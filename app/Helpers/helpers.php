@@ -197,3 +197,66 @@ if (!function_exists('format_date')) {
         return $time ? date($format, $time) : '-';
     }
 }
+
+/**
+ * UI Component Helpers
+ */
+if (!function_exists('component')) {
+    function component(string $__component_name, array $__component_data = []): string {
+        $__component_file = __DIR__ . '/../../views/components/' . str_replace('.', '/', $__component_name) . '.php';
+        if (!file_exists($__component_file)) {
+            $__component_file = __DIR__ . '/../../views/components/' . $__component_name . '.php';
+        }
+        if (file_exists($__component_file)) {
+            extract($__component_data);
+            ob_start();
+            include $__component_file;
+            return ob_get_clean();
+        }
+        return "<!-- Component [{$__component_name}] not found -->";
+    }
+}
+
+if (!function_exists('render_component')) {
+    function render_component(string $name, array $data = []): void {
+        echo component($name, $data);
+    }
+}
+
+if (!function_exists('ui_button')) {
+    function ui_button(string $text, array $options = []): string {
+        $options['text'] = $text;
+        return component('button', $options);
+    }
+}
+
+if (!function_exists('ui_card')) {
+    function ui_card(string $title, string $content, array $options = []): string {
+        $options['title'] = $title;
+        $options['content'] = $content;
+        return component('card', $options);
+    }
+}
+
+if (!function_exists('ui_empty_state')) {
+    function ui_empty_state(string $title, ?string $message = null, array $options = []): string {
+        $options['title'] = $title;
+        $options['message'] = $message;
+        return component('empty_state', $options);
+    }
+}
+
+if (!function_exists('ui_error_state')) {
+    function ui_error_state(string $title, ?string $message = null, array $options = []): string {
+        $options['title'] = $title;
+        $options['message'] = $message;
+        return component('error_state', $options);
+    }
+}
+
+if (!function_exists('ui_badge')) {
+    function ui_badge(string $text, string $variant = 'primary'): string {
+        return '<span class="badge badge-' . htmlspecialchars($variant) . '">' . htmlspecialchars($text) . '</span>';
+    }
+}
+

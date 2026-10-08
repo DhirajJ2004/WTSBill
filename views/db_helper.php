@@ -644,3 +644,26 @@ if (!function_exists('getIndianWords')) {
         return \App\Services\NumberToWordsService::toIndianWords($number);
     }
 }
+
+if (!function_exists('component')) {
+    function component(string $__component_name, array $__component_data = []): string {
+        $__component_file = __DIR__ . '/components/' . str_replace('.', '/', $__component_name) . '.php';
+        if (!file_exists($__component_file)) {
+            $__component_file = __DIR__ . '/components/' . $__component_name . '.php';
+        }
+        if (file_exists($__component_file)) {
+            extract($__component_data);
+            ob_start();
+            include $__component_file;
+            return ob_get_clean();
+        }
+        return "<!-- Component [{$__component_name}] not found -->";
+    }
+}
+
+if (!function_exists('render_component')) {
+    function render_component(string $name, array $data = []): void {
+        echo component($name, $data);
+    }
+}
+
