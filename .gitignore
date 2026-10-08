@@ -10,9 +10,18 @@ vendor/
 node_modules/
 
 # Storage & logs
-storage/logs/*.log
-*.log
+storage/logs/*
+!storage/logs/.gitkeep
+storage/cache/*
+!storage/cache/.gitkeep
+storage/sessions/*
+!storage/sessions/.gitkeep
 backend/storage/logs/*.log
+*.log
+
+# Public Uploads
+public/uploads/*
+!public/uploads/.gitkeep
 
 # Operating System files
 .DS_Store
