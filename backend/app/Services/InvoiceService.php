@@ -35,7 +35,7 @@ class InvoiceService
      * @param User|null $authUser Authenticated user performing action
      * @return array Standardized result payload
      */
-    public static function createInvoice(array $input, ?int $authCompanyId = null, ?int $authBranchId = null, ?User $authUser = null): array
+    public static function createInvoice(array $input, ?int $authCompanyId = null, ?int $authBranchId = null, mixed $authUser = null): array
     {
         // -------------------------------------------------------------
         // 1. Resolve & Enforce Tenant & Branch Workspace Context
@@ -79,9 +79,17 @@ class InvoiceService
         }
 
         // User Context
-        $user = $authUser ?: (WorkspaceContext::getUser() ?: AuthMiddleware::getUser());
-        $userName = $user?->name ?: 'System';
-        $userId = $user?->id ?: null;
+        if (is_string($authUser)) {
+            $userName = $authUser;
+            $userId = null;
+        } elseif ($authUser instanceof User) {
+            $userName = $authUser->name;
+            $userId = $authUser->id;
+        } else {
+            $user = WorkspaceContext::getUser() ?: AuthMiddleware::getUser();
+            $userName = $user?->name ?: 'System';
+            $userId = $user?->id ?: null;
+        }
 
         // -------------------------------------------------------------
         // 2. Customer Validation (Strict Tenant Scoping, No Fallbacks)
@@ -293,7 +301,7 @@ class InvoiceService
                 $availableQty = $stockBal
                     ? max(floatval($stockBal->available_quantity), floatval($stockBal->quantity) - floatval($stockBal->reserved_quantity))
                     : floatval($product->current_stock);
-                $allowNegative = (bool)($product->allow_negative_stock || $company->allow_negative_stock || !empty($input['allow_negative_stock']));
+                $allowNegative = !empty($input['allow_negative_stock']) || ((bool)$product->allow_negative_stock && (bool)$company->allow_negative_stock);
 
                 if ($availableQty < $quantity && !$allowNegative) {
                     return [
@@ -486,6 +494,10 @@ class InvoiceService
                 'success' => true,
                 'code' => 201,
                 'message' => "Invoice #{$invNumber} created successfully.",
+                'invoice_id' => $invoice->id,
+                'invoice' => $invoice,
+                'invoice_number' => $invNumber,
+                'grand_total' => $grandTotal,
                 'data' => $invoice->load(['customer', 'items.product']),
             ];
 
@@ -591,13 +603,19 @@ class InvoiceService
     }
 
     /**
-     * Cancel an invoice atomically.
+     * Cancel / Void an invoice atomically.
      */
-    public static function cancelInvoice(int $invoiceId, ?string $reason = null, ?int $authCompanyId = null, ?User $authUser = null): array
+    public static function cancelInvoice(int $invoiceId, ?string $reason = null, ?int $authCompanyId = null, mixed $authUser = null): array
     {
         $companyId = $authCompanyId ?: (WorkspaceContext::getCompanyId() ?: AuthMiddleware::getTenantId());
-        $user = $authUser ?: (WorkspaceContext::getUser() ?: AuthMiddleware::getUser());
-        $userName = $user?->name ?: 'System';
+        if (is_string($authUser)) {
+            $userName = $authUser;
+        } elseif ($authUser instanceof User) {
+            $userName = $authUser->name;
+        } else {
+            $user = WorkspaceContext::getUser() ?: AuthMiddleware::getUser();
+            $userName = $user?->name ?: 'System';
+        }
 
         $invoice = Invoice::withoutGlobalScopes()->where('id', $invoiceId)->first();
         if (!$invoice) {
@@ -690,5 +708,30 @@ class InvoiceService
                 'message' => 'Failed to cancel invoice: ' . $e->getMessage()
             ];
         }
+    }
+
+    /**
+     * Void an invoice (Alias for cancelInvoice with parameter normalization).
+     */
+    public static function voidInvoice(int $id, ?int $companyId = null, mixed $userName = 'Admin', ?string $reason = 'Cancelled'): array
+    {
+        return self::cancelInvoice($id, $reason, $companyId, $userName);
+    }
+
+    /**
+     * Delete a DRAFT invoice.
+     */
+    public static function deleteInvoice(int $id, ?int $companyId = null, mixed $userName = 'Admin'): array
+    {
+        $comp = $companyId ?: (WorkspaceContext::getCompanyId() ?: AuthMiddleware::getTenantId());
+        $invoice = Invoice::withoutGlobalScopes()->where('id', $id)->where('company_id', $comp)->first();
+        if (!$invoice) {
+            return ['success' => false, 'code' => 404, 'message' => "Invoice #{$id} not found."];
+        }
+        if ($invoice->status === 'POSTED' || $invoice->status === 'PAID') {
+            return ['success' => false, 'code' => 422, 'message' => "Posted invoices cannot be deleted directly. Please void or cancel the invoice."];
+        }
+        $invoice->delete();
+        return ['success' => true, 'code' => 200, 'message' => "Draft Invoice #{$invoice->invoice_number} deleted successfully."];
     }
 }
