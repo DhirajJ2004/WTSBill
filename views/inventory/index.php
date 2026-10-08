@@ -201,9 +201,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             // --------------------------------------------------------
             elseif ($action === 'delete_product') {
                 $productId = intval($_POST['product_id'] ?? 0);
-                $product = Product::where('company_id', $companyId)->findOrFail($productId);
-                $product->delete();
-                $statusMessage = "Product '{$product->name}' removed from active inventory.";
+                $delRes = InventoryService::deleteProduct($productId, $companyId, $_SESSION['user']['name'] ?? 'Admin');
+                if (!$delRes['success']) {
+                    throw new Exception($delRes['message']);
+                }
+                $statusMessage = $delRes['message'];
             }
 
             // --------------------------------------------------------
