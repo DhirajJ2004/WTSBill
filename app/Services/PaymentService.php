@@ -398,26 +398,4 @@ class PaymentService
             return ['success' => true, 'message' => "Payment #{$payment->payment_number} voided successfully."];
         });
     }
-
-    /**
-     * Legacy backward-compatible createPayment
-     */
-    public static function createPayment(array $data, ?string $createdByName = 'Admin'): Payment
-    {
-        $partyType = strtoupper(trim($data['party_type'] ?? 'CUSTOMER'));
-        $companyId = intval($data['company_id']);
-        $branchId = !empty($data['branch_id']) ? intval($data['branch_id']) : null;
-
-        if ($partyType === 'CUSTOMER') {
-            $res = static::recordCustomerReceipt($data, $companyId, $branchId, $createdByName);
-        } else {
-            $res = static::recordSupplierPayment($data, $companyId, $branchId, $createdByName);
-        }
-
-        if (!$res['success']) {
-            throw new \InvalidArgumentException($res['message'] ?? 'Payment creation failed');
-        }
-
-        return Payment::findOrFail($res['payment_id']);
-    }
 }
