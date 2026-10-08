@@ -68,7 +68,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $tokenValid) {
                     DB::table('password_resets')->where('email', $email)->delete();
 
                     // Invalidate active personal access tokens for this user
-                    DB::table('personal_access_tokens')->where('tokenable_id', $user->id)->delete();
+                    try {
+                        DB::table('personal_access_tokens')->where('user_id', $user->id)->delete();
+                    } catch (\Throwable $e) {}
 
                     // Audit Log
                     AuditLogService::log(

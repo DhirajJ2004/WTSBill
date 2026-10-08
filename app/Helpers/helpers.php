@@ -2,11 +2,21 @@
 
 /**
  * WTSBill ERP - Centralized Core Helper Functions
- * Provides standard authentication, CSRF, escaping, formatting, and workspace accessors.
  */
 
-use App\Auth\WorkspaceContext;
-use App\Http\JsonResponse;
+spl_autoload_register(function ($class) {
+    $prefix = 'App\\';
+    $baseDir = dirname(__DIR__) . '/';
+    $len = strlen($prefix);
+    if (strncmp($prefix, $class, $len) !== 0) {
+        return;
+    }
+    $relativeClass = substr($class, $len);
+    $file = $baseDir . str_replace('\\', '/', $relativeClass) . '.php';
+    if (file_exists($file)) {
+        require_once $file;
+    }
+});
 
 if (session_status() === PHP_SESSION_NONE) {
     @session_start();
