@@ -1,0 +1,26 @@
+# Environment files — NEVER COMMIT CREDENTIALS OR SECRETS
+.env
+.env.*
+!.env.example
+*.env
+
+# Dependencies
+/backend/vendor/
+vendor/
+node_modules/
+
+# Storage & logs
+storage/logs/*.log
+*.log
+backend/storage/logs/*.log
+
+# Operating System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace

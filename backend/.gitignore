@@ -1,0 +1,15 @@
+# Environment files — NEVER COMMIT CREDENTIALS OR SECRETS
+.env
+.env.*
+!.env.example
+*.env
+
+# Dependencies
+/vendor/
+
+# Storage & logs
+/storage/logs/*.log
+*.log
+
+# Cache
+/bootstrap/cache/*
