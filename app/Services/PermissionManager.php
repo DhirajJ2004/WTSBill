@@ -11,7 +11,7 @@ class PermissionManager
      */
     protected static array $rolePermissions = [
         'ADMIN' => [
-            '*.*',
+            '*.*', // Super admin
         ],
         'SUPER_ADMIN' => [
             '*.*',
@@ -28,9 +28,9 @@ class PermissionManager
         ],
         'ACCOUNTANT' => [
             'dashboard.view',
-            'sales.*', 'sales.view', 'sales.export', 'sales.print', 'sales.record_payment',
-            'invoice.*', 'invoice.view', 'invoice.print', 'invoice.export',
-            'invoices.*', 'invoices.view', 'invoices.print', 'invoices.export',
+            'sales.view', 'sales.export', 'sales.print', 'sales.record_payment',
+            'invoice.view', 'invoice.print', 'invoice.export',
+            'invoices.view', 'invoices.print', 'invoices.export',
             'purchases.*', 'purchase.*', 'purchase.view', 'purchase.create', 'purchase.edit',
             'purchase_order.*', 'goods_receipt.*', 'purchase_return.*', 'debit_note.*',
             'inventory.view',
@@ -115,7 +115,7 @@ class PermissionManager
             return false;
         }
 
-        $normalizedRole = strtoupper(str_replace([' ', '-'], '_', $user->role ?: 'STAFF'));
+        $normalizedRole = strtoupper(str_replace(' ', '_', $user->role ?: 'STAFF'));
         $userPerms = static::$rolePermissions[$normalizedRole] ?? static::$rolePermissions['STAFF'];
 
         // Super admin wildcard
@@ -201,7 +201,7 @@ class PermissionManager
      */
     public static function getPermissionsForRole(string $role): array
     {
-        $normalizedRole = strtoupper(str_replace([' ', '-'], '_', $role));
+        $normalizedRole = strtoupper(str_replace(' ', '_', $role));
         return static::$rolePermissions[$normalizedRole] ?? static::$rolePermissions['STAFF'];
     }
 

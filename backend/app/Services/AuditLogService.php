@@ -67,7 +67,7 @@ class AuditLogService
         $sanitized = [];
         foreach ($data as $key => $val) {
             $keyLower = strtolower((string)$key);
-            if (preg_match('/(password|token|secret|jwt|hash|remember_token|auth_key|api_key|credit_card|cvv|pin)/i', $keyLower)) {
+            if (preg_match('/(password|token|secret|jwt|hash|remember_token|auth_key|api_key|credit_card|cvv|pin|db_pass|database_password|session_id|sess_id|session)/i', $keyLower)) {
                 $sanitized[$key] = '[REDACTED]';
             } elseif (is_array($val) || is_object($val)) {
                 $sanitized[$key] = static::sanitizeData($val);
@@ -252,5 +252,58 @@ class AuditLogService
         } catch (\Throwable $e) {
             error_log("[AuditLogService::log] " . $e->getMessage());
         }
+    }
+
+    /**
+     * Search and paginate audit logs for a company.
+     */
+    public static function getLogs(int $companyId, array $filters = [], int $page = 1, int $perPage = 50): array
+    {
+        $query = AuditLog::where('company_id', $companyId);
+
+        if (!empty($filters['action'])) {
+            $query->where('action', strtoupper(trim($filters['action'])));
+        }
+        if (!empty($filters['entity_type'])) {
+            $query->where('entity_type', trim($filters['entity_type']));
+        }
+        if (!empty($filters['user_name'])) {
+            $query->where('user_name', 'LIKE', '%' . trim($filters['user_name']) . '%');
+        }
+        if (!empty($filters['status'])) {
+            $query->where('status', strtoupper(trim($filters['status'])));
+        }
+        if (!empty($filters['from_date'])) {
+            $query->where('created_at', '>=', $filters['from_date'] . ' 00:00:00');
+        }
+        if (!empty($filters['to_date'])) {
+            $query->where('created_at', '<=', $filters['to_date'] . ' 23:59:59');
+        }
+        if (!empty($filters['search'])) {
+            $search = '%' . trim($filters['search']) . '%';
+            $query->where(function ($q) use ($search) {
+                $q->where('description', 'LIKE', $search)
+                  ->orWhere('action', 'LIKE', $search)
+                  ->orWhere('user_name', 'LIKE', $search)
+                  ->orWhere('ip_address', 'LIKE', $search);
+            });
+        }
+
+        $total = $query->count();
+        $offset = ($page - 1) * $perPage;
+
+        $items = $query->orderBy('id', 'desc')
+            ->offset($offset)
+            ->limit($perPage)
+            ->get()
+            ->toArray();
+
+        return [
+            'total'        => $total,
+            'page'         => $page,
+            'per_page'     => $perPage,
+            'total_pages'  => ceil($total / max(1, $perPage)),
+            'items'        => $items,
+        ];
     }
 }
