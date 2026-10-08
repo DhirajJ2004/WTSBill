@@ -156,11 +156,70 @@ if (!function_exists('sanitize_error_payload')) {
 
 // Global Helpers
 function response_json($data, int $code = 200) {
+    if (is_object($data)) {
+        if (method_exists($data, 'toArray')) {
+            $data = $data->toArray();
+        } else {
+            $data = (array)$data;
+        }
+    }
+    if (!is_array($data)) {
+        $data = ['data' => $data];
+    }
+
+    $isError = false;
+    if ($code >= 400) {
+        $isError = true;
+    } elseif (isset($data['status']) && in_array(strtolower((string)$data['status']), ['error', 'failed', 'fail'], true)) {
+        $isError = true;
+    } elseif (isset($data['success']) && $data['success'] === false) {
+        $isError = true;
+    }
+
+    if ($isError) {
+        if ($code < 400 || $code > 599) {
+            $code = 400;
+        }
+        $message = (string)($data['message'] ?? ($data['error'] ?? 'An error occurred.'));
+        $errors = $data['errors'] ?? ($data['validation_errors'] ?? []);
+        if (empty($errors) && isset($data['error']) && is_array($data['error'])) {
+            $errors = $data['error'];
+        }
+        if (is_array($errors) && empty($errors)) {
+            $errors = (object)[];
+        }
+
+        $formatted = [
+            'status'  => 'error',
+            'message' => $message,
+            'errors'  => $errors,
+        ];
+    } else {
+        if ($code === 0 || $code < 200 || $code >= 300) {
+            $code = 200;
+        }
+
+        if (isset($data['status']) && $data['status'] === 'success' && array_key_exists('data', $data) && count($data) === 2) {
+            $formatted = $data;
+        } else {
+            $payload = $data;
+            if (isset($payload['status'])) unset($payload['status']);
+            if (isset($payload['success'])) unset($payload['success']);
+            if (array_key_exists('data', $data) && count($data) <= 3) {
+                $payload = $data['data'];
+            }
+            $formatted = [
+                'status' => 'success',
+                'data'   => $payload,
+            ];
+        }
+    }
+
     http_response_code($code);
     header('Content-Type: application/json');
     apply_cors_headers(false);
-    sanitize_error_payload($data);
-    echo json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    sanitize_error_payload($formatted);
+    echo json_encode($formatted, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit();
 }
 
@@ -430,29 +489,36 @@ require_once __DIR__ . '/../routes/api.php';
 try {
     dispatch_route($uriPath, $_SERVER['REQUEST_METHOD'] ?? 'GET');
 } catch (AuthorizationException $e) {
-    response_json($e->response, $e->statusCode);
+    response_json([
+        'status'  => 'error',
+        'message' => $e->getMessage(),
+        'errors'  => (object)[],
+    ], $e->statusCode);
+} catch (\Illuminate\Validation\ValidationException $e) {
+    response_json([
+        'status'  => 'error',
+        'message' => 'The given data was invalid.',
+        'errors'  => $e->errors(),
+    ], 422);
 } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
     response_json([
-        'status' => 'error',
+        'status'  => 'error',
         'message' => 'Resource not found or unauthorized.',
+        'errors'  => (object)[],
     ], 404);
+} catch (\InvalidArgumentException $e) {
+    response_json([
+        'status'  => 'error',
+        'message' => $e->getMessage(),
+        'errors'  => (object)[],
+    ], 400);
 } catch (\Throwable $e) {
     error_log("[UNCAUGHT EXCEPTION] " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine() . "\n" . $e->getTraceAsString());
-    $isAppDebug = filter_var($_ENV['APP_DEBUG'] ?? false, FILTER_VALIDATE_BOOLEAN);
-    if (!$isAppDebug) {
-        response_json([
-            'status' => 'error',
-            'message' => 'An internal server error occurred. Please contact the administrator.',
-        ], 500);
-    } else {
-        response_json([
-            'status' => 'error',
-            'message' => $e->getMessage(),
-            'exception' => get_class($e),
-            'file' => $e->getFile(),
-            'line' => $e->getLine(),
-        ], 500);
-    }
+    response_json([
+        'status'  => 'error',
+        'message' => 'An internal server error occurred. Please contact the administrator.',
+        'errors'  => (object)[],
+    ], 500);
 }
 
 

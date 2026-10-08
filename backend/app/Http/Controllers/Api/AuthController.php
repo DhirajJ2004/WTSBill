@@ -33,6 +33,7 @@ class AuthController
         return response_json([
             'status' => 'success',
             'message' => 'Login successful',
+            'token' => $result['access_token'],
             'access_token' => $result['access_token'],
             'token_type' => 'Bearer',
             'user' => $result['user'],

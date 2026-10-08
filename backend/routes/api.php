@@ -58,10 +58,14 @@ function dispatch_route(string $uri, string $method)
     }
 
     $path = parse_url($uri, PHP_URL_PATH);
-    if (($apiPos = strpos($path, '/api/v1/')) !== false) {
-        $path = substr($path, $apiPos);
-    } elseif (strpos($path, '/WTSBill') === 0) {
+    if (strpos($path, '/WTSBill') === 0) {
         $path = substr($path, strlen('/WTSBill'));
+    }
+    if (strpos($path, '/api/v1/') === 0 || $path === '/api/v1') {
+        // Already v1
+    } elseif (strpos($path, '/api/') === 0 || $path === '/api') {
+        // Backward-compatible rewrite: /api/* -> /api/v1/*
+        $path = '/api/v1' . substr($path, strlen('/api'));
     }
     $path = rtrim($path, '/');
 
