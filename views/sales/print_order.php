@@ -21,8 +21,53 @@ $company = DB::table('companies')->where('id', $companyId)->first();
 $bank = DB::table('bank_accounts')->where('company_id', $companyId)->first();
 
 $type = $_GET['type'] ?? 'so'; // 'so' = Sales Order, 'po' = Purchase Order
-$orderNumber = $_GET['number'] ?? ($type === 'po' ? 'PO-2026-0082' : 'SO-2026-081');
-$clientName = $_GET['party'] ?? ($type === 'po' ? 'Apex Metals & Alloys' : 'Ramesh Hardware Stores');
+$orderId = isset($_GET['id']) ? intval($_GET['id']) : 0;
+
+if ($orderId > 0) {
+    $table = ($type === 'po') ? 'purchase_orders' : 'sales_orders';
+    $docName = ($type === 'po') ? 'Purchase Order' : 'Sales Order';
+    $authData = \App\Services\DocumentPrintService::authorizeAndFetch($table, $orderId, $docName, url($type === 'po' ? '/purchases' : '/sales-orders'));
+    $order = $authData['document'];
+    $company = $authData['company'];
+    $bank = $authData['bank'];
+    $logoDataUri = $authData['logoUri'];
+
+    $orderNumber = ($type === 'po') ? ($order->po_number ?? ('PO-' . $order->id)) : ($order->order_number ?? ('SO-' . $order->id));
+    $orderDate = date('d-m-Y', strtotime($order->order_date ?? ($order->po_date ?? ($order->created_at ?? date('Y-m-d')))));
+    
+    if ($type === 'po') {
+        $supplier = DB::table('suppliers')->where('id', $order->supplier_id)->first();
+        $clientName = $supplier->name ?? 'Vendor';
+        $clientAddress = ($supplier->address_line1 ?? '') . (!empty($supplier->city) ? ' - ' . $supplier->city : '');
+        $clientGstin = $supplier->gstin ?? 'URP';
+        $orderItems = DB::table('purchase_order_items')->where('purchase_order_id', $order->id)->get();
+    } else {
+        $customer = DB::table('customers')->where('id', $order->customer_id)->first();
+        $clientName = $customer->name ?? 'Customer';
+        $clientAddress = ($customer->address_line1 ?? '') . (!empty($customer->city) ? ' - ' . $customer->city : '');
+        $clientGstin = $customer->gstin ?? 'URP';
+        $orderItems = DB::table('sales_order_items')->where('sales_order_id', $order->id)->get();
+    }
+    
+    $grandTotal = floatval($order->grand_total ?? ($order->total_amount ?? 0));
+    $taxableAmt = floatval($order->sub_total ?? 0);
+    $totalTax = floatval($order->total_tax ?? 0);
+    $cgst = floatval($order->cgst_amount ?? round($totalTax / 2, 2));
+    $sgst = floatval($order->sgst_amount ?? round($totalTax / 2, 2));
+    $igst = floatval($order->igst_amount ?? 0);
+} else {
+    $orderNumber = $_GET['number'] ?? ($type === 'po' ? 'PO-2026-0082' : 'SO-2026-081');
+    $clientName = $_GET['party'] ?? ($type === 'po' ? 'Apex Metals & Alloys' : 'Ramesh Hardware Stores');
+    $clientAddress = '123 Industrial Area, Pune';
+    $clientGstin = '27AAAAA0000A1Z5';
+    $orderDate = date('d-m-Y');
+    $taxableAmt = 10000.00;
+    $cgst = 900.00;
+    $sgst = 900.00;
+    $igst = 0.00;
+    $grandTotal = 11800.00;
+    $orderItems = [];
+}
 
 $companyName = $company->name ?? 'Wis Technosavvy Pvt Ltd';
 $companyAddress1 = $company->address_line1 ?? 'Office No-B-7, 2nd floor, Shreya Business Hub,';

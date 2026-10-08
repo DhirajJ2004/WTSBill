@@ -17,12 +17,33 @@ if (empty($_SESSION['user'])) {
 }
 
 $companyId = get_current_company_id();
-$company = DB::table('companies')->where('id', $companyId)->first();
+$challanId = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
-$challanNumber = $_GET['number'] ?? 'DC-2026-009';
-$recipient = $_GET['client'] ?? 'Ramesh Hardware Stores';
-$vehicleNo = $_GET['vehicle'] ?? 'MH-12-QX-4891';
-$ewayBill = $_GET['eway'] ?? '241829019283';
+if ($challanId > 0) {
+    $authData = \App\Services\DocumentPrintService::authorizeAndFetch('delivery_challans', $challanId, 'Delivery Challan', url('/delivery-challans'));
+    $challan = $authData['document'];
+    $company = $authData['company'];
+    $logoDataUri = $authData['logoUri'];
+
+    $challanNumber = $challan->challan_number ?? ('DC-' . $challan->id);
+    $challanDate = date('d-m-Y', strtotime($challan->challan_date ?? ($challan->created_at ?? date('Y-m-d'))));
+    $customer = DB::table('customers')->where('id', $challan->customer_id)->first();
+    $recipient = $customer->name ?? 'Customer';
+    $recipientAddress = ($customer->address_line1 ?? '') . (!empty($customer->city) ? ' - ' . $customer->city : '');
+    $recipientGstin = $customer->gstin ?? 'URP';
+    $vehicleNo = $challan->transport_mode ?? ($challan->vehicle_number ?? 'MH-12-QX-4891');
+    $ewayBill = $challan->eway_bill_number ?? '241829019283';
+    $challanItems = DB::table('delivery_challan_items')->where('delivery_challan_id', $challan->id)->get();
+} else {
+    $challanNumber = $_GET['number'] ?? 'DC-2026-009';
+    $recipient = $_GET['client'] ?? 'Ramesh Hardware Stores';
+    $recipientAddress = 'Plot 44, Market Yard, Pune';
+    $recipientGstin = '27AAAAA0000A1Z5';
+    $vehicleNo = $_GET['vehicle'] ?? 'MH-12-QX-4891';
+    $ewayBill = $_GET['eway'] ?? '241829019283';
+    $challanDate = date('d-m-Y');
+    $challanItems = [];
+}
 
 $companyName = $company->name ?? 'Wis Technosavvy Pvt Ltd';
 $companyAddress1 = $company->address_line1 ?? 'Office No-B-7, 2nd floor, Shreya Business Hub,';
