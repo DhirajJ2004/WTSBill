@@ -17,8 +17,7 @@ use App\Services\InvoiceService;
 use App\Services\SalesOrderService;
 use App\Services\DeliveryChallanService;
 use App\Services\AuditLogService;
-use App\Http\Middleware\AuthMiddleware;
-use App\Auth\WorkspaceContext;
+use App\Middleware\AuthMiddleware;
 use Illuminate\Database\Capsule\Manager as DB;
 
 class SalesConversionService
@@ -31,7 +30,7 @@ class SalesConversionService
         ?int $companyId = null,
         mixed $authUser = 'Admin'
     ): array {
-        $comp = $companyId ?: (WorkspaceContext::getCompanyId() ?: (AuthMiddleware::getTenantId() ?: 1));
+        $comp = $companyId ?: (AuthMiddleware::getTenantId() ?: 1);
         $userName = is_string($authUser) ? $authUser : ($authUser->name ?? 'Admin');
 
         $quotation = Quotation::withoutGlobalScopes()
@@ -132,7 +131,7 @@ class SalesConversionService
         ?int $companyId = null,
         mixed $authUser = 'Admin'
     ): array {
-        $comp = $companyId ?: (WorkspaceContext::getCompanyId() ?: (AuthMiddleware::getTenantId() ?: 1));
+        $comp = $companyId ?: (AuthMiddleware::getTenantId() ?: 1);
         $userName = is_string($authUser) ? $authUser : ($authUser->name ?? 'Admin');
 
         $quotation = Quotation::withoutGlobalScopes()
@@ -234,7 +233,7 @@ class SalesConversionService
         mixed $authUser = 'Admin',
         bool $dispatchStock = false
     ): array {
-        $comp = $companyId ?: (WorkspaceContext::getCompanyId() ?: (AuthMiddleware::getTenantId() ?: 1));
+        $comp = $companyId ?: (AuthMiddleware::getTenantId() ?: 1);
         $userName = is_string($authUser) ? $authUser : ($authUser->name ?? 'Admin');
 
         $so = SalesOrder::withoutGlobalScopes()
@@ -330,7 +329,7 @@ class SalesConversionService
         ?int $companyId = null,
         mixed $authUser = 'Admin'
     ): array {
-        $comp = $companyId ?: (WorkspaceContext::getCompanyId() ?: (AuthMiddleware::getTenantId() ?: 1));
+        $comp = $companyId ?: (AuthMiddleware::getTenantId() ?: 1);
         $userName = is_string($authUser) ? $authUser : ($authUser->name ?? 'Admin');
 
         $so = SalesOrder::withoutGlobalScopes()
@@ -430,7 +429,7 @@ class SalesConversionService
         ?int $companyId = null,
         mixed $authUser = 'Admin'
     ): array {
-        $comp = $companyId ?: (WorkspaceContext::getCompanyId() ?: (AuthMiddleware::getTenantId() ?: 1));
+        $comp = $companyId ?: (AuthMiddleware::getTenantId() ?: 1);
         $userName = is_string($authUser) ? $authUser : ($authUser->name ?? 'Admin');
 
         $dc = DeliveryChallan::withoutGlobalScopes()
@@ -477,6 +476,7 @@ class SalesConversionService
             ];
         }
 
+        // If DC was already dispatched, skip duplicate stock deduction on invoice creation!
         $alreadyDispatched = in_array(strtoupper($dc->status), ['DISPATCHED', 'DELIVERED'], true);
 
         $invPayload = [

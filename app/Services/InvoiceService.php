@@ -260,28 +260,30 @@ class InvoiceService
 
             // D. Deduct Stock Movements & Create Accounting Journal if POSTED
             if ($status !== 'DRAFT') {
-                foreach ($validatedItems as $vi) {
-                    $prod = $vi['product'];
-                    if (strtoupper($prod->product_type ?? '') !== 'SERVICES' && $prod->track_inventory) {
-                        $stockRes = InventoryService::recordStockOut(
-                            $companyId,
-                            $warehouseId,
-                            $prod->id,
-                            $vi['quantity'],
-                            (float)$prod->purchase_price,
-                            'SALE',
-                            [
-                                'reference_type' => 'INVOICE',
-                                'reference_id' => $invoice->id,
-                                'reference_number' => $invNumber,
-                                'movement_date' => $invoiceDate,
-                                'created_by' => $userName,
-                                'notes' => "Stock outward for Sales Invoice #{$invNumber}",
-                            ]
-                        );
+                if (empty($input['skip_stock_deduction'])) {
+                    foreach ($validatedItems as $vi) {
+                        $prod = $vi['product'];
+                        if (strtoupper($prod->product_type ?? '') !== 'SERVICES' && $prod->track_inventory) {
+                            $stockRes = InventoryService::recordStockOut(
+                                $companyId,
+                                $warehouseId,
+                                $prod->id,
+                                $vi['quantity'],
+                                (float)$prod->purchase_price,
+                                'SALE',
+                                [
+                                    'reference_type' => 'INVOICE',
+                                    'reference_id' => $invoice->id,
+                                    'reference_number' => $invNumber,
+                                    'movement_date' => $invoiceDate,
+                                    'created_by' => $userName,
+                                    'notes' => "Stock outward for Sales Invoice #{$invNumber}",
+                                ]
+                            );
 
-                        if (!$stockRes['success']) {
-                            throw new \Exception("Stock deduction failed: " . $stockRes['message']);
+                            if (!$stockRes['success']) {
+                                throw new \Exception("Stock deduction failed: " . $stockRes['message']);
+                            }
                         }
                     }
                 }

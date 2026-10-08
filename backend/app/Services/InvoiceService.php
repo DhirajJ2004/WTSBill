@@ -443,26 +443,28 @@ class InvoiceService
             // C. If POSTED, execute downstream movements, accounting, and customer balance updates
             if ($status === 'POSTED') {
                 // 1. Inventory Deduction
-                foreach ($validatedItems as $vi) {
-                    $prod = $vi['product'];
-                    if (strtoupper($prod->product_type ?? '') !== 'SERVICE' && $prod->track_inventory) {
-                        InventoryService::recordStockMovement(
-                            companyId: $companyId,
-                            warehouseId: $warehouseId,
-                            productId: $prod->id,
-                            movementType: 'SALE',
-                            quantity: $vi['quantity'],
-                            direction: 'OUT',
-                            unitCost: floatval($prod->purchase_price ?: 0),
-                            branchId: $branchId,
-                            refType: 'SALES_INVOICE',
-                            refId: $invoice->id,
-                            refNumber: $invNumber,
-                            movementDate: $invoiceDate,
-                            createdBy: $userName,
-                            notes: "Deducted for Sales Invoice #{$invNumber}",
-                            allowNegativeStock: (bool)($prod->allow_negative_stock || $company->allow_negative_stock || !empty($input['allow_negative_stock']))
-                        );
+                if (empty($input['skip_stock_deduction'])) {
+                    foreach ($validatedItems as $vi) {
+                        $prod = $vi['product'];
+                        if (strtoupper($prod->product_type ?? '') !== 'SERVICE' && $prod->track_inventory) {
+                            InventoryService::recordStockMovement(
+                                companyId: $companyId,
+                                warehouseId: $warehouseId,
+                                productId: $prod->id,
+                                movementType: 'SALE',
+                                quantity: $vi['quantity'],
+                                direction: 'OUT',
+                                unitCost: floatval($prod->purchase_price ?: 0),
+                                branchId: $branchId,
+                                refType: 'SALES_INVOICE',
+                                refId: $invoice->id,
+                                refNumber: $invNumber,
+                                movementDate: $invoiceDate,
+                                createdBy: $userName,
+                                notes: "Deducted for Sales Invoice #{$invNumber}",
+                                allowNegativeStock: !empty($input['allow_negative_stock']) || ((bool)$prod->allow_negative_stock && (bool)$company->allow_negative_stock)
+                            );
+                        }
                     }
                 }
 
