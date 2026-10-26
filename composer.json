@@ -1,0 +1,26 @@
+{
+    "name": "billwts/erp",
+    "description": "WTSBill ERP Rebuilt Native PHP 8+ Accounting & Invoicing Application",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.5"
+    },
+    "config": {
+        "platform-check": false,
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "autoload": {
+        "psr-4": {
+            "WTSBill\\": "app/",
+            "App\\": "app/"
+        },
+        "files": [
+            "app/Core/helpers.php"
+        ]
+    }
+}

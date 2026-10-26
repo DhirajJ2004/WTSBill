@@ -1,0 +1,11 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Directly serve static assets from public/assets
+    RewriteRule ^assets/(.*)$ public/assets/$1 [L]
+
+    # Handle all other requests via public/index.php
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ public/index.php [QSA,L]
+</IfModule>

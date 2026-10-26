@@ -1,0 +1,47 @@
+# Composer & Dependencies
+/vendor/
+
+# Environment and Secret Credentials
+.env
+.env.backup
+.env.production
+.env.staging
+.env.local
+*.pem
+*.key
+*.cert
+
+# Runtime Storage
+/storage/logs/*.log
+!/storage/logs/.gitkeep
+/storage/sessions/*
+!/storage/sessions/.gitkeep
+/storage/cache/*
+!/storage/cache/.gitkeep
+/storage/backups/*
+!/storage/backups/.gitkeep
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# System & OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# IDE & Editor Settings
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# Testing & Coverage Artifacts
+.phpunit.result.cache
+/coverage/
