@@ -110,11 +110,14 @@ class BranchService
         $isMain = !empty($data['is_main_branch']) ? 1 : 0;
         $isActive = isset($data['is_active']) ? (int)$data['is_active'] : 1;
 
+        $contactPerson = trim($data['contact_person'] ?? '') ?: null;
+
         $insertData = [
             'company_id' => $companyId,
             'name' => $name,
             'code' => $branchCode,
             'branch_code' => $branchCode,
+            'contact_person' => $contactPerson,
             'legal_name' => trim($data['legal_name'] ?? '') ?: $name,
             'gstin' => $gstin,
             'pan' => $pan,
@@ -131,8 +134,15 @@ class BranchService
             'updated_at' => date('Y-m-d H:i:s'),
         ];
 
-        $id = $this->branchRepo->createBranch($insertData);
-        $insertData['id'] = $id;
+        try {
+            $id = $this->branchRepo->createBranch($insertData);
+            $insertData['id'] = $id;
+        } catch (\PDOException $e) {
+            if ($e->getCode() == 23000 || str_contains($e->getMessage(), 'Duplicate entry') || str_contains($e->getMessage(), 'unique') || str_contains($e->getMessage(), 'UNIQUE')) {
+                throw ValidationException::withMessages(['branch_code' => "Branch code '{$branchCode}' is already assigned to another branch."]);
+            }
+            throw $e;
+        }
 
         Logger::info("Branch '{$name}' ({$branchCode}) created with ID {$id} for company {$companyId}");
 
@@ -159,10 +169,13 @@ class BranchService
         $isMain = isset($data['is_main_branch']) ? (int)$data['is_main_branch'] : (int)$existing['is_main_branch'];
         $isActive = isset($data['is_active']) ? (int)$data['is_active'] : (int)$existing['is_active'];
 
+        $contactPerson = isset($data['contact_person']) ? (trim($data['contact_person']) ?: null) : ($existing['contact_person'] ?? null);
+
         $updateData = [
             'name' => $name,
             'code' => $branchCode,
             'branch_code' => $branchCode,
+            'contact_person' => $contactPerson,
             'legal_name' => trim($data['legal_name'] ?? '') ?: $name,
             'gstin' => $gstin,
             'pan' => $pan,
@@ -237,6 +250,8 @@ class BranchService
         $name = trim($data['name'] ?? '');
         if ($name === '') {
             $errors['name'] = 'Branch name is required.';
+        } elseif (mb_strlen($name) < 2 || mb_strlen($name) > 255) {
+            $errors['name'] = 'Branch name must be between 2 and 255 characters.';
         }
 
         $code = strtoupper(trim($data['branch_code'] ?? $data['code'] ?? ''));
@@ -246,6 +261,27 @@ class BranchService
             $existing = $this->branchRepo->findByCode($code, $companyId);
             if ($existing && ($ignoreId === null || (int)$existing['id'] !== $ignoreId)) {
                 $errors['branch_code'] = "Branch code '{$code}' is already assigned to another branch.";
+            }
+        }
+
+        if (!empty($data['email'])) {
+            $email = trim($data['email']);
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $errors['email'] = 'Invalid email address format.';
+            }
+        }
+
+        if (!empty($data['phone'])) {
+            $phone = trim($data['phone']);
+            if (!preg_match('/^[0-9\+\-\s\(\)]{7,20}$/', $phone)) {
+                $errors['phone'] = 'Invalid phone number format.';
+            }
+        }
+
+        if (!empty($data['pincode'])) {
+            $pincode = trim($data['pincode']);
+            if (!preg_match('/^[0-9]{4,10}$/', $pincode)) {
+                $errors['pincode'] = 'PIN code must be between 4 and 10 digits.';
             }
         }
 

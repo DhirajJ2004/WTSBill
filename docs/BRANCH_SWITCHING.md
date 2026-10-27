@@ -89,7 +89,9 @@ Every core transactional table stores `branch_id`:
 |:---:|---|---|---|---|
 | `POST` | `/branches/switch` | `BranchController@switch` | `[$auth, $csrf]` | Switches active branch context in session |
 | `GET` | `/branches` | `BranchController@index` | `[$auth]` | Admin branch management view |
-| `POST` | `/branches` | `BranchController@store` | `[$auth, $csrf]` | Creates a new branch |
+| `POST` | `/branches` | `BranchController@store` | `[$auth, $csrf]` | Creates a new branch (with permissions & validation) |
+| `GET` | `/api/branches` | `BranchController@list` | `[$auth]` | Dynamic authorized switcher branch list for dropdown |
+| `GET` | `/branches/list` | `BranchController@list` | `[$auth]` | Authorized branch list endpoint |
 | `GET` | `/branches/{id}` | `BranchController@show` | `[$auth]` | Fetches branch details for modal editing |
 | `POST` | `/branches/{id}/update` | `BranchController@update` | `[$auth, $csrf]` | Updates branch details |
 | `POST` | `/branches/{id}/toggle-status` | `BranchController@toggleStatus` | `[$auth, $csrf]` | Activates or deactivates branch |
@@ -97,9 +99,29 @@ Every core transactional table stores `branch_id`:
 
 ---
 
-## 5. Automated Test Coverage
+## 5. Add Branch Feature Architecture & Integration
 
-The feature is validated by 21 automated assertions in `tests/Feature/BranchSwitchingTest.php`:
+1. **Header Dropdown Integration:**
+   - The branch switcher in `views/partials/header.php` renders the currently active branch, all authorized branches, and an **+ Add Branch** button at the bottom for authorized administrators (`ADMIN`, `SUPERADMIN`, `OWNER`).
+   - The Add Branch option is separated visually with a top border and soft primary accent background.
+   - Non-administrators and ordinary staff users never see the Add Branch action or modal markup.
+2. **Add Branch Modal UX & Safeguards:**
+   - Matches the dark/light WTSBill design system.
+   - Form fields: Branch Name (required), Branch Code (required & unique), Contact Person (optional), Phone Number (optional), Email (optional), Address (optional), City (optional), State (optional), PIN Code (optional), and Status (Active / Inactive).
+   - Features client-side pre-validation, spinner loading state during submission, and clear inline error alerts without browser popups or alert dialogs.
+3. **Database Persistence & Unique Constraints:**
+   - Enforces unique branch codes per company both via service-level checks and a MariaDB unique constraint (`branches_company_branch_code_unique`).
+   - Reuses existing `branches` table safely without resetting or duplicating tables.
+4. **Dynamic Refresh Without Page Reload:**
+   - On successful creation, the modal closes, an in-app success toast notifies the user, and `window.refreshBranchDropdown()` dynamically updates the dropdown menu.
+   - The currently active branch remains unchanged unless the user explicitly switches.
+   - Inactive branches display with an `INACTIVE` badge and cannot be switched into.
+
+---
+
+## 6. Automated Test Coverage
+
+The feature is validated by 33 automated assertions in `tests/Feature/BranchSwitchingTest.php`:
 
 - `BRANCH-01`: Administrator authenticates and establishes Company 1 session.
 - `BRANCH-02`: Database contains active operating branches (>= 2 seeded branches).
@@ -122,10 +144,22 @@ The feature is validated by 21 automated assertions in `tests/Feature/BranchSwit
 - `BRANCH-19`: Newly created invoice records the currently active branch_id in database.
 - `BRANCH-20`: Dashboard queries scope transaction metrics accurately to active branch.
 - `BRANCH-21`: Administrator switches context back to Main Branch (ID 1) without state corruption.
+- `BRANCH-22`: Header dropdown renders "+ Add Branch" button for authorized administrators.
+- `BRANCH-23`: Ordinary staff user header does NOT contain "+ Add Branch" action.
+- `BRANCH-24`: Header renders Add Branch modal with all schema-adapted form controls.
+- `BRANCH-25`: Submitting empty branch name or code to POST /branches fails with HTTP 422.
+- `BRANCH-26`: Submitting invalid email, phone, or PIN code returns HTTP 422 with specific field errors.
+- `BRANCH-27`: Non-administrator staff attempt to create a branch is rejected with HTTP 403 Forbidden.
+- `BRANCH-28`: Administrator creates new branch with contact person & full details (HTTP 201 persisted in MySQL).
+- `BRANCH-29`: Active operating branch in session remains unchanged upon branch creation (no auto-switching).
+- `BRANCH-30`: GET /api/branches returns newly created branch in authorized branch list for company.
+- `BRANCH-31`: Duplicate branch code registration is rejected with HTTP 422 validation failure.
+- `BRANCH-32`: Inactive branch is created with is_active = 0, but switching to it is rejected with HTTP 422.
+- `BRANCH-33`: Authorized administrator can switch to newly created operating branch.
 
 ---
 
-## 6. Real-Time Branch Data Scoping & Visual UI Styling
+## 7. Real-Time Branch Data Scoping & Visual UI Styling
 
 1. **Visual Presentation & Resilience:**
    - The branch switcher in `views/partials/header.php` is styled with dark-mode matching deep slate backgrounds (`#1e293b`), custom border outlines (`#334155`), clean typography, map-pin icon badges, and downward carets.

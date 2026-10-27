@@ -30,7 +30,7 @@ $router->get('/', function (Request $req) {
                     COALESCE(SUM(total_tax), 0) AS total_tax,
                     COALESCE(SUM(amount_due), 0) AS receivables
              FROM `invoices` 
-             WHERE company_id = ? AND branch_id = ?",
+             WHERE company_id = ? AND branch_id = ? AND deleted_at IS NULL AND status != 'CANCELLED'",
             [$companyId, $branchId]
         );
 
@@ -42,10 +42,11 @@ $router->get('/', function (Request $req) {
         );
 
         $recentInvoices = \WTSBill\Core\Database::select(
-            "SELECT id, invoice_number, customer_name, invoice_date, grand_total, status 
-             FROM `invoices` 
-             WHERE company_id = ? AND branch_id = ?
-             ORDER BY id DESC LIMIT 5",
+            "SELECT i.id, i.invoice_number, COALESCE(c.name, i.customer_name, 'Direct Customer') AS customer_name, i.invoice_date, i.grand_total, i.status 
+             FROM `invoices` i
+             LEFT JOIN `customers` c ON i.customer_id = c.id
+             WHERE i.company_id = ? AND (i.branch_id = ? OR i.branch_id IS NULL) AND i.deleted_at IS NULL AND i.status != 'CANCELLED'
+             ORDER BY i.id DESC LIMIT 5",
             [$companyId, $branchId]
         );
 
@@ -108,6 +109,8 @@ $router->post('/customers/create', [$customerController, 'store'], [$auth, $csrf
 $router->post('/customers', [$customerController, 'store'], [$auth, $csrf]);
 $router->get('/customers/{id}', [$customerController, 'show'], [$auth]);
 $router->post('/customers/{id}/update', [$customerController, 'update'], [$auth, $csrf]);
+$router->post('/customers/{id}/delete', [$customerController, 'delete'], [$auth, $csrf]);
+$router->delete('/customers/{id}', [$customerController, 'delete'], [$auth, $csrf]);
 
 // Suppliers Master
 $supplierController = new \WTSBill\Controllers\SupplierController();
@@ -130,8 +133,11 @@ $salesController = new \WTSBill\Controllers\SalesController();
 $router->get('/sales/invoices', [$salesController, 'invoicesIndex'], [$auth]);
 $router->get('/sales/invoices/create', [$salesController, 'invoiceCreateForm'], [$auth]);
 $router->post('/sales/invoices/create', [$salesController, 'invoiceStore'], [$auth, $csrf]);
-$router->post('/sales/invoices', [$salesController, 'invoiceStore'], [$auth, $csrf]);
 $router->get('/sales/invoices/{id}', [$salesController, 'invoiceShow'], [$auth]);
+$router->get('/sales/invoices/{id}/edit', [$salesController, 'invoiceEditForm'], [$auth]);
+$router->post('/sales/invoices/{id}/update', [$salesController, 'invoiceUpdate'], [$auth, $csrf]);
+$router->post('/sales/invoices/{id}/delete', [$salesController, 'invoiceDelete'], [$auth, $csrf]);
+$router->get('/sales/invoices/{id}/print', [$salesController, 'invoicePrint'], [$auth]);
 
 
 // Users & Roles
@@ -141,14 +147,13 @@ $router->post('/users', [$userController, 'store'], [$auth, $csrf]);
 
 
 // System Settings
-$router->get('/settings', function (Request $req) {
-    $html = \WTSBill\Core\View::renderWithLayout('settings/index', [
-        'title' => 'System Settings',
-        'currentUri' => '/settings',
-    ], 'layouts/app');
-
-    return Response::html($html);
-}, [$auth]);
+$settingsController = new \WTSBill\Controllers\SettingsController();
+$router->get('/settings', [$settingsController, 'index'], [$auth]);
+$router->get('/api/settings/company', [$settingsController, 'getCompany'], [$auth]);
+$router->post('/settings/company/update', [$settingsController, 'updateCompany'], [$auth, $csrf]);
+$router->get('/settings/audit-logs', [$settingsController, 'auditLogs'], [$auth]);
+$router->get('/api/settings/audit-logs', [$settingsController, 'auditLogs'], [$auth]);
+$router->get('/settings/audit-logs/export', [$settingsController, 'exportAuditLogs'], [$auth]);
 
 // Inventory Controller (Stock & Categories)
 $inventoryController = new \WTSBill\Controllers\InventoryController();
@@ -168,6 +173,8 @@ $router->post('/categories', [$inventoryController, 'categoryStore'], [$auth, $c
 // Sales Quotations & Orders
 $router->get('/sales/quotations', [$salesController, 'quotationsIndex'], [$auth]);
 $router->post('/sales/quotations', [$salesController, 'quotationStore'], [$auth, $csrf]);
+$router->get('/sales/quotations/{id}/print', [$salesController, 'quotationPrint'], [$auth]);
+$router->get('/sales/quotations/{id}', [$salesController, 'quotationPrint'], [$auth]);
 
 // Delivery Challans
 $router->get('/sales/challans', [$salesController, 'challansIndex'], [$auth]);
@@ -233,6 +240,8 @@ $router->post('/branches/switch', [$branchController, 'switch'], [$auth, $csrf])
 $router->get('/branches/switch', [$branchController, 'switch'], [$auth]);
 $router->get('/branches', [$branchController, 'index'], [$auth]);
 $router->post('/branches', [$branchController, 'store'], [$auth, $csrf]);
+$router->get('/branches/list', [$branchController, 'list'], [$auth]);
+$router->get('/api/branches', [$branchController, 'list'], [$auth]);
 $router->get('/branches/{id}', [$branchController, 'show'], [$auth]);
 $router->post('/branches/{id}/update', [$branchController, 'update'], [$auth, $csrf]);
 $router->post('/branches/{id}/toggle-status', [$branchController, 'toggleStatus'], [$auth, $csrf]);

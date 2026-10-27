@@ -19,9 +19,9 @@ $title = 'Dashboard';
         <div class="card-body">
             <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Total Sales</div>
             <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin-top: 0.25rem;">
-                <?= format_currency((float)($metrics['total_sales'] ?? 1425890.00)) ?>
+                <?= format_currency((float)($metrics['total_sales'] ?? 0)) ?>
             </div>
-            <div style="font-size: 0.75rem; color: var(--color-success); margin-top: 0.35rem;">&uarr; 12.5% this quarter</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">Active net sales</div>
         </div>
     </div>
 
@@ -29,7 +29,7 @@ $title = 'Dashboard';
         <div class="card-body">
             <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">GST Tax Collected</div>
             <div style="font-size: 1.5rem; font-weight: 700; color: var(--color-info); margin-top: 0.25rem;">
-                <?= format_currency((float)($metrics['total_tax'] ?? 256660.20)) ?>
+                <?= format_currency((float)($metrics['total_tax'] ?? 0)) ?>
             </div>
             <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">IGST / CGST / SGST split verified</div>
         </div>
@@ -39,9 +39,9 @@ $title = 'Dashboard';
         <div class="card-body">
             <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Accounts Receivable</div>
             <div style="font-size: 1.5rem; font-weight: 700; color: var(--color-warning); margin-top: 0.25rem;">
-                <?= format_currency((float)($metrics['receivables'] ?? 318400.00)) ?>
+                <?= format_currency((float)($metrics['receivables'] ?? 0)) ?>
             </div>
-            <div style="font-size: 0.75rem; color: var(--color-warning); margin-top: 0.35rem;">8 outstanding customer invoices</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">Outstanding customer dues</div>
         </div>
     </div>
 
@@ -49,9 +49,9 @@ $title = 'Dashboard';
         <div class="card-body">
             <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Accounts Payable</div>
             <div style="font-size: 1.5rem; font-weight: 700; color: var(--color-danger); margin-top: 0.25rem;">
-                <?= format_currency((float)($metrics['payables'] ?? 184500.00)) ?>
+                <?= format_currency((float)($metrics['payables'] ?? 0)) ?>
             </div>
-            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">5 pending supplier bills</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">Pending supplier bills</div>
         </div>
     </div>
 </div>
@@ -88,29 +88,19 @@ $title = 'Dashboard';
                                 </span>
                             </td>
                             <td style="text-align: right;">
-                                <a href="/sales/invoices/<?= e((string)$inv['id']) ?>" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">View</a>
+                                <a href="/sales/invoices/<?= (int)$inv['id'] ?>" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; text-decoration: none;">View</a>
                             </td>
                         </tr>
                     <?php endforeach; ?>
                 <?php else: ?>
-                    <tr>
-                        <td><strong>INV-2026-0001</strong></td>
-                        <td>Tata Steel Limited</td>
-                        <td>2026-10-08</td>
-                        <td style="text-align: right; font-weight: 600;">₹ 1,18,000.00</td>
-                        <td style="text-align: center;"><span class="badge badge-success">PAID</span></td>
-                        <td style="text-align: right;"><button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">View</button></td>
-                    </tr>
-                    <tr>
-                        <td><strong>INV-2026-0002</strong></td>
-                        <td>Reliance Industries Ltd</td>
-                        <td>2026-10-09</td>
-                        <td style="text-align: right; font-weight: 600;">₹ 54,200.00</td>
-                        <td style="text-align: center;"><span class="badge badge-warning">PENDING</span></td>
-                        <td style="text-align: right;"><button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">View</button></td>
+                    <tr id="no-recent-invoices-row">
+                        <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2.5rem 1rem;">
+                            No recent invoices found. <a href="/sales/invoices/create" style="color: var(--color-primary); font-weight: 500; text-decoration: none;">Create Invoice &rarr;</a>
+                        </td>
                     </tr>
                 <?php endif; ?>
             </tbody>
         </table>
     </div>
 </div>
+

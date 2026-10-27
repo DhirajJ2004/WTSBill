@@ -11,7 +11,7 @@
 | File Path | Namespace | Role & Endpoints |
 | :--- | :--- | :--- |
 | `app/Controllers/AuthController.php` | `WTSBill\Controllers` | Authentication, login, logout, password reset |
-| `app/Controllers/BranchController.php` | `WTSBill\Controllers` | Branch switching, admin CRUD, user branch assignments |
+| `app/Controllers/BranchController.php` | `WTSBill\Controllers` | Branch switching, admin CRUD, Add Branch creation (`POST /branches`), dynamic branch list (`GET /api/branches`), user branch assignments |
 | `app/Controllers/ProductController.php` | `WTSBill\Controllers` | Product catalog CRUD, modal registration, SKU check, search |
 
 ---
@@ -21,7 +21,7 @@
 | File Path | Namespace | Role & Responsibilities |
 | :--- | :--- | :--- |
 | `app/Services/AuthService.php` | `WTSBill\Services` | Authentication state, Bcrypt verification, session binding |
-| `app/Services/BranchService.php` | `WTSBill\Services` | Branch switching authorization, validation, session context |
+| `app/Services/BranchService.php` | `WTSBill\Services` | Branch switching authorization, branch creation with contact person & validation, session context |
 | `app/Services/ProductService.php` | `WTSBill\Services` | Product business rules, SKU uniqueness, GST rates, stock adjustments |
 
 ---
@@ -31,7 +31,7 @@
 | File Path | Namespace | Role & Responsibilities |
 | :--- | :--- | :--- |
 | `app/Repositories/BaseRepository.php` | `WTSBill\Repositories` | Foundational PDO query builder with multi-tenant scoping |
-| `app/Repositories/BranchRepository.php` | `WTSBill\Repositories` | Branch entity queries, user branch access, default branch resolution |
+| `app/Repositories/BranchRepository.php` | `WTSBill\Repositories` | Branch entity queries, `findSwitcherBranches`, user branch access, default branch resolution |
 | `app/Repositories/UserRepository.php` | `WTSBill\Repositories` | User lookup by email, remember token management |
 | `app/Repositories/ProductRepository.php` | `WTSBill\Repositories` | Product entity queries, SKU lookup, category filtering, stock updates |
 
@@ -73,7 +73,7 @@
 | :--- | :--- |
 | `views/layouts/app.php` | Main authenticated enterprise shell with sidebar, header, toast container |
 | `views/layouts/auth.php` | Centered unauthenticated shell for login/reset |
-| `views/partials/header.php` | Header with company/branch badges, user profile, logout |
+| `views/partials/header.php` | Header with branch selector dropdown, + Add Branch modal with validation & dynamic refresh, theme toggle, user profile |
 | `views/partials/sidebar.php` | Collapsible sidebar navigation for all ERP modules |
 | `views/partials/modal.php` | Accessible modal dialog container |
 | `views/partials/toast.php` | Toast notification alert container |
@@ -129,4 +129,5 @@
 | `tests/Integration/PrintOutputParityTest.php` | Integration | @media print, number_to_words_inr |
 | `tests/Feature/FullWorkflowRegressionTest.php` | Feature | End-to-end commercial ERP cycle |
 | `tests/Feature/ProductManagementTest.php` | Feature | Product creation, validation, duplicate SKU rejection, persistence |
-| `tests/run_tests.php` | Master Runner | Executes all suites (300+ assertions) |
+| `tests/Feature/BranchSwitchingTest.php` | Feature | 33 assertions: Branch switching, Add Branch modal, permissions, API, validation |
+| `tests/run_tests.php` | Master Runner | Executes all suites (407 assertions, 100% pass) |

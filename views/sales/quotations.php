@@ -33,6 +33,7 @@
                     <th style="text-align: right;">Total Tax</th>
                     <th style="text-align: right;">Grand Total</th>
                     <th style="text-align: center;">Status</th>
+                    <th style="text-align: right;">Actions</th>
                 </tr>
             </thead>
             <tbody id="quote-table-body">
@@ -49,11 +50,16 @@
                             <td style="text-align: center;">
                                 <span class="badge badge-warning"><?= e($q['status'] ?? 'SENT') ?></span>
                             </td>
+                            <td style="text-align: right; white-space: nowrap;">
+                                <a href="/sales/quotations/<?= (int)$q['id'] ?>/print" target="_blank" class="btn btn-secondary" style="padding: 0.25rem 0.65rem; font-size: 0.75rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                                    <span>🖨️</span> Print
+                                </a>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr id="no-quote-row">
-                        <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">No quotation records found.</td>
+                        <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2rem;">No quotation records found.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>
@@ -99,9 +105,26 @@
                         </div>
                     </div>
 
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label for="quote-kind-attn">Kind Attn. (Contact Person)</label>
+                            <input type="text" id="quote-kind-attn" name="kind_attn" class="form-control" placeholder="e.g. Sapra Constructions">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="quote-payment-days">Payment Condition (Credit Days)</label>
+                            <input type="number" id="quote-payment-days" name="payment_days" class="form-control" value="0" min="0">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="quote-pos">Place of Supply (State Code)</label>
+                        <input type="text" id="quote-pos" name="place_of_supply_state_code" class="form-control" value="27" placeholder="27 (Maharashtra)">
+                    </div>
+
                     <div class="form-group">
                         <label for="quote-notes">Scope of Work & Notes</label>
-                        <textarea id="quote-notes" name="notes" class="form-control" rows="3" placeholder="Pricing terms, delivery timeframe, and validity conditions"></textarea>
+                        <textarea id="quote-notes" name="notes" class="form-control" rows="2" placeholder="Pricing terms, delivery timeframe, and validity conditions"></textarea>
                     </div>
                 </div>
             </div>

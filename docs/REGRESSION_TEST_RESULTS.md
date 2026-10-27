@@ -1,9 +1,9 @@
 # WTSBill ERP — Regression Test Results Log
 
-**Document Version:** 3.0.0  
-**Last Verified:** 2026-10-26  
+**Document Version:** 4.0.0  
+**Last Verified:** 2026-10-27  
 **Test Runner:** `tests/run_tests.php`  
-**Execution Environment:** Native PHP 8.2 CLI + MariaDB 10.4.32 (`wtsbill_db`)
+**Execution Environment:** Native PHP 8.0 CLI + MariaDB 10.4.32 (`wtsbill_db`)
 
 ---
 
@@ -13,8 +13,8 @@
 ==================================================================================
                          TEST VERIFICATION SUMMARY                                
 ==================================================================================
-Total Assertions: 350
-Passed:           350
+Total Assertions: 407
+Passed:           407
 Failed:           0
 Pass Percentage:  100%
 
@@ -44,7 +44,7 @@ STATUS: ALL TEST SUITES PASSED (100%)
 | **15** | Access Control Matrix Audit | 8 | **PASS** | Route-level permission boundaries |
 | **16** | Layout Rendering Feature Test | 24 | **PASS** | Master app shell, sidebar navigation, toast, modal partials |
 | **17** | Frontend Integration Test | 30 | **PASS** | HSL CSS tokens, WTSBill client JS, form submission guards |
-| **18** | Performance Smoke Test | 14 | **PASS** | View path cache, PDO statement cache, ETag 304, gzip |
+| **18** | Performance Smoke Test | 14 | **PASS** | View cache, statement cache, ETag 304, gzip |
 | **19** | Database Integrity Test | 5 | **PASS** | 130+ tables verified, tenant columns, ACID rollback, unique numbers |
 | **20** | Business Logic Parity Test | 7 | **PASS** | GST 50/50 splits, 18% IGST, round-off, stock equation, double-entry |
 | **21** | Route & Method Parity Test | 4 | **PASS** | 21 routes return 200 OK, guest 302 redirect, clean 404, health API |
@@ -52,11 +52,14 @@ STATUS: ALL TEST SUITES PASSED (100%)
 | **23** | Full Workflow Regression Test | 8 | **PASS** | End-to-end commercial ERP cycle simulation |
 | **24** | Product & Inventory Management | 8 | **PASS** | Modal rendering, validation 422, duplicate SKU block, persistence, edit |
 | **25** | Global Placeholder Popup Fix | 21 | **PASS** | Zero alert() dialogs, 16 real modals, multi-module persistence |
-| **26** | Branch Management & Switching | 21 | **PASS** | Header branch selector, session context, authorization, admin CRUD |
+| **26** | Branch Management & Switching | 33 | **PASS** | Header branch selector, session context, + Add Branch modal, DB persistence, validation |
+| **27** | Balance Sheet Statement | 16 | **PASS** | Accountant-grade balance sheet, assets == liabilities + equity, exports |
+| **28** | Inventory Stock & Warehouses | 11 | **PASS** | KPIs, stock adjustments, balanced journal posting, negative stock guard |
+| **29** | Purchase Bills & Accounts Payable | 12 | **PASS** | White + Blue layout, bill persistence, payments, settle, duplicate |
 
 ---
 
-## 3. Branch Switching Verified Assertions (Section 26)
+## 3. Branch Switching & Add Branch Verified Assertions (Section 26)
 
 - `BRANCH-01`: Administrator authenticates and establishes Company 1 session. **PASSED**
 - `BRANCH-02`: Database contains active operating branches (>= 2 seeded branches). **PASSED**
@@ -79,3 +82,15 @@ STATUS: ALL TEST SUITES PASSED (100%)
 - `BRANCH-19`: Newly created invoice records the currently active branch_id in database. **PASSED**
 - `BRANCH-20`: Dashboard queries scope transaction metrics accurately to active branch. **PASSED**
 - `BRANCH-21`: Administrator switches context back to Main Branch (ID 1) without state corruption. **PASSED**
+- `BRANCH-22`: Header dropdown renders "+ Add Branch" button for authorized administrators. **PASSED**
+- `BRANCH-23`: Ordinary staff user header does NOT contain "+ Add Branch" action. **PASSED**
+- `BRANCH-24`: Header renders Add Branch modal with all schema-adapted form controls. **PASSED**
+- `BRANCH-25`: Submitting empty branch name or code to POST /branches fails with HTTP 422. **PASSED**
+- `BRANCH-26`: Submitting invalid email, phone, or PIN code returns HTTP 422 with specific field errors. **PASSED**
+- `BRANCH-27`: Non-administrator staff attempt to create a branch is rejected with HTTP 403 Forbidden. **PASSED**
+- `BRANCH-28`: Administrator creates new branch with contact person & full details (HTTP 201 persisted in MySQL). **PASSED**
+- `BRANCH-29`: Active operating branch in session remains unchanged upon branch creation (no auto-switching). **PASSED**
+- `BRANCH-30`: GET /api/branches returns newly created branch in authorized branch list for company. **PASSED**
+- `BRANCH-31`: Duplicate branch code registration is rejected with HTTP 422 validation failure. **PASSED**
+- `BRANCH-32`: Inactive branch is created with is_active = 0, but switching to it is rejected with HTTP 422. **PASSED**
+- `BRANCH-33`: Authorized administrator can switch to newly created operating branch. **PASSED**

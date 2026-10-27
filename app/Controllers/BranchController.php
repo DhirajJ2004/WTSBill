@@ -115,7 +115,7 @@ class BranchController
         $companyId = (int)(Session::getCompanyId() ?? 1);
         $branches = $this->branchRepo->findAllByCompany($companyId);
         $allUsers = Database::select(
-            "SELECT id, name, email, role FROM `users` WHERE company_id = ? AND is_active = 1 AND deleted_at IS NULL ORDER BY name ASC",
+            "SELECT id, name, email, role FROM `users` WHERE (current_company_id = ? OR current_company_id IS NULL) AND is_active = 1 AND deleted_at IS NULL ORDER BY name ASC",
             [$companyId]
         );
 
@@ -139,7 +139,9 @@ class BranchController
      */
     public function store(Request $request): Response
     {
-        $this->ensureAdmin();
+        if ($authResp = $this->checkAdmin($request)) {
+            return $authResp;
+        }
 
         $companyId = (int)(Session::getCompanyId() ?? 1);
         $data = $request->all();
@@ -184,6 +186,46 @@ class BranchController
             Session::flash('error', 'Failed to create branch: ' . $e->getMessage());
             return Response::redirect('/branches');
         }
+    }
+
+    /**
+     * Get branch list for dropdown/switcher and client state updates.
+     * Route: GET /api/branches, GET /branches/list
+     */
+    public function list(Request $request): Response
+    {
+        $userId = (int)(Session::get('user_id') ?? 0);
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $userRole = (string)(Session::get('user_role') ?? 'STAFF');
+
+        if ($userId <= 0) {
+            return Response::json(['success' => false, 'message' => 'Unauthorized. Please log in.'], 401);
+        }
+
+        $isAdmin = in_array(strtoupper($userRole), ['ADMIN', 'SUPERADMIN', 'OWNER'], true);
+        $branches = $this->branchRepo->findSwitcherBranches($userId, $companyId, $userRole);
+        $activeBranchId = (int)(Session::getBranchId() ?? 1);
+
+        return Response::json([
+            'success' => true,
+            'active_branch_id' => $activeBranchId,
+            'is_admin' => $isAdmin,
+            'branches' => array_map(function ($b) {
+                return [
+                    'id' => (int)$b['id'],
+                    'name' => $b['name'],
+                    'code' => $b['code'] ?? $b['branch_code'] ?? '',
+                    'branch_code' => $b['branch_code'] ?? $b['code'] ?? '',
+                    'contact_person' => $b['contact_person'] ?? null,
+                    'phone' => $b['phone'] ?? null,
+                    'email' => $b['email'] ?? null,
+                    'city' => $b['city'] ?? null,
+                    'state' => $b['state'] ?? null,
+                    'is_main_branch' => (bool)$b['is_main_branch'],
+                    'is_active' => (int)$b['is_active'],
+                ];
+            }, $branches),
+        ]);
     }
 
     /**
@@ -345,6 +387,22 @@ class BranchController
         return str_contains($accept, 'application/json') ||
                str_contains($contentType, 'application/json') ||
                strtolower($xRequestedWith) === 'xmlhttprequest';
+    }
+
+    private function checkAdmin(Request $request): ?Response
+    {
+        $role = strtoupper((string)(Session::get('user_role') ?? 'STAFF'));
+        if ($role !== 'ADMIN' && $role !== 'SUPERADMIN' && $role !== 'OWNER') {
+            if ($this->expectsJson($request)) {
+                return Response::json([
+                    'success' => false,
+                    'message' => 'Forbidden: Administrator privileges required to perform this action.',
+                ], 403);
+            }
+            Session::flash('error', 'Forbidden: Administrator privileges required.');
+            return Response::redirect('/dashboard');
+        }
+        return null;
     }
 
     private function ensureAdmin(): void

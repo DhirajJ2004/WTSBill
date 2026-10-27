@@ -66,70 +66,107 @@ $errorMsg = \WTSBill\Core\Session::getFlash('error');
                 </div>
             </div>
 
+            <!-- Extended GST Invoice Metadata Fields -->
+            <div style="background: var(--bg-hover); padding: 1rem; border-radius: var(--radius); margin-bottom: 1.5rem; border: 1px solid var(--border-color);">
+                <h4 style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.75rem;">Order & Shipping Metadata (Optional)</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem;">
+                    <div class="form-group">
+                        <label for="inv-po-no" style="font-size: 0.8rem;">P.O. Number</label>
+                        <input type="text" id="inv-po-no" name="po_no" class="form-control" placeholder="e.g. PO/26-27/001" style="font-size: 0.85rem;">
+                    </div>
+                    <div class="form-group">
+                        <label for="inv-po-date" style="font-size: 0.8rem;">P.O. Date</label>
+                        <input type="date" id="inv-po-date" name="po_date" class="form-control" style="font-size: 0.85rem;">
+                    </div>
+                    <div class="form-group">
+                        <label for="inv-challan-no" style="font-size: 0.8rem;">Challan Number</label>
+                        <input type="text" id="inv-challan-no" name="challan_no" class="form-control" placeholder="e.g. CH-9901" style="font-size: 0.85rem;">
+                    </div>
+                    <div class="form-group">
+                        <label for="inv-credit-days" style="font-size: 0.8rem;">Bill Credit (Days)</label>
+                        <input type="number" id="inv-credit-days" name="bill_credit_days" class="form-control" value="0" min="0" style="font-size: 0.85rem;">
+                    </div>
+                    <div class="form-group">
+                        <label for="inv-delivery-by" style="font-size: 0.8rem;">Delivery By</label>
+                        <input type="text" id="inv-delivery-by" name="delivery_by" class="form-control" placeholder="e.g. Courier / By Hand" style="font-size: 0.85rem;">
+                    </div>
+                    <div class="form-group">
+                        <label for="inv-receipt-mode" style="font-size: 0.8rem;">Receipt Mode</label>
+                        <select id="inv-receipt-mode" name="receipt_mode" class="form-control" style="font-size: 0.85rem;">
+                            <option value="Credit" selected>Credit</option>
+                            <option value="Cash">Cash</option>
+                            <option value="UPI">UPI</option>
+                            <option value="Cheque">Cheque</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="inv-lr-no" style="font-size: 0.8rem;">LR Number</label>
+                        <input type="text" id="inv-lr-no" name="lr_no" class="form-control" placeholder="e.g. LR-4421" style="font-size: 0.85rem;">
+                    </div>
+                </div>
+            </div>
+
             <!-- Line Items Table -->
-            <h4 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Invoice Line Items</h4>
-            <div class="table-container" style="margin-bottom: 1.5rem;">
-                <table class="table">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem;">
+                <h4 style="font-size: 0.95rem; font-weight: 600; margin: 0; color: var(--text-primary);">Invoice Line Items</h4>
+                <button type="button" id="btn-add-line-item" class="btn btn-sm btn-secondary" onclick="window.addLineItem()" style="display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; padding: 0.35rem 0.85rem; border: 1px dashed var(--primary); background: var(--primary-soft); color: var(--primary); font-weight: 600;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>+ Add Item</span>
+                </button>
+            </div>
+
+            <div class="table-container" style="margin-bottom: 1rem; overflow-x: auto;">
+                <table class="table" id="items-table" style="width: 100%; min-width: 780px;">
                     <thead>
                         <tr>
-                            <th style="width: 35%;">Product / Item</th>
-                            <th style="width: 15%;">HSN/SAC</th>
-                            <th style="width: 15%; text-align: right;">Qty</th>
-                            <th style="width: 15%; text-align: right;">Rate (₹)</th>
-                            <th style="width: 20%; text-align: right;">GST Rate</th>
+                            <th style="width: 32%;">Product / Item</th>
+                            <th style="width: 14%;">HSN/SAC</th>
+                            <th style="width: 11%; text-align: right;">Qty</th>
+                            <th style="width: 14%; text-align: right;">Rate (₹)</th>
+                            <th style="width: 13%; text-align: right;">GST Rate</th>
+                            <th style="width: 12%; text-align: right;">Amount (₹)</th>
+                            <th style="width: 4%; text-align: center;"></th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td>
-                                <select id="line-product" name="product_id" class="form-control" style="font-size: 0.85rem;" onchange="window.onProductChange()">
-                                    <option value="">-- Choose Catalog Product --</option>
-                                    <?php foreach ($products ?? [] as $p): ?>
-                                        <option value="<?= e((string)$p['id']) ?>" 
-                                                data-price="<?= (float)$p['selling_price'] ?>"
-                                                data-hsn="<?= e($p['hsn_sac'] ?? '7318') ?>"
-                                                data-tax="<?= (float)$p['tax_rate'] ?>">
-                                            <?= e($p['name']) ?> (<?= format_currency((float)$p['selling_price']) ?>)
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </td>
-                            <td>
-                                <input type="text" id="line-hsn" name="hsn_sac" class="form-control" value="7318" style="font-size: 0.85rem;">
-                            </td>
-                            <td>
-                                <input type="number" id="line-qty" name="quantity" class="form-control" value="10" min="1" step="0.01" style="text-align: right; font-size: 0.85rem;" oninput="window.recalculateTotals()">
-                            </td>
-                            <td>
-                                <input type="number" id="line-rate" name="rate" class="form-control" value="45.00" min="0" step="0.01" style="text-align: right; font-size: 0.85rem;" oninput="window.recalculateTotals()">
-                            </td>
-                            <td>
-                                <select id="line-gst" name="gst_rate" class="form-control" style="font-size: 0.85rem;" onchange="window.recalculateTotals()">
-                                    <option value="18" selected>18% (Standard)</option>
-                                    <option value="12">12%</option>
-                                    <option value="5">5%</option>
-                                    <option value="0">0% (Exempt)</option>
-                                </select>
-                            </td>
-                        </tr>
+                    <tbody id="items-table-body">
+                        <!-- Dynamically populated via JS -->
                     </tbody>
                 </table>
             </div>
 
+            <!-- Add Row Action Bar Under Table -->
+            <div style="margin-bottom: 1.5rem;">
+                <button type="button" class="btn btn-light" onclick="window.addLineItem()" style="display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.85rem; padding: 0.45rem 1rem; border-radius: 6px; border: 1px dashed var(--border-color); color: var(--primary); background: var(--bg-surface); cursor: pointer;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>Add Another Line Item</span>
+                </button>
+            </div>
+
             <!-- Totals Summary Card -->
-            <div style="background: var(--bg-hover); padding: 1rem 1.5rem; border-radius: var(--radius); margin-bottom: 1.5rem; display: flex; justify-content: flex-end;">
-                <div style="width: 280px; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.9rem;">
+            <div style="background: var(--bg-hover); padding: 1.25rem 1.5rem; border-radius: var(--radius); margin-bottom: 1.5rem; display: flex; justify-content: flex-end;">
+                <div style="width: 320px; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.9rem;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--text-muted);">Total Items:</span>
+                        <strong id="summary-items-count">1 Item(s)</strong>
+                    </div>
                     <div style="display: flex; justify-content: space-between;">
                         <span style="color: var(--text-muted);">Taxable Subtotal:</span>
-                        <strong id="summary-subtotal">₹450.00</strong>
+                        <strong id="summary-subtotal">₹0.00</strong>
                     </div>
                     <div style="display: flex; justify-content: space-between;" id="summary-tax-row">
-                        <span style="color: var(--text-muted);" id="summary-tax-label">CGST 9% + SGST 9%:</span>
-                        <strong id="summary-tax-val">₹81.00</strong>
+                        <span style="color: var(--text-muted);" id="summary-tax-label">CGST + SGST:</span>
+                        <strong id="summary-tax-val">₹0.00</strong>
                     </div>
-                    <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--border-color); padding-top: 0.5rem; font-size: 1.1rem; color: var(--color-primary);">
+                    <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--border-color); padding-top: 0.5rem; font-size: 1.15rem; color: var(--color-primary);">
                         <strong>Grand Total:</strong>
-                        <strong id="summary-grand">₹531.00</strong>
+                        <strong id="summary-grand">₹0.00</strong>
                     </div>
                 </div>
             </div>
@@ -147,7 +184,118 @@ $errorMsg = \WTSBill\Core\Session::getFlash('error');
     </div>
 </div>
 
+<!-- Hidden catalog products JSON for client row generation -->
+<script id="catalog-products-data" type="application/json">
+<?= json_encode(array_map(function($p) {
+    return [
+        'id' => (int)$p['id'],
+        'name' => (string)$p['name'],
+        'price' => (float)$p['selling_price'],
+        'hsn' => (string)($p['hsn_sac'] ?? '7318'),
+        'tax' => (float)$p['tax_rate'],
+    ];
+}, $products ?? [])) ?>
+</script>
+
 <script>
+    const catalogProducts = JSON.parse(document.getElementById('catalog-products-data').textContent || '[]');
+    let rowCounter = 0;
+
+    window.addLineItem = function(initialData = null) {
+        rowCounter++;
+        const tbody = document.getElementById('items-table-body');
+        const tr = document.createElement('tr');
+        tr.id = 'item-row-' + rowCounter;
+        tr.className = 'invoice-item-row';
+        tr.dataset.rowId = rowCounter;
+
+        let optionsHtml = '<option value="">-- Choose Catalog Product --</option>';
+        catalogProducts.forEach(p => {
+            const isSelected = initialData && parseInt(initialData.product_id) === p.id;
+            optionsHtml += `<option value="${p.id}" data-price="${p.price}" data-hsn="${p.hsn}" data-tax="${p.tax}" ${isSelected ? 'selected' : ''}>${p.name} (₹${p.price.toFixed(2)})</option>`;
+        });
+
+        const defaultQty = initialData && initialData.quantity !== undefined ? initialData.quantity : 1;
+        const defaultRate = initialData && initialData.rate !== undefined ? initialData.rate : (catalogProducts[0] ? catalogProducts[0].price : 100.00);
+        const defaultHsn = initialData && initialData.hsn_sac ? initialData.hsn_sac : (catalogProducts[0] ? catalogProducts[0].hsn : '7318');
+        const defaultGst = initialData && initialData.gst_rate !== undefined ? initialData.gst_rate : 18;
+
+        tr.innerHTML = `
+            <td>
+                <select name="items[${rowCounter}][product_id]" class="form-control item-product" style="font-size: 0.85rem;" onchange="window.onRowProductChange(${rowCounter})">
+                    ${optionsHtml}
+                </select>
+            </td>
+            <td>
+                <input type="text" name="items[${rowCounter}][hsn_sac]" class="form-control item-hsn" value="${defaultHsn}" style="font-size: 0.85rem;">
+            </td>
+            <td>
+                <input type="number" name="items[${rowCounter}][quantity]" class="form-control item-qty" value="${defaultQty}" min="0.01" step="0.01" style="text-align: right; font-size: 0.85rem;" oninput="window.recalculateTotals()">
+            </td>
+            <td>
+                <input type="number" name="items[${rowCounter}][rate]" class="form-control item-rate" value="${parseFloat(defaultRate).toFixed(2)}" min="0" step="0.01" style="text-align: right; font-size: 0.85rem;" oninput="window.recalculateTotals()">
+            </td>
+            <td>
+                <select name="items[${rowCounter}][gst_rate]" class="form-control item-gst" style="font-size: 0.85rem;" onchange="window.recalculateTotals()">
+                    <option value="18" ${defaultGst == 18 ? 'selected' : ''}>18% (Standard)</option>
+                    <option value="12" ${defaultGst == 12 ? 'selected' : ''}>12%</option>
+                    <option value="5" ${defaultGst == 5 ? 'selected' : ''}>5%</option>
+                    <option value="0" ${defaultGst == 0 ? 'selected' : ''}>0% (Exempt)</option>
+                </select>
+            </td>
+            <td style="text-align: right; vertical-align: middle;">
+                <strong class="item-line-total" style="font-size: 0.9rem; color: var(--text-primary);">₹0.00</strong>
+            </td>
+            <td style="text-align: center; vertical-align: middle;">
+                <button type="button" class="btn btn-sm" onclick="window.removeLineItem(${rowCounter})" title="Remove item" style="padding: 0.2rem 0.45rem; background: transparent; border: none; color: var(--color-danger); cursor: pointer; border-radius: 4px;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </td>
+        `;
+
+        tbody.appendChild(tr);
+
+        // Preselect product if specified or default
+        if (initialData && initialData.product_id) {
+            const sel = tr.querySelector('.item-product');
+            sel.value = initialData.product_id;
+        }
+
+        window.recalculateTotals();
+    };
+
+    window.removeLineItem = function(rowId) {
+        const rows = document.querySelectorAll('.invoice-item-row');
+        if (rows.length <= 1) {
+            if (window.WTSBill && window.WTSBill.Toast) {
+                window.WTSBill.Toast.show('An invoice must have at least one line item.', 'warning');
+            }
+            return;
+        }
+        const row = document.getElementById('item-row-' + rowId);
+        if (row) {
+            row.remove();
+            window.recalculateTotals();
+        }
+    };
+
+    window.onRowProductChange = function(rowId) {
+        const row = document.getElementById('item-row-' + rowId);
+        if (!row) return;
+
+        const sel = row.querySelector('.item-product');
+        const opt = sel.options[sel.selectedIndex];
+        if (opt && opt.dataset.price) {
+            row.querySelector('.item-rate').value = parseFloat(opt.dataset.price).toFixed(2);
+            row.querySelector('.item-hsn').value = opt.dataset.hsn || '7318';
+            row.querySelector('.item-gst').value = opt.dataset.tax || '18';
+        }
+        window.recalculateTotals();
+    };
+
     window.onCustomerChange = function() {
         const select = document.getElementById('inv-customer');
         const opt = select.options[select.selectedIndex];
@@ -163,37 +311,42 @@ $errorMsg = \WTSBill\Core\Session::getFlash('error');
         window.recalculateTotals();
     };
 
-    window.onProductChange = function() {
-        const select = document.getElementById('line-product');
-        const opt = select.options[select.selectedIndex];
-        if (opt && opt.dataset.price) {
-            document.getElementById('line-rate').value = parseFloat(opt.dataset.price).toFixed(2);
-            document.getElementById('line-hsn').value = opt.dataset.hsn || '7318';
-            document.getElementById('line-gst').value = opt.dataset.tax || '18';
-        }
-        window.recalculateTotals();
-    };
-
     window.recalculateTotals = function() {
-        const qty = parseFloat(document.getElementById('line-qty').value) || 0;
-        const rate = parseFloat(document.getElementById('line-rate').value) || 0;
-        const gstRate = parseFloat(document.getElementById('line-gst').value) || 0;
+        const rows = document.querySelectorAll('.invoice-item-row');
         const pos = document.getElementById('inv-pos').value;
-
-        const taxable = Math.round(qty * rate * 100) / 100;
-        const taxVal = Math.round(taxable * (gstRate / 100) * 100) / 100;
-        const grand = Math.round(taxable + taxVal);
-
-        document.getElementById('summary-subtotal').textContent = '₹' + taxable.toFixed(2);
-
         const isIntraState = (pos === '27');
+
+        let totalTaxable = 0.0;
+        let totalTax = 0.0;
+        let itemCount = 0;
+
+        rows.forEach(row => {
+            const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+            const rate = parseFloat(row.querySelector('.item-rate').value) || 0;
+            const gst = parseFloat(row.querySelector('.item-gst').value) || 0;
+
+            const lineTaxable = Math.round(qty * rate * 100) / 100;
+            const lineTax = Math.round(lineTaxable * (gst / 100) * 100) / 100;
+            const lineTotal = lineTaxable + lineTax;
+
+            row.querySelector('.item-line-total').textContent = '₹' + lineTotal.toFixed(2);
+
+            totalTaxable += lineTaxable;
+            totalTax += lineTax;
+            itemCount++;
+        });
+
+        const grand = Math.round(totalTaxable + totalTax);
+
+        document.getElementById('summary-items-count').textContent = itemCount + ' Item(s)';
+        document.getElementById('summary-subtotal').textContent = '₹' + totalTaxable.toFixed(2);
+
         if (isIntraState) {
-            const split = (gstRate / 2).toFixed(1);
-            document.getElementById('summary-tax-label').textContent = `CGST ${split}% + SGST ${split}%:`;
+            document.getElementById('summary-tax-label').textContent = 'CGST + SGST:';
         } else {
-            document.getElementById('summary-tax-label').textContent = `IGST ${gstRate}%:`;
+            document.getElementById('summary-tax-label').textContent = 'IGST:';
         }
-        document.getElementById('summary-tax-val').textContent = '₹' + taxVal.toFixed(2);
+        document.getElementById('summary-tax-val').textContent = '₹' + totalTax.toFixed(2);
         document.getElementById('summary-grand').textContent = '₹' + grand.toFixed(2);
     };
 
@@ -206,6 +359,21 @@ $errorMsg = \WTSBill\Core\Session::getFlash('error');
         btn.textContent = 'Generating Invoice...';
 
         const formData = new FormData(form);
+
+        // Also populate backward-compatible single item fields from first row
+        const firstRow = document.querySelector('.invoice-item-row');
+        if (firstRow) {
+            const pId = firstRow.querySelector('.item-product').value;
+            const hsn = firstRow.querySelector('.item-hsn').value;
+            const qty = firstRow.querySelector('.item-qty').value;
+            const rate = firstRow.querySelector('.item-rate').value;
+            const gst = firstRow.querySelector('.item-gst').value;
+            formData.set('product_id', pId);
+            formData.set('hsn_sac', hsn);
+            formData.set('quantity', qty);
+            formData.set('rate', rate);
+            formData.set('gst_rate', gst);
+        }
 
         try {
             const metaToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -235,11 +403,19 @@ $errorMsg = \WTSBill\Core\Session::getFlash('error');
             }
         } catch (err) {
             console.error('Invoice create error:', err);
-            form.submit(); // fallback standard submit
+            form.submit();
         }
     };
 
     document.addEventListener('DOMContentLoaded', function() {
-        window.recalculateTotals();
+        // Initialize default first line item
+        const firstProduct = catalogProducts[0] || null;
+        window.addLineItem({
+            product_id: firstProduct ? firstProduct.id : '',
+            quantity: 10,
+            rate: firstProduct ? firstProduct.price : 45.00,
+            hsn_sac: firstProduct ? firstProduct.hsn : '7318',
+            gst_rate: 18
+        });
     });
 </script>

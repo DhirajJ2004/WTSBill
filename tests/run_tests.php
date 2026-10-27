@@ -39,6 +39,13 @@ require_once ROOT_PATH . '/tests/Feature/BranchSwitchingTest.php';
 require_once ROOT_PATH . '/tests/Feature/BalanceSheetStatementTest.php';
 require_once ROOT_PATH . '/tests/Feature/InventoryStockManagementTest.php';
 require_once ROOT_PATH . '/tests/Feature/PurchaseBillsPayableTest.php';
+require_once ROOT_PATH . '/tests/Feature/TaxInvoicePrintTemplateTest.php';
+require_once ROOT_PATH . '/tests/Feature/SettingsEditTest.php';
+require_once ROOT_PATH . '/tests/Feature/InvoiceEditDeleteTest.php';
+require_once ROOT_PATH . '/tests/Feature/CustomerDeleteTest.php';
+require_once ROOT_PATH . '/tests/Feature/AuditLogSettingsTest.php';
+require_once ROOT_PATH . '/tests/Feature/DashboardInvoiceViewTest.php';
+require_once ROOT_PATH . '/tests/Feature/QuotationPrintTest.php';
 
 
 $totalTests = 0;
@@ -146,6 +153,27 @@ echo "\n--- SECTION 28: FEATURE TESTS — INVENTORY STOCK & WAREHOUSE BALANCES U
 
 echo "\n--- SECTION 29: FEATURE TESTS — PURCHASE BILLS & ACCOUNTS PAYABLE UPGRADE ---\n";
 \Tests\Feature\PurchaseBillsPayableTest::run($assert);
+
+echo "\n--- SECTION 30: FEATURE TESTS — TAX INVOICE PRINT & PDF TEMPLATE REBUILD ---\n";
+\Tests\Feature\TaxInvoicePrintTemplateTest::run($assert);
+
+echo "\n--- SECTION 31: FEATURE TESTS — ENTERPRISE SYSTEM SETTINGS & PROFILE EDIT ---\n";
+\Tests\Feature\SettingsEditTest::run($assert);
+
+echo "\n--- SECTION 32: FEATURE TESTS — TAX INVOICE EDIT & DELETE ACTIONS ---\n";
+\Tests\Feature\InvoiceEditDeleteTest::run($assert);
+ 
+echo "\n--- SECTION 33: FEATURE TESTS — CUSTOMER DELETION & DIRECTORY MANAGEMENT ---\n";
+\Tests\Feature\CustomerDeleteTest::run($assert);
+
+echo "\n--- SECTION 34: FEATURE TESTS — ENTERPRISE AUDIT LOGS IN SETTINGS (ADMIN ONLY) ---\n";
+\Tests\Feature\AuditLogSettingsTest::run($assert);
+
+echo "\n--- SECTION 35: FEATURE TESTS — DASHBOARD INVOICE VIEW & ROUTE PARITY ---\n";
+\Tests\Feature\DashboardInvoiceViewTest::run($assert);
+
+echo "\n--- SECTION 36: FEATURE TESTS — QUOTATIONS PRINT OPTION & DOCUMENT TEMPLATE ---\n";
+\Tests\Feature\QuotationPrintTest::run($assert);
 
 
 echo "\n==================================================================================\n";

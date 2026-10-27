@@ -49,7 +49,7 @@ class CustomerRepository extends BaseRepository
         $companyId = Session::getCompanyId() ?? 1;
         $sql = "SELECT id, name, company_name, gstin, phone, email, city, state, opening_balance, current_balance, credit_limit, is_active 
                 FROM `{$this->table}` 
-                WHERE company_id = ?";
+                WHERE company_id = ? AND deleted_at IS NULL";
         $params = [$companyId];
 
         if (!empty(trim($term))) {

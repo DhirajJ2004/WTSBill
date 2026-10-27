@@ -58,8 +58,9 @@
                                 </span>
                             </td>
                             <td style="text-align: center;">
-                                <div style="display: flex; gap: 0.25rem; justify-content: center;">
+                                <div style="display: flex; gap: 0.35rem; justify-content: center;">
                                     <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="window.editCustomer(<?= (int)$c['id'] ?>)">Edit</button>
+                                    <button type="button" class="btn btn-outline-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; color: var(--danger); border-color: var(--danger);" onclick="window.deleteCustomer(<?= (int)$c['id'] ?>, '<?= e(addslashes($c['name'])) ?>')">Delete</button>
                                 </div>
                             </td>
                         </tr>
@@ -159,9 +160,14 @@
                 </div>
             </div>
 
-            <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 0.5rem;">
-                <button type="button" class="btn btn-secondary" onclick="window.closeCustomerModal()">Cancel</button>
-                <button type="submit" id="cust-submit-btn" class="btn btn-primary">Save Customer</button>
+            <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                <div>
+                    <button type="button" id="cust-modal-delete-btn" class="btn btn-outline-danger" style="display: none; padding: 0.4rem 0.75rem; font-size: 0.85rem; color: var(--danger); border-color: var(--danger);" onclick="window.deleteCurrentModalCustomer()">Delete Customer</button>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="window.closeCustomerModal()">Cancel</button>
+                    <button type="submit" id="cust-submit-btn" class="btn btn-primary">Save Customer</button>
+                </div>
             </div>
         </form>
     </div>
@@ -194,6 +200,8 @@
         document.getElementById('customer-modal-error').textContent = '';
         document.getElementById('cust-submit-btn').disabled = false;
         document.getElementById('cust-submit-btn').textContent = 'Save Customer';
+        const modalDeleteBtn = document.getElementById('cust-modal-delete-btn');
+        if (modalDeleteBtn) modalDeleteBtn.style.display = 'none';
 
         if (window.WTSBill && window.WTSBill.Modal) {
             window.WTSBill.Modal.open('customer-modal');
@@ -216,6 +224,8 @@
         document.getElementById('customer-modal-title').textContent = 'Edit Customer Details';
         document.getElementById('cust-opening-group').style.display = 'none';
         document.getElementById('cust-submit-btn').textContent = 'Update Customer';
+        const modalDeleteBtn = document.getElementById('cust-modal-delete-btn');
+        if (modalDeleteBtn) modalDeleteBtn.style.display = 'inline-block';
 
         try {
             const resp = await fetch('/customers/' + id, {
@@ -298,6 +308,72 @@
             errBox.textContent = 'Network or server error. Please try again.';
             submitBtn.disabled = false;
             submitBtn.textContent = id ? 'Update Customer' : 'Save Customer';
+        }
+    };
+
+    window.deleteCurrentModalCustomer = function() {
+        const id = document.getElementById('cust-id').value;
+        const name = document.getElementById('cust-name').value;
+        if (id) {
+            window.closeCustomerModal();
+            window.deleteCustomer(id, name);
+        }
+    };
+
+    window.deleteCustomer = async function(id, customerName) {
+        if (!confirm('Are you sure you want to delete customer "' + (customerName || '#' + id) + '"? This will remove the customer record.')) {
+            return;
+        }
+
+        const metaToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+        try {
+            const resp = await fetch('/customers/' + id + '/delete', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': metaToken,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ _csrf_token: metaToken })
+            });
+
+            const data = await resp.json();
+
+            if (resp.ok && data.success) {
+                if (window.WTSBill && window.WTSBill.Toast) {
+                    window.WTSBill.Toast.show(data.message || 'Customer deleted successfully.', 'success');
+                }
+                const row = document.getElementById('customer-row-' + id);
+                if (row) {
+                    row.remove();
+                }
+                const countEl = document.getElementById('customers-count');
+                if (countEl) {
+                    const current = parseInt(countEl.textContent, 10);
+                    if (!isNaN(current) && current > 0) {
+                        countEl.textContent = current - 1;
+                    }
+                }
+            } else {
+                if (window.WTSBill && window.WTSBill.Toast) {
+                    window.WTSBill.Toast.show(data.message || 'Failed to delete customer.', 'danger');
+                }
+            }
+        } catch (err) {
+            console.error('Delete customer error:', err);
+            // Fallback to standard form submit
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/customers/' + id + '/delete';
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_csrf_token';
+            csrfInput.value = metaToken;
+            form.appendChild(csrfInput);
+            document.body.appendChild(form);
+            form.submit();
         }
     };
 </script>

@@ -377,6 +377,255 @@ class BranchSwitchingTest
                 Session::getBranchId() === 1
             );
 
+            // ==========================================
+            // 20. ADD BRANCH UI & HEADER INTEGRATION
+            // ==========================================
+
+            // Re-render header as Administrator
+            $adminHeaderHtml = View::render('partials/header');
+            $assert(
+                'BRANCH-22',
+                'Header dropdown renders "+ Add Branch" button for authorized administrators',
+                str_contains($adminHeaderHtml, 'header-add-branch-btn') &&
+                str_contains($adminHeaderHtml, '+ Add Branch') &&
+                str_contains($adminHeaderHtml, 'openAddBranchModal')
+            );
+
+            // Re-render header as Staff User (User 3)
+            Session::set('user_id', 3);
+            Session::set('user_role', 'STAFF');
+            $staffHeaderHtml = View::render('partials/header');
+            $assert(
+                'BRANCH-23',
+                'Ordinary staff user header does NOT contain "+ Add Branch" action',
+                !str_contains($staffHeaderHtml, 'header-add-branch-btn') &&
+                !str_contains($staffHeaderHtml, 'id="add-branch-modal"')
+            );
+
+            // Re-authenticate Admin
+            Session::set('user_id', 1);
+            Session::set('user_role', 'ADMIN');
+            Session::set('current_company_id', 1);
+
+            $assert(
+                'BRANCH-24',
+                'Header renders Add Branch modal with all schema-adapted form controls',
+                str_contains($adminHeaderHtml, 'id="add-branch-modal"') &&
+                str_contains($adminHeaderHtml, 'id="add-branch-name"') &&
+                str_contains($adminHeaderHtml, 'id="add-branch-code"') &&
+                str_contains($adminHeaderHtml, 'id="add-branch-contact-person"') &&
+                str_contains($adminHeaderHtml, 'id="add-branch-phone"') &&
+                str_contains($adminHeaderHtml, 'id="add-branch-email"') &&
+                str_contains($adminHeaderHtml, 'id="add-branch-address"') &&
+                str_contains($adminHeaderHtml, 'id="add-branch-city"') &&
+                str_contains($adminHeaderHtml, 'id="add-branch-state"') &&
+                str_contains($adminHeaderHtml, 'id="add-branch-pincode"') &&
+                str_contains($adminHeaderHtml, 'id="add-branch-status"') &&
+                str_contains($adminHeaderHtml, 'id="add-branch-submit-btn"')
+            );
+
+            // ==========================================
+            // 21. VALIDATION & SECURITY ENFORCEMENT
+            // ==========================================
+
+            // Empty name & code submission
+            $emptyReq = new Request([], [
+                'name' => '',
+                'branch_code' => '',
+            ], [
+                'REQUEST_METHOD' => 'POST',
+                'REQUEST_URI' => '/branches',
+                'HTTP_ACCEPT' => 'application/json',
+            ]);
+            $emptyResp = $branchController->store($emptyReq);
+            $emptyJson = json_decode($emptyResp->getBody(), true);
+            $assert(
+                'BRANCH-25',
+                'Submitting empty branch name or code to POST /branches fails with HTTP 422',
+                $emptyResp->getStatusCode() === 422 &&
+                isset($emptyJson['errors']['name']) &&
+                isset($emptyJson['errors']['branch_code'])
+            );
+
+            // Invalid email and phone format submission
+            $invalidReq = new Request([], [
+                'name' => 'Invalid Test Branch',
+                'branch_code' => 'INV-99',
+                'email' => 'invalid-email-format',
+                'phone' => '123',
+                'pincode' => 'ABC',
+            ], [
+                'REQUEST_METHOD' => 'POST',
+                'REQUEST_URI' => '/branches',
+                'HTTP_ACCEPT' => 'application/json',
+            ]);
+            $invalidResp = $branchController->store($invalidReq);
+            $invalidJson = json_decode($invalidResp->getBody(), true);
+            $assert(
+                'BRANCH-26',
+                'Submitting invalid email, phone, or PIN code returns HTTP 422 with specific field errors',
+                $invalidResp->getStatusCode() === 422 &&
+                isset($invalidJson['errors']['email']) &&
+                isset($invalidJson['errors']['phone']) &&
+                isset($invalidJson['errors']['pincode'])
+            );
+
+            // Staff user calling POST /branches directly is blocked
+            Session::set('user_role', 'STAFF');
+            $staffCreateReq = new Request([], [
+                'name' => 'Unauthorized Staff Branch',
+                'branch_code' => 'STF-01',
+            ], [
+                'REQUEST_METHOD' => 'POST',
+                'REQUEST_URI' => '/branches',
+                'HTTP_ACCEPT' => 'application/json',
+            ]);
+            $staffCreateResp = $branchController->store($staffCreateReq);
+            $assert(
+                'BRANCH-27',
+                'Non-administrator staff attempt to create a branch is rejected with HTTP 403 Forbidden',
+                $staffCreateResp->getStatusCode() === 403
+            );
+
+            // Restore Admin session
+            Session::set('user_role', 'ADMIN');
+
+            // ==========================================
+            // 22. SUCCESSFUL CREATION & DB PERSISTENCE
+            // ==========================================
+
+            $validBranchCode = 'NAG-' . rand(100, 999);
+            $activeBranchBefore = Session::getBranchId();
+
+            $validCreateReq = new Request([], [
+                'name' => 'Nagpur Regional Branch',
+                'branch_code' => $validBranchCode,
+                'contact_person' => 'Sunil Deshmukh',
+                'phone' => '+91 9822114455',
+                'email' => 'nagpur.ops@wtsbill.in',
+                'address' => 'Plot 45, MIDC Hingna',
+                'city' => 'Nagpur',
+                'state' => 'Maharashtra',
+                'pincode' => '440028',
+                'is_active' => 1,
+            ], [
+                'REQUEST_METHOD' => 'POST',
+                'REQUEST_URI' => '/branches',
+                'HTTP_ACCEPT' => 'application/json',
+            ]);
+            $validCreateResp = $branchController->store($validCreateReq);
+            $validCreateJson = json_decode($validCreateResp->getBody(), true);
+            $newBranchId = (int)($validCreateJson['branch']['id'] ?? 0);
+
+            $dbBranch = Database::selectOne("SELECT * FROM branches WHERE id = ?", [$newBranchId]);
+            $assert(
+                'BRANCH-28',
+                'Administrator creates new branch with contact person & full details (HTTP 201 persisted in MySQL)',
+                $validCreateResp->getStatusCode() === 201 &&
+                $newBranchId > 0 &&
+                !empty($dbBranch) &&
+                $dbBranch['name'] === 'Nagpur Regional Branch' &&
+                $dbBranch['contact_person'] === 'Sunil Deshmukh' &&
+                $dbBranch['city'] === 'Nagpur' &&
+                (int)$dbBranch['is_active'] === 1
+            );
+
+            // Active operating branch remains unchanged upon branch creation
+            $assert(
+                'BRANCH-29',
+                'Active operating branch in session remains unchanged upon branch creation (no auto-switching)',
+                Session::getBranchId() === $activeBranchBefore
+            );
+
+            // Dynamic listing API returns the new branch
+            $listReq = new Request([], [], [
+                'REQUEST_METHOD' => 'GET',
+                'REQUEST_URI' => '/api/branches',
+                'HTTP_ACCEPT' => 'application/json',
+            ]);
+            $listResp = $branchController->list($listReq);
+            $listJson = json_decode($listResp->getBody(), true);
+            $foundInList = false;
+            foreach ($listJson['branches'] ?? [] as $bItem) {
+                if ((int)$bItem['id'] === $newBranchId) {
+                    $foundInList = true;
+                    break;
+                }
+            }
+            $assert(
+                'BRANCH-30',
+                'GET /api/branches returns newly created branch in authorized branch list for company',
+                $listResp->getStatusCode() === 200 &&
+                $foundInList === true &&
+                $listJson['is_admin'] === true
+            );
+
+            // Duplicate branch code registration rejected
+            $dupReq = new Request([], [
+                'name' => 'Duplicate Nagpur Branch',
+                'branch_code' => $validBranchCode,
+            ], [
+                'REQUEST_METHOD' => 'POST',
+                'REQUEST_URI' => '/branches',
+                'HTTP_ACCEPT' => 'application/json',
+            ]);
+            $dupResp = $branchController->store($dupReq);
+            $assert(
+                'BRANCH-31',
+                'Duplicate branch code registration is rejected with HTTP 422 validation failure',
+                $dupResp->getStatusCode() === 422
+            );
+
+            // Inactive branch creation & switching prevention
+            $inactiveCode = 'INACT-' . rand(100, 999);
+            $inactCreateReq = new Request([], [
+                'name' => 'Inactive Test Branch',
+                'branch_code' => $inactiveCode,
+                'is_active' => 0,
+            ], [
+                'REQUEST_METHOD' => 'POST',
+                'REQUEST_URI' => '/branches',
+                'HTTP_ACCEPT' => 'application/json',
+            ]);
+            $inactCreateResp = $branchController->store($inactCreateReq);
+            $inactCreateJson = json_decode($inactCreateResp->getBody(), true);
+            $inactiveBranchId = (int)($inactCreateJson['branch']['id'] ?? 0);
+
+            $inactDb = Database::selectOne("SELECT is_active FROM branches WHERE id = ?", [$inactiveBranchId]);
+            $inactSwitchReq = new Request([], ['branch_id' => $inactiveBranchId], [
+                'REQUEST_METHOD' => 'POST',
+                'REQUEST_URI' => '/branches/switch',
+                'HTTP_ACCEPT' => 'application/json',
+            ]);
+            $inactSwitchResp = $branchController->switch($inactSwitchReq);
+
+            $assert(
+                'BRANCH-32',
+                'Inactive branch is created with is_active = 0, but switching to it is rejected with HTTP 422',
+                $inactCreateResp->getStatusCode() === 201 &&
+                $inactiveBranchId > 0 &&
+                (int)($inactDb['is_active'] ?? 1) === 0 &&
+                $inactSwitchResp->getStatusCode() === 422
+            );
+
+            // Authorized switching to the newly created active branch
+            $newSwitchReq = new Request([], ['branch_id' => $newBranchId], [
+                'REQUEST_METHOD' => 'POST',
+                'REQUEST_URI' => '/branches/switch',
+                'HTTP_ACCEPT' => 'application/json',
+            ]);
+            $newSwitchResp = $branchController->switch($newSwitchReq);
+            $assert(
+                'BRANCH-33',
+                'Authorized administrator can switch to newly created operating branch',
+                $newSwitchResp->getStatusCode() === 200 &&
+                Session::getBranchId() === $newBranchId &&
+                str_contains(Session::getBranchName() ?? '', 'Nagpur')
+            );
+
+            // Switch back to Branch 1
+            $branchService->switchBranch(1, 1, 1, 'ADMIN');
+
         } finally {
             // Clean up test data
             if ($testInvoiceId > 0) {
@@ -386,6 +635,14 @@ class BranchSwitchingTest
             if ($testBranchId > 0) {
                 Database::execute("DELETE FROM user_branches WHERE branch_id = ?", [$testBranchId]);
                 Database::execute("DELETE FROM branches WHERE id = ?", [$testBranchId]);
+            }
+            if (isset($newBranchId) && $newBranchId > 0) {
+                Database::execute("DELETE FROM user_branches WHERE branch_id = ?", [$newBranchId]);
+                Database::execute("DELETE FROM branches WHERE id = ?", [$newBranchId]);
+            }
+            if (isset($inactiveBranchId) && $inactiveBranchId > 0) {
+                Database::execute("DELETE FROM user_branches WHERE branch_id = ?", [$inactiveBranchId]);
+                Database::execute("DELETE FROM branches WHERE id = ?", [$inactiveBranchId]);
             }
             // Ensure session is set to branch 1
             Session::set('current_branch_id', 1);

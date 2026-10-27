@@ -49,8 +49,11 @@
                                     <?= e($inv['status']) ?>
                                 </span>
                             </td>
-                            <td style="text-align: right;">
-                                <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="window.viewInvoice(<?= (int)$inv['id'] ?>)">View</button>
+                            <td style="text-align: right; white-space: nowrap;">
+                                <a href="/sales/invoices/<?= (int)$inv['id'] ?>/print" target="_blank" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; text-decoration: none; margin-right: 3px;">Print</a>
+                                <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; margin-right: 3px;" onclick="window.viewInvoice(<?= (int)$inv['id'] ?>)">View</button>
+                                <a href="/sales/invoices/<?= (int)$inv['id'] ?>/edit" class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; text-decoration: none; margin-right: 3px;">Edit</a>
+                                <button type="button" class="btn btn-outline-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; color: var(--danger); border-color: var(--danger);" onclick="window.deleteInvoice(<?= (int)$inv['id'] ?>, '<?= e(addslashes($inv['invoice_number'])) ?>')">Delete</button>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -121,14 +124,21 @@
                 <div id="inv-view-notes" style="font-size: 0.8rem; color: var(--text-muted); padding: 0.75rem; background: var(--bg-hover); border-radius: var(--radius);"></div>
             </div>
         </div>
-        <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
-            <button type="button" class="btn btn-secondary" onclick="window.print()"><i class="icon">🖨️</i> Print Invoice</button>
-            <button type="button" class="btn btn-primary" onclick="window.closeInvoiceModal()">Close</button>
+        <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <a id="inv-modal-print-btn" href="#" target="_blank" class="btn btn-secondary" style="text-decoration: none;"><i class="icon">🖨️</i> Print Tax Invoice</a>
+                <a id="inv-modal-edit-btn" href="#" class="btn btn-primary" style="text-decoration: none;">Edit Invoice</a>
+                <button type="button" id="inv-modal-delete-btn" class="btn btn-outline-danger" style="color: var(--danger); border-color: var(--danger);" onclick="window.deleteCurrentModalInvoice()">Delete Invoice</button>
+            </div>
+            <button type="button" class="btn btn-secondary" onclick="window.closeInvoiceModal()">Close</button>
         </div>
     </div>
 </div>
 
 <script>
+    let currentModalInvoiceId = 0;
+    let currentModalInvoiceNumber = '';
+
     document.addEventListener('DOMContentLoaded', function() {
         if (window.WTSBill && window.WTSBill.Tables) {
             window.WTSBill.Tables.filter('invoice-search', 'invoices-table');
@@ -145,6 +155,7 @@
     });
 
     window.viewInvoice = async function(id) {
+        currentModalInvoiceId = id;
         document.getElementById('inv-loading').style.display = 'block';
         document.getElementById('inv-details').style.display = 'none';
 
@@ -163,6 +174,13 @@
             if (data.success && data.invoice) {
                 const inv = data.invoice;
                 const items = data.items || [];
+                currentModalInvoiceNumber = inv.invoice_number;
+
+                const printBtn = document.getElementById('inv-modal-print-btn');
+                if (printBtn) printBtn.href = '/sales/invoices/' + id + '/print';
+
+                const editBtn = document.getElementById('inv-modal-edit-btn');
+                if (editBtn) editBtn.href = '/sales/invoices/' + id + '/edit';
 
                 document.getElementById('inv-view-number').textContent = inv.invoice_number;
                 document.getElementById('inv-view-dates').textContent = 'Date: ' + inv.invoice_date + ' | Due: ' + (inv.due_date || 'Immediate');
@@ -214,5 +232,60 @@
         } else {
             document.getElementById('invoice-view-modal').classList.remove('active');
         }
+    };
+
+    window.deleteCurrentModalInvoice = function() {
+        if (currentModalInvoiceId > 0) {
+            window.closeInvoiceModal();
+            window.deleteInvoice(currentModalInvoiceId, currentModalInvoiceNumber);
+        }
+    };
+
+    window.deleteInvoice = function(id, invoiceNumber) {
+        if (!confirm('Are you sure you want to delete invoice ' + (invoiceNumber || '#' + id) + '? This will cancel the invoice and roll back the customer ledger balance.')) {
+            return;
+        }
+
+        const metaToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        
+        fetch('/sales/invoices/' + id + '/delete', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': metaToken,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ _csrf_token: metaToken })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                if (window.WTSBill && window.WTSBill.Toast) {
+                    window.WTSBill.Toast.show(data.message || 'Invoice deleted successfully.', 'success');
+                }
+                const row = document.getElementById('invoice-row-' + id);
+                if (row) row.remove();
+                setTimeout(() => window.location.reload(), 400);
+            } else {
+                if (window.WTSBill && window.WTSBill.Toast) {
+                    window.WTSBill.Toast.show(data.message || 'Failed to delete invoice.', 'danger');
+                }
+            }
+        })
+        .catch(err => {
+            console.error('Delete invoice error:', err);
+            // Fallback to standard form submit
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/sales/invoices/' + id + '/delete';
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_csrf_token';
+            csrfInput.value = metaToken;
+            form.appendChild(csrfInput);
+            document.body.appendChild(form);
+            form.submit();
+        });
     };
 </script>

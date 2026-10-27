@@ -160,6 +160,47 @@ class CustomerController
         }
     }
 
+    /**
+     * Delete / deactivate customer record.
+     */
+    public function delete(Request $req, mixed $id = null): Response
+    {
+        $customerId = (int)(is_array($id) ? ($id['id'] ?? 0) : ($id ?: ($req->post('id') ?? $req->param('id') ?? 0)));
+
+        $customer = $this->customerService->getCustomer($customerId);
+        if (!$customer) {
+            if ($this->expectsJson($req)) {
+                return Response::json(['success' => false, 'message' => 'Customer not found.'], 404);
+            }
+            Session::flash('error', 'Customer not found.');
+            return Response::redirect('/customers');
+        }
+
+        try {
+            $this->customerService->deleteCustomer($customerId);
+
+            if ($this->expectsJson($req)) {
+                return Response::json([
+                    'success' => true,
+                    'message' => "Customer '{$customer['name']}' deleted successfully.",
+                ]);
+            }
+
+            Session::flash('success', "Customer '{$customer['name']}' deleted successfully.");
+            return Response::redirect('/customers');
+        } catch (\Throwable $e) {
+            if ($this->expectsJson($req)) {
+                return Response::json([
+                    'success' => false,
+                    'message' => 'Failed to delete customer: ' . $e->getMessage(),
+                ], 500);
+            }
+
+            Session::flash('error', 'Failed to delete customer: ' . $e->getMessage());
+            return Response::redirect('/customers');
+        }
+    }
+
     protected function expectsJson(Request $req): bool
     {
         $accept = (string)($req->header('accept') ?? '');

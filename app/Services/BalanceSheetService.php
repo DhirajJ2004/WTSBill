@@ -83,7 +83,8 @@ class BalanceSheetService
             'compare_formatted' => $compareFormatted,
             'financial_year' => $fy,
             'company' => [
-                'name' => $company['legal_name'] ?: $company['name'],
+                'name' => $company['name'] ?: ($company['legal_name'] ?? 'Wis Technosavvy Pvt Ltd'),
+                'legal_name' => $company['legal_name'] ?: $company['name'],
                 'gstin' => $company['gstin'] ?: '27AADCW7577N1ZE',
                 'city' => $company['city'] ?: 'Pune',
                 'currency' => $company['currency'] ?: 'INR',

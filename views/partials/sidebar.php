@@ -217,7 +217,7 @@ $groupHasActive = function(array $paths) use ($currentUri): bool {
         </div>
 
         <!-- 7. Administration Group -->
-        <?php $adminActive = $groupHasActive(['/branches', '/users', '/settings']); ?>
+        <?php $adminActive = $groupHasActive(['/users', '/settings']); ?>
         <div class="nav-group collapsed <?= $adminActive ? 'has-active' : '' ?>" data-nav-group="admin">
             <button type="button" class="nav-section-title nav-group-toggle" onclick="window.toggleNavGroup('admin', event)" aria-expanded="false" title="Administration">
                 <span>Administration</span>
@@ -226,12 +226,6 @@ $groupHasActive = function(array $paths) use ($currentUri): bool {
                 </svg>
             </button>
             <div class="nav-group-items" id="nav-group-admin">
-                <a href="/branches" class="nav-item <?= $isActive('/branches') ?>">
-                    <span class="nav-icon">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                    </span>
-                    <span>Branches & Locations</span>
-                </a>
                 <a href="/users" class="nav-item <?= $isActive('/users') ?>">
                     <span class="nav-icon">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>

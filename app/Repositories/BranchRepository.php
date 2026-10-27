@@ -74,6 +74,26 @@ class BranchRepository extends BaseRepository
     }
 
     /**
+     * Find branches to display in the header switcher dropdown.
+     * Administrators see all operating branches for the company (with active/inactive status).
+     * Non-administrators only see their active, explicitly assigned branches.
+     */
+    public function findSwitcherBranches(int $userId, int $companyId, string $role = 'STAFF'): array
+    {
+        $roleUpper = strtoupper($role);
+        if ($roleUpper === 'ADMIN' || $roleUpper === 'SUPERADMIN' || $roleUpper === 'OWNER') {
+            return Database::select(
+                "SELECT * FROM `branches` 
+                 WHERE company_id = :company_id AND deleted_at IS NULL 
+                 ORDER BY is_main_branch DESC, is_active DESC, name ASC",
+                ['company_id' => $companyId]
+            );
+        }
+
+        return $this->findUserAuthorizedBranches($userId, $companyId, $role);
+    }
+
+    /**
      * Check if user is authorized to access a given branch.
      */
     public function isUserAuthorized(int $userId, int $branchId, int $companyId, string $role = 'STAFF'): bool

@@ -106,6 +106,27 @@ class CustomerService
     }
 
     /**
+     * Delete / deactivate a customer.
+     */
+    public function deleteCustomer(int $id): bool
+    {
+        $existing = $this->customerRepo->find($id);
+        if ($existing === null) {
+            return false;
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $this->customerRepo->update($id, [
+            'is_active' => 0,
+            'deleted_at' => $now,
+            'status' => 'INACTIVE',
+            'updated_at' => $now,
+        ]);
+
+        return true;
+    }
+
+    /**
      * Validate payload fields for customer registration.
      */
     protected function validateCustomerData(array $data, ?int $excludeId = null): array
