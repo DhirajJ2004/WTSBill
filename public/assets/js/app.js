@@ -288,8 +288,12 @@
         const branchBtn = document.getElementById('branch-switch-btn');
         if (branchBtn) {
             branchBtn.addEventListener('click', function (e) {
-                e.stopPropagation();
-                Dropdown.toggle('branch-switch-menu');
+                if (typeof window.toggleBranchDropdown === 'function') {
+                    window.toggleBranchDropdown(e);
+                } else {
+                    e.stopPropagation();
+                    Dropdown.toggle('branch-switch-menu');
+                }
             });
         }
 

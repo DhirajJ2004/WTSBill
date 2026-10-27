@@ -209,7 +209,8 @@ class Response
      */
     private static function sanitizeErrorMessage(string $message): string
     {
-        if (preg_match('/(SQLSTATE|SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TABLE)/i', $message)) {
+        // Only sanitize if it matches actual SQL driver/database errors (SQLSTATE, syntax error, unknown table/column)
+        if (preg_match('/(SQLSTATE\[\w+\]|\b(syntax error|unknown column|table doesn\'t exist)\b)/i', $message)) {
             return 'A database error occurred while processing your request. Please contact support.';
         }
         return $message;

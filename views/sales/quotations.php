@@ -13,7 +13,9 @@
     </div>
     <div style="display: flex; gap: 0.5rem; align-items: center;">
         <input type="text" id="quote-search" class="form-control" placeholder="Search quotation #..." style="width: 240px; padding: 0.4rem 0.75rem; font-size: 0.85rem;">
-        <button type="button" class="btn btn-primary" onclick="window.openQuotationModal()">+ Create Quotation</button>
+        <?php if (\WTSBill\Auth\Gate::can('quotations.create')): ?>
+            <button type="button" class="btn btn-primary" onclick="window.openQuotationModal()">+ Create Quotation</button>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -51,9 +53,11 @@
                                 <span class="badge badge-warning"><?= e($q['status'] ?? 'SENT') ?></span>
                             </td>
                             <td style="text-align: right; white-space: nowrap;">
-                                <a href="/sales/quotations/<?= (int)$q['id'] ?>/print" target="_blank" class="btn btn-secondary" style="padding: 0.25rem 0.65rem; font-size: 0.75rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-                                    <span>🖨️</span> Print
-                                </a>
+                                <?php if (\WTSBill\Auth\Gate::can('quotations.print')): ?>
+                                    <a href="/sales/quotations/<?= (int)$q['id'] ?>/print" target="_blank" class="btn btn-secondary" style="padding: 0.25rem 0.65rem; font-size: 0.75rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                                        <span>🖨️</span> Print
+                                    </a>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>

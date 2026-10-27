@@ -522,6 +522,7 @@ $ledgerList = $initialLedger['rows'] ?? $initialLedger['data'] ?? [];
                         <th>Reason / Audit Notes</th>
                         <th style="width: 120px;">Operator</th>
                         <th style="text-align: center; width: 90px;">Status</th>
+                        <th style="text-align: right; width: 130px;" class="no-print">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="history-tbody">
@@ -549,11 +550,24 @@ $ledgerList = $initialLedger['rows'] ?? $initialLedger['data'] ?? [];
                                 <td style="font-size: 0.825rem; max-width: 200px;"><?= e($h['reason'] . ($h['notes'] ? " ({$h['notes']})" : '')) ?></td>
                                 <td style="font-size: 0.825rem; color: var(--text-secondary);"><?= e($h['user']) ?></td>
                                 <td style="text-align: center;"><span class="badge badge-success">POSTED</span></td>
+                                <td style="text-align: right;" class="no-print">
+                                    <div style="display: flex; gap: 4px; justify-content: flex-end;">
+                                        <?php if (\WTSBill\Auth\Gate::can('inventory.adjustment.edit')): ?>
+                                            <button type="button" class="btn btn-secondary btn-sm" style="padding: 2px 6px; font-size: 0.72rem;" onclick="window.editAdjustmentModal(<?= (int)$h['id'] ?>, '<?= e(addslashes($h['adjustment_number'])) ?>', '<?= e(addslashes($h['reason'] ?? '')) ?>', '<?= e(addslashes($h['notes'] ?? '')) ?>')">Edit</button>
+                                        <?php endif; ?>
+                                        <?php if (\WTSBill\Auth\Gate::can('inventory.adjustment.delete')): ?>
+                                            <form method="POST" action="/inventory/stock/adjustments/<?= (int)$h['id'] ?>/delete" onsubmit="return confirm('Revert and delete stock adjustment <?= e(addslashes($h['adjustment_number'])) ?>? This will restore original inventory balances.');" style="margin: 0; display: inline;">
+                                                <input type="hidden" name="_csrf_token" value="<?= e(\WTSBill\Core\Session::csrfToken()) ?>">
+                                                <button type="submit" class="btn btn-danger btn-sm" style="padding: 2px 6px; font-size: 0.72rem;">Delete</button>
+                                            </form>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr id="history-empty-row">
-                            <td colspan="11" style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
+                            <td colspan="12" style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
                                 No physical stock adjustment entries logged yet.
                             </td>
                         </tr>
@@ -2154,6 +2168,27 @@ $ledgerList = $initialLedger['rows'] ?? $initialLedger['data'] ?? [];
     };
     window.saveStockAdjustment = function(e) {
         window.WTSStock.saveAdjustment(e);
+    };
+
+    window.editAdjustmentModal = function(id, num, reason, notes) {
+        var newReason = prompt('Update reason for adjustment ' + num + ':', reason || '');
+        if (newReason !== null && newReason.trim() !== '') {
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/inventory/stock/adjustments/' + id + '/update';
+            var tokenInput = document.createElement('input');
+            tokenInput.type = 'hidden';
+            tokenInput.name = '_csrf_token';
+            tokenInput.value = '<?= e(\WTSBill\Core\Session::csrfToken()) ?>';
+            form.appendChild(tokenInput);
+            var reasonInput = document.createElement('input');
+            reasonInput.type = 'hidden';
+            reasonInput.name = 'reason';
+            reasonInput.value = newReason;
+            form.appendChild(reasonInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
     };
 
     // Initialize when DOM content is ready

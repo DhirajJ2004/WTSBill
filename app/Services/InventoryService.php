@@ -926,4 +926,79 @@ class InventoryService
         $formatted = '₹ ' . $formattedInteger . '.' . $decimalPart;
         return $isNegative ? '(' . $formatted . ')' : $formatted;
     }
+
+    /**
+     * Update an existing stock adjustment.
+     */
+    public function updateAdjustment(int $companyId, int $adjustmentId, array $data, string $userName): array
+    {
+        $adj = Database::selectOne("SELECT * FROM stock_adjustments WHERE id = ? AND company_id = ?", [$adjustmentId, $companyId]);
+        if (!$adj) {
+            throw ValidationException::withMessages(['id' => 'Stock adjustment record not found.']);
+        }
+
+        $reason = trim((string)($data['reason'] ?? $adj['reason']));
+        $notes = trim((string)($data['notes'] ?? $adj['notes']));
+
+        Database::update('stock_adjustments', [
+            'reason' => $reason,
+            'notes' => $notes,
+            'updated_at' => date('Y-m-d H:i:s'),
+        ], 'id = ?', [$adjustmentId]);
+
+        return [
+            'success' => true,
+            'message' => "Adjustment '{$adj['adjustment_number']}' updated successfully.",
+        ];
+    }
+
+    /**
+     * Delete / rollback a stock adjustment and restore physical balances.
+     */
+    public function deleteAdjustment(int $companyId, int $adjustmentId, string $userName): array
+    {
+        $adj = Database::selectOne("SELECT * FROM stock_adjustments WHERE id = ? AND company_id = ?", [$adjustmentId, $companyId]);
+        if (!$adj) {
+            throw ValidationException::withMessages(['id' => 'Stock adjustment record not found.']);
+        }
+
+        $items = Database::select("SELECT * FROM stock_adjustment_items WHERE adjustment_id = ?", [$adjustmentId]);
+        $warehouseId = (int)$adj['warehouse_id'];
+
+        Database::transaction(function() use ($companyId, $adjustmentId, $warehouseId, $items, $adj) {
+            $now = date('Y-m-d H:i:s');
+            foreach ($items as $item) {
+                $productId = (int)$item['product_id'];
+                $qty = (float)$item['quantity'];
+                $type = strtoupper((string)($item['type'] ?? 'ADD'));
+                $isDeduction = in_array($type, ['SUBTRACT', 'DECREASE', 'WRITE_OFF', 'DAMAGE', 'TRANSFER'], true);
+
+                // Reverse the balance impact
+                $balance = Database::selectOne("SELECT * FROM stock_balances WHERE company_id = ? AND warehouse_id = ? AND product_id = ?", [$companyId, $warehouseId, $productId]);
+                if ($balance) {
+                    $cur = (float)$balance['quantity'];
+                    $revised = $isDeduction ? ($cur + $qty) : ($cur - $qty);
+                    $avail = max(0.0, $revised - (float)$balance['reserved_quantity']);
+                    Database::update('stock_balances', [
+                        'quantity' => $revised,
+                        'available_quantity' => $avail,
+                        'updated_at' => $now,
+                    ], 'id = ?', [$balance['id']]);
+
+                    Database::update('products', [
+                        'current_stock' => $revised,
+                        'updated_at' => $now,
+                    ], 'id = ?', [$productId]);
+                }
+            }
+
+            Database::delete('stock_adjustment_items', 'adjustment_id = ?', [$adjustmentId]);
+            Database::delete('stock_adjustments', 'id = ?', [$adjustmentId]);
+        });
+
+        return [
+            'success' => true,
+            'message' => "Adjustment '{$adj['adjustment_number']}' deleted and balances reverted successfully.",
+        ];
+    }
 }

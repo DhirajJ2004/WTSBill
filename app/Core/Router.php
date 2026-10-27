@@ -121,7 +121,15 @@ class Router
                 }
 
                 // Invoke route handler
-                return $this->invokeHandler($route['handler'], $request, $params);
+                try {
+                    return $this->invokeHandler($route['handler'], $request, $params);
+                } catch (\WTSBill\Core\Exceptions\HttpException $e) {
+                    if ($request->expectsJson()) {
+                        return Response::error($e->getMessage(), $e->getStatusCode(), $e->getErrors());
+                    }
+                    $msg = htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8');
+                    return Response::html("<h1>Error {$e->getStatusCode()}</h1><p>{$msg}</p>", $e->getStatusCode());
+                }
             }
         }
 

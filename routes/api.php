@@ -54,14 +54,16 @@ $router->get('/api/v1/auth/me', function (Request $req) {
 
 // 3. Products Catalog API
 $productController = new \WTSBill\Controllers\ProductController();
+$can = fn(string $perm) => new \WTSBill\Middleware\AuthorizationMiddleware($perm);
+
 $router->get('/api/v1/products', function (Request $req) use ($productController) {
     $service = new \WTSBill\Services\ProductService();
     $catalog = $service->getCatalog((string)($req->query('search') ?? ''));
     return Response::success(['products' => $catalog, 'total' => count($catalog)]);
-}, [$authMiddleware]);
+}, [$authMiddleware, $can('items.view')]);
 
-$router->post('/api/v1/products', [$productController, 'store'], [$authMiddleware]);
-$router->get('/api/v1/products/{id}', [$productController, 'show'], [$authMiddleware]);
-$router->post('/api/v1/products/{id}/update', [$productController, 'update'], [$authMiddleware]);
-$router->post('/api/v1/products/{id}/delete', [$productController, 'delete'], [$authMiddleware]);
+$router->post('/api/v1/products', [$productController, 'store'], [$authMiddleware, $can('items.create')]);
+$router->get('/api/v1/products/{id}', [$productController, 'show'], [$authMiddleware, $can('items.view')]);
+$router->post('/api/v1/products/{id}/update', [$productController, 'update'], [$authMiddleware, $can('items.edit')]);
+$router->post('/api/v1/products/{id}/delete', [$productController, 'delete'], [$authMiddleware, $can('items.delete')]);
 

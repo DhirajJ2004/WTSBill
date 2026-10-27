@@ -12,7 +12,9 @@
     </div>
     <div style="display: flex; gap: 0.5rem; align-items: center;">
         <input type="text" id="invoice-search" class="form-control" placeholder="Search invoice number or client..." style="width: 250px; padding: 0.4rem 0.75rem; font-size: 0.85rem;">
-        <a href="/sales/invoices/create" class="btn btn-primary">+ Create Invoice</a>
+        <?php if (\WTSBill\Auth\Gate::can('invoices.create')): ?>
+            <a href="/sales/invoices/create" class="btn btn-primary">+ Create Invoice</a>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -50,10 +52,18 @@
                                 </span>
                             </td>
                             <td style="text-align: right; white-space: nowrap;">
-                                <a href="/sales/invoices/<?= (int)$inv['id'] ?>/print" target="_blank" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; text-decoration: none; margin-right: 3px;">Print</a>
-                                <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; margin-right: 3px;" onclick="window.viewInvoice(<?= (int)$inv['id'] ?>)">View</button>
-                                <a href="/sales/invoices/<?= (int)$inv['id'] ?>/edit" class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; text-decoration: none; margin-right: 3px;">Edit</a>
-                                <button type="button" class="btn btn-outline-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; color: var(--danger); border-color: var(--danger);" onclick="window.deleteInvoice(<?= (int)$inv['id'] ?>, '<?= e(addslashes($inv['invoice_number'])) ?>')">Delete</button>
+                                <?php if (\WTSBill\Auth\Gate::can('invoices.print')): ?>
+                                    <a href="/sales/invoices/<?= (int)$inv['id'] ?>/print" target="_blank" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; text-decoration: none; margin-right: 3px;">Print</a>
+                                <?php endif; ?>
+                                <?php if (\WTSBill\Auth\Gate::can('invoices.view')): ?>
+                                    <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; margin-right: 3px;" onclick="window.viewInvoice(<?= (int)$inv['id'] ?>)">View</button>
+                                <?php endif; ?>
+                                <?php if (\WTSBill\Auth\Gate::can('invoices.edit')): ?>
+                                    <a href="/sales/invoices/<?= (int)$inv['id'] ?>/edit" class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; text-decoration: none; margin-right: 3px;">Edit</a>
+                                <?php endif; ?>
+                                <?php if (\WTSBill\Auth\Gate::can('invoices.delete')): ?>
+                                    <button type="button" class="btn btn-outline-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; color: var(--danger); border-color: var(--danger);" onclick="window.deleteInvoice(<?= (int)$inv['id'] ?>, '<?= e(addslashes($inv['invoice_number'])) ?>')">Delete</button>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -126,9 +136,15 @@
         </div>
         <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
             <div style="display: flex; gap: 0.5rem; align-items: center;">
-                <a id="inv-modal-print-btn" href="#" target="_blank" class="btn btn-secondary" style="text-decoration: none;"><i class="icon">🖨️</i> Print Tax Invoice</a>
-                <a id="inv-modal-edit-btn" href="#" class="btn btn-primary" style="text-decoration: none;">Edit Invoice</a>
-                <button type="button" id="inv-modal-delete-btn" class="btn btn-outline-danger" style="color: var(--danger); border-color: var(--danger);" onclick="window.deleteCurrentModalInvoice()">Delete Invoice</button>
+                <?php if (\WTSBill\Auth\Gate::can('invoices.print')): ?>
+                    <a id="inv-modal-print-btn" href="#" target="_blank" class="btn btn-secondary" style="text-decoration: none;"><i class="icon">🖨️</i> Print Tax Invoice</a>
+                <?php endif; ?>
+                <?php if (\WTSBill\Auth\Gate::can('invoices.edit')): ?>
+                    <a id="inv-modal-edit-btn" href="#" class="btn btn-primary" style="text-decoration: none;">Edit Invoice</a>
+                <?php endif; ?>
+                <?php if (\WTSBill\Auth\Gate::can('invoices.delete')): ?>
+                    <button type="button" id="inv-modal-delete-btn" class="btn btn-outline-danger" style="color: var(--danger); border-color: var(--danger);" onclick="window.deleteCurrentModalInvoice()">Delete Invoice</button>
+                <?php endif; ?>
             </div>
             <button type="button" class="btn btn-secondary" onclick="window.closeInvoiceModal()">Close</button>
         </div>

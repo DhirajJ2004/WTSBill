@@ -88,6 +88,9 @@ class AuthService
         // Update last login timestamp in DB
         $this->userRepository->updateLastLogin((int) $user['id']);
 
+        // Invalidate any gate cache
+        \WTSBill\Auth\Gate::flushCache();
+
         Logger::info("User successfully logged in: {$user['email']} (ID: {$user['id']}, Role: {$user['role']})");
 
         return $user;
@@ -105,6 +108,7 @@ class AuthService
             Logger::info("User logged out: {$email} (ID: {$userId})");
         }
 
+        \WTSBill\Auth\Gate::flushCache();
         Session::clear();
         Session::destroy();
     }

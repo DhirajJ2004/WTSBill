@@ -46,6 +46,7 @@ require_once ROOT_PATH . '/tests/Feature/CustomerDeleteTest.php';
 require_once ROOT_PATH . '/tests/Feature/AuditLogSettingsTest.php';
 require_once ROOT_PATH . '/tests/Feature/DashboardInvoiceViewTest.php';
 require_once ROOT_PATH . '/tests/Feature/QuotationPrintTest.php';
+require_once ROOT_PATH . '/tests/Security/RbacRoleIsolationTest.php';
 
 
 $totalTests = 0;
@@ -174,6 +175,9 @@ echo "\n--- SECTION 35: FEATURE TESTS — DASHBOARD INVOICE VIEW & ROUTE PARITY 
 
 echo "\n--- SECTION 36: FEATURE TESTS — QUOTATIONS PRINT OPTION & DOCUMENT TEMPLATE ---\n";
 \Tests\Feature\QuotationPrintTest::run($assert);
+
+echo "\n--- SECTION 37: SECURITY TESTS — RBAC ROLE ISOLATION & SERVER-SIDE GATING ---\n";
+\Tests\Security\RbacRoleIsolationTest::run($assert);
 
 
 echo "\n==================================================================================\n";

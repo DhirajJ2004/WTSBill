@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace WTSBill\Controllers;
 
+use WTSBill\Auth\Gate;
 use WTSBill\Core\Database;
 use WTSBill\Core\Exceptions\ValidationException;
 use WTSBill\Core\Request;
 use WTSBill\Core\Response;
 use WTSBill\Core\Session;
 use WTSBill\Core\View;
+use WTSBill\Services\AuditLogger;
 use WTSBill\Services\InventoryService;
 
 /**
@@ -24,12 +26,15 @@ class InventoryController
     {
         $this->inventoryService = $inventoryService ?? new InventoryService();
     }
+
     /**
      * Categories list view.
      */
     public function categoriesIndex(Request $req): Response
     {
-        $companyId = Session::getCompanyId() ?? 1;
+        Gate::authorize('categories.view', $req);
+
+        $companyId = (int)(Session::getCompanyId() ?? 1);
         $categories = Database::select(
             "SELECT c.id, c.name, c.code, c.description, c.status, COUNT(p.id) as product_count 
              FROM categories c 
@@ -54,7 +59,9 @@ class InventoryController
      */
     public function categoryStore(Request $req): Response
     {
-        $companyId = Session::getCompanyId() ?? 1;
+        Gate::authorize('categories.create', $req);
+
+        $companyId = (int)(Session::getCompanyId() ?? 1);
         $payload = !empty($req->json()) ? $req->json() : $req->post();
 
         $name = trim((string)($payload['name'] ?? ''));
@@ -71,27 +78,49 @@ class InventoryController
         }
 
         if (empty($code)) {
-            $code = 'CAT-' . strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $name), 0, 4)) . '-' . rand(10, 99);
+            $code = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $name), 0, 4));
+        }
+
+        $existing = Database::selectOne(
+            "SELECT id FROM categories WHERE company_id = ? AND (name = ? OR code = ?)",
+            [$companyId, $name, $code]
+        );
+        if ($existing) {
+            $err = ['name' => 'A category with this name or code already exists.'];
+            if ($this->expectsJson($req)) {
+                return Response::json(['success' => false, 'message' => 'A category with this name or code already exists.', 'errors' => $err], 422);
+            }
+            Session::flash('error', 'A category with this name or code already exists.');
+            return Response::redirect('/categories');
         }
 
         try {
-            $catId = Database::insert('categories', [
+            $id = Database::insert('categories', [
                 'company_id' => $companyId,
                 'name' => $name,
                 'code' => $code,
-                'description' => $desc ?: null,
+                'description' => $desc,
                 'status' => 'ACTIVE',
                 'created_at' => date('Y-m-d H:i:s'),
                 'updated_at' => date('Y-m-d H:i:s'),
             ]);
 
-            $cat = Database::selectOne("SELECT * FROM categories WHERE id = ?", [$catId]);
+            AuditLogger::log(
+                action: 'create',
+                module: 'inventory',
+                entityType: 'CATEGORY',
+                entityId: $id,
+                entityLabel: $name,
+                newValues: ['name' => $name, 'code' => $code],
+                status: 'success',
+                notes: "Created product category '{$name}'"
+            );
 
             if ($this->expectsJson($req)) {
                 return Response::json([
                     'success' => true,
                     'message' => "Category '{$name}' created successfully.",
-                    'category' => $cat,
+                    'category' => ['id' => $id, 'name' => $name, 'code' => $code],
                 ], 201);
             }
 
@@ -115,7 +144,9 @@ class InventoryController
      */
     public function stockIndex(Request $req): Response
     {
-        $companyId = Session::getCompanyId() ?? 1;
+        Gate::authorize('inventory.view', $req);
+
+        $companyId = (int)(Session::getCompanyId() ?? 1);
         $tab = strtolower(trim((string)$req->get('tab', 'balances')));
         if (!in_array($tab, ['balances', 'history', 'ledger'], true)) {
             $tab = 'balances';
@@ -139,25 +170,17 @@ class InventoryController
                     COALESCE(purchase_price, 0) as cost_price,
                     current_stock, reorder_level, max_level
              FROM products 
-             WHERE company_id = ? 
+             WHERE company_id = ? AND deleted_at IS NULL 
              ORDER BY name ASC",
             [$companyId]
         );
 
-        $initialBalances = $this->inventoryService->getStockBalances($companyId, ['page' => 1, 'per_page' => 25]);
-        $initialHistory = $this->inventoryService->getAdjustmentHistory($companyId, ['page' => 1, 'per_page' => 25]);
-        $initialLedger = $this->inventoryService->getStockLedger($companyId, ['page' => 1, 'per_page' => 25]);
+        $company = Database::selectOne("SELECT allow_negative_stock FROM companies WHERE id = ?", [$companyId]);
+        $allowNegativeStock = (bool)($company['allow_negative_stock'] ?? false);
 
-        // Check settings for negative stock allowance
-        $allowNegativeStock = false;
-        try {
-            $settingRow = Database::selectOne("SELECT `value` FROM `settings` WHERE `key` = 'allow_negative_stock' AND (company_id = ? OR company_id IS NULL) LIMIT 1", [$companyId]);
-            if ($settingRow) {
-                $allowNegativeStock = in_array(strtolower((string)$settingRow['value']), ['1', 'true', 'yes', 'on'], true);
-            }
-        } catch (\Throwable $e) {
-            $allowNegativeStock = false;
-        }
+        $initialBalances = $this->inventoryService->getStockBalances($companyId, ['per_page' => 25]);
+        $initialHistory = $this->inventoryService->getAdjustmentHistory($companyId, ['per_page' => 25]);
+        $initialLedger = $this->inventoryService->getStockLedger($companyId, ['per_page' => 25]);
 
         $html = View::renderWithLayout('inventory/stock', [
             'title' => 'Stock & Warehouse Balances',
@@ -178,17 +201,31 @@ class InventoryController
     }
 
     /**
-     * Record physical stock adjustment (Supports both web forms and backward compatibility).
+     * Record physical stock adjustment.
      */
     public function stockAdjust(Request $req): Response
     {
-        $companyId = Session::getCompanyId() ?? 1;
-        $userId = Session::getUserId() ?? (int)(Session::getUser()['id'] ?? 1);
-        $userName = (string)(Session::getUser()['name'] ?? 'Admin User');
+        Gate::authorize('inventory.adjustment.create', $req);
+
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $user = Gate::user();
+        $userId = $user ? (int)$user['id'] : (int)(Session::getUserId() ?? 1);
+        $userName = $user ? (string)$user['name'] : (string)(Session::get('user_name') ?? 'Inventory Manager');
         $payload = !empty($req->json()) ? $req->json() : $req->post();
 
         try {
             $result = $this->inventoryService->recordAdjustment($companyId, $userId, $userName, $payload);
+
+            AuditLogger::log(
+                action: 'create',
+                module: 'inventory',
+                entityType: 'STOCK_ADJUSTMENT',
+                entityId: (int)($result['adjustment']['id'] ?? 0),
+                entityLabel: (string)($result['adjustment']['adjustment_number'] ?? ''),
+                newValues: $payload,
+                status: 'success',
+                notes: "Recorded stock adjustment for product #{$payload['product_id']}"
+            );
 
             if ($this->expectsJson($req)) {
                 return Response::json([
@@ -199,7 +236,7 @@ class InventoryController
             }
 
             Session::flash('success', $result['message'] ?? 'Stock adjustment recorded successfully.');
-            return Response::redirect('/inventory/stock');
+            return Response::redirect('/inventory/stock?tab=history');
         } catch (ValidationException $ve) {
             if ($this->expectsJson($req)) {
                 return Response::json([
@@ -225,12 +262,96 @@ class InventoryController
     }
 
     /**
+     * Update existing stock adjustment (e.g. reason / notes).
+     */
+    public function adjustmentUpdate(Request $req, mixed $id = null): Response
+    {
+        Gate::authorize('inventory.adjustment.edit', $req);
+
+        $adjId = (int)(is_array($id) ? ($id['id'] ?? 0) : ($id ?: ($req->input('id') ?? 0)));
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $user = Gate::user();
+        $userName = $user ? (string)$user['name'] : 'Inventory Manager';
+        $payload = !empty($req->json()) ? $req->json() : $req->post();
+
+        try {
+            $result = $this->inventoryService->updateAdjustment($companyId, $adjId, $payload, $userName);
+
+            AuditLogger::log(
+                action: 'update',
+                module: 'inventory',
+                entityType: 'STOCK_ADJUSTMENT',
+                entityId: $adjId,
+                entityLabel: '#' . $adjId,
+                newValues: $payload,
+                status: 'success',
+                notes: "Updated stock adjustment #{$adjId}"
+            );
+
+            if ($this->expectsJson($req)) {
+                return Response::json($result);
+            }
+
+            Session::flash('success', $result['message']);
+            return Response::redirect('/inventory/stock?tab=history');
+        } catch (ValidationException $ve) {
+            if ($this->expectsJson($req)) {
+                return Response::json(['success' => false, 'message' => $ve->getMessage()], 422);
+            }
+            Session::flash('error', $ve->getMessage());
+            return Response::redirect('/inventory/stock?tab=history');
+        }
+    }
+
+    /**
+     * Delete / rollback physical stock adjustment.
+     */
+    public function adjustmentDelete(Request $req, mixed $id = null): Response
+    {
+        Gate::authorize('inventory.adjustment.delete', $req);
+
+        $adjId = (int)(is_array($id) ? ($id['id'] ?? 0) : ($id ?: ($req->input('id') ?? 0)));
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $user = Gate::user();
+        $userName = $user ? (string)$user['name'] : 'Inventory Manager';
+
+        try {
+            $result = $this->inventoryService->deleteAdjustment($companyId, $adjId, $userName);
+
+            AuditLogger::log(
+                action: 'delete',
+                module: 'inventory',
+                entityType: 'STOCK_ADJUSTMENT',
+                entityId: $adjId,
+                entityLabel: '#' . $adjId,
+                status: 'success',
+                notes: "Deleted and reversed stock adjustment #{$adjId}"
+            );
+
+            if ($this->expectsJson($req)) {
+                return Response::json($result);
+            }
+
+            Session::flash('success', $result['message']);
+            return Response::redirect('/inventory/stock?tab=history');
+        } catch (\Throwable $e) {
+            if ($this->expectsJson($req)) {
+                return Response::json(['success' => false, 'message' => $e->getMessage()], 422);
+            }
+            Session::flash('error', $e->getMessage());
+            return Response::redirect('/inventory/stock?tab=history');
+        }
+    }
+
+    /**
      * Stock balances, history, and ledger API endpoint.
      * Route: GET /api/inventory/stock
      */
     public function stockApi(Request $req): Response
     {
-        $companyId = Session::getCompanyId() ?? 1;
+        Gate::authorize('inventory.view', $req);
+
+        $companyId = (int)(Session::getCompanyId() ?? 1);
         $tab = strtolower(trim((string)$req->get('tab', 'balances')));
 
         $filters = [
@@ -267,28 +388,34 @@ class InventoryController
     }
 
     /**
-     * Dedicated REST API for recording stock adjustments with role verification.
+     * Dedicated REST API for recording stock adjustments with Gate authorization.
      * Route: POST /api/inventory/adjustments
      */
     public function stockAdjustmentApi(Request $req): Response
     {
-        $companyId = Session::getCompanyId() ?? 1;
-        $userId = Session::getUserId() ?? (int)(Session::getUser()['id'] ?? 1);
-        $userName = (string)(Session::getUser()['name'] ?? 'Admin User');
-        $role = strtoupper((string)(Session::get('user_role') ?? (Session::getUser()['role'] ?? 'ADMIN')));
+        Gate::authorize('inventory.adjustment.create', $req);
 
-        $allowedRoles = ['ADMIN', 'SUPERADMIN', 'OWNER', 'INVENTORY MANAGER', 'INVENTORY_MANAGER', 'MANAGER'];
-        if (!in_array($role, $allowedRoles, true)) {
-            return Response::json([
-                'success' => false,
-                'message' => 'Permission denied: Only Admin and Inventory Managers can record stock adjustments.',
-            ], 403);
-        }
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $user = Gate::user();
+        $userId = $user ? (int)$user['id'] : (int)(Session::getUserId() ?? 1);
+        $userName = $user ? (string)$user['name'] : 'Inventory Manager';
 
         $payload = !empty($req->json()) ? $req->json() : $req->post();
 
         try {
             $result = $this->inventoryService->recordAdjustment($companyId, $userId, $userName, $payload);
+
+            AuditLogger::log(
+                action: 'create',
+                module: 'inventory',
+                entityType: 'STOCK_ADJUSTMENT',
+                entityId: (int)($result['adjustment']['id'] ?? 0),
+                entityLabel: (string)($result['adjustment']['adjustment_number'] ?? ''),
+                newValues: $payload,
+                status: 'success',
+                notes: "API stock adjustment recorded"
+            );
+
             return Response::json($result, 201);
         } catch (ValidationException $ve) {
             return Response::json([
@@ -310,7 +437,9 @@ class InventoryController
      */
     public function stockExport(Request $req): Response
     {
-        $companyId = Session::getCompanyId() ?? 1;
+        Gate::authorize('inventory.view', $req);
+
+        $companyId = (int)(Session::getCompanyId() ?? 1);
         $format = strtolower(trim((string)$req->get('format', 'csv')));
 
         $filters = [

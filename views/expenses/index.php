@@ -12,7 +12,9 @@
     </div>
     <div style="display: flex; gap: 0.5rem; align-items: center;">
         <input type="text" id="expense-search" class="form-control" placeholder="Search expense voucher..." style="width: 240px; padding: 0.4rem 0.75rem; font-size: 0.85rem;">
-        <button type="button" class="btn btn-primary" onclick="window.openExpenseModal()">+ Record Expense</button>
+        <?php if (\WTSBill\Auth\Gate::can('expenses.create')): ?>
+            <button type="button" class="btn btn-primary" onclick="window.openExpenseModal()">+ Record Expense</button>
+        <?php endif; ?>
     </div>
 </div>
 

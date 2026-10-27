@@ -245,13 +245,13 @@ class Session
 
     public static function getUserId(): ?int
     {
-        $id = self::get('user_id') ?? (self::get('user')['id'] ?? null);
+        $id = self::get('user_id') ?? (self::get('user')['id'] ?? (self::get('auth_user')['id'] ?? null));
         return $id !== null ? (int) $id : null;
     }
 
     public static function getUser(): ?array
     {
-        $user = self::get('user');
+        $user = self::get('user') ?? self::get('auth_user');
         return is_array($user) ? $user : null;
     }
 

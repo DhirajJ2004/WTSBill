@@ -187,9 +187,13 @@ $csrfToken = \WTSBill\Core\Session::getCsrfToken();
             </div>
 
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 1rem;">
-                <button type="button" class="btn btn-outline-danger" onclick="window.confirmDeleteInvoice()" style="color: var(--danger); border-color: var(--danger);">
-                    Delete Invoice
-                </button>
+                <?php if (\WTSBill\Auth\Gate::can('invoices.delete')): ?>
+                    <button type="button" class="btn btn-outline-danger" onclick="window.confirmDeleteInvoice()" style="color: var(--danger); border-color: var(--danger);">
+                        Delete Invoice
+                    </button>
+                <?php else: ?>
+                    <div></div>
+                <?php endif; ?>
                 <div style="display: flex; gap: 0.75rem;">
                     <a href="/sales/invoices" class="btn btn-secondary">Cancel</a>
                     <button type="submit" id="inv-submit-btn" class="btn btn-primary" style="padding: 0.65rem 1.5rem; font-size: 0.95rem;">Save Changes &rarr;</button>
