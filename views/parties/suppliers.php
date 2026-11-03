@@ -25,14 +25,14 @@
         <table class="table" id="suppliers-table">
             <thead>
                 <tr>
-                    <th>#</th>
-                    <th>Supplier Name</th>
-                    <th>GSTIN</th>
-                    <th>City / State</th>
-                    <th>Phone</th>
-                    <th style="text-align: right;">Payable Balance</th>
-                    <th style="text-align: center;">Status</th>
-                    <th style="text-align: center;">Actions</th>
+                    <th style="width: 5%;">#</th>
+                    <th style="width: 23%;">Supplier Name</th>
+                    <th style="width: 14%;">GSTIN</th>
+                    <th style="width: 16%;">City / State</th>
+                    <th style="width: 13%;">Phone</th>
+                    <th style="width: 13%; text-align: right;">Payable Balance</th>
+                    <th style="width: 6%; text-align: center;">Status</th>
+                    <th style="width: 10%; text-align: center; white-space: nowrap;">Actions</th>
                 </tr>
             </thead>
             <tbody id="suppliers-table-body">
@@ -57,9 +57,14 @@
                                     <?= ($s['is_active'] ?? 1) ? 'ACTIVE' : 'INACTIVE' ?>
                                 </span>
                             </td>
-                            <td style="text-align: center;">
-                                <div style="display: flex; gap: 0.25rem; justify-content: center;">
-                                    <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="window.editSupplier(<?= (int)$s['id'] ?>)">Edit</button>
+                            <td style="text-align: center; white-space: nowrap;">
+                                <div style="display: flex; gap: 0.35rem; justify-content: center; align-items: center;">
+                                    <?php if (\WTSBill\Auth\Gate::can('suppliers.edit')): ?>
+                                        <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.55rem; font-size: 0.78rem;" onclick="window.editSupplier(<?= (int)$s['id'] ?>)">Edit</button>
+                                    <?php endif; ?>
+                                    <?php if (\WTSBill\Auth\Gate::can('suppliers.delete')): ?>
+                                        <button type="button" class="btn btn-outline-danger" style="padding: 0.25rem 0.55rem; font-size: 0.78rem; color: var(--danger); border-color: var(--danger);" onclick="window.deleteSupplier(<?= (int)$s['id'] ?>, '<?= e(addslashes($s['name'])) ?>')">Delete</button>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>
@@ -159,9 +164,16 @@
                 </div>
             </div>
 
-            <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 0.5rem;">
-                <button type="button" class="btn btn-secondary" onclick="window.closeSupplierModal()">Cancel</button>
-                <button type="submit" id="sup-submit-btn" class="btn btn-primary">Save Supplier</button>
+            <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                <div>
+                    <?php if (\WTSBill\Auth\Gate::can('suppliers.delete')): ?>
+                        <button type="button" id="sup-modal-delete-btn" class="btn btn-outline-danger" style="display: none; padding: 0.4rem 0.75rem; font-size: 0.85rem; color: var(--danger); border-color: var(--danger);" onclick="window.deleteCurrentModalSupplier()">Delete Supplier</button>
+                    <?php endif; ?>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="window.closeSupplierModal()">Cancel</button>
+                    <button type="submit" id="sup-submit-btn" class="btn btn-primary">Save Supplier</button>
+                </div>
             </div>
         </form>
     </div>
@@ -194,6 +206,8 @@
         document.getElementById('supplier-modal-error').textContent = '';
         document.getElementById('sup-submit-btn').disabled = false;
         document.getElementById('sup-submit-btn').textContent = 'Save Supplier';
+        const modalDeleteBtn = document.getElementById('sup-modal-delete-btn');
+        if (modalDeleteBtn) modalDeleteBtn.style.display = 'none';
 
         if (window.WTSBill && window.WTSBill.Modal) {
             window.WTSBill.Modal.open('supplier-modal');
@@ -216,6 +230,8 @@
         document.getElementById('supplier-modal-title').textContent = 'Edit Supplier Details';
         document.getElementById('sup-opening-group').style.display = 'none';
         document.getElementById('sup-submit-btn').textContent = 'Update Supplier';
+        const modalDeleteBtn = document.getElementById('sup-modal-delete-btn');
+        if (modalDeleteBtn) modalDeleteBtn.style.display = 'inline-block';
 
         try {
             const resp = await fetch('/suppliers/' + id, {
@@ -298,6 +314,80 @@
             errBox.textContent = 'Network or server error. Please try again.';
             submitBtn.disabled = false;
             submitBtn.textContent = id ? 'Update Supplier' : 'Save Supplier';
+        }
+    };
+
+    window.deleteCurrentModalSupplier = function() {
+        const id = document.getElementById('sup-id').value;
+        const name = document.getElementById('sup-name').value;
+        if (id) {
+            window.closeSupplierModal();
+            window.deleteSupplier(id, name);
+        }
+    };
+
+    window.deleteSupplier = async function(id, name) {
+        if (!confirm('Are you sure you want to delete supplier "' + (name || '#' + id) + '"? This will remove the supplier record.')) {
+            return;
+        }
+
+        const metaToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+        try {
+            const resp = await fetch('/suppliers/' + id + '/delete', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': metaToken
+                },
+                body: new URLSearchParams({
+                    '_csrf_token': metaToken,
+                    'id': id
+                })
+            });
+
+            const data = await resp.json();
+
+            if (resp.ok && data.success) {
+                if (window.WTSBill && window.WTSBill.Toast) {
+                    window.WTSBill.Toast.show(data.message || 'Supplier deleted successfully.', 'success');
+                }
+                const row = document.getElementById('supplier-row-' + id);
+                if (row) {
+                    row.remove();
+                }
+
+                // Update active counter
+                const countSpan = document.getElementById('suppliers-count');
+                if (countSpan) {
+                    const currentCount = parseInt(countSpan.textContent) || 0;
+                    countSpan.textContent = Math.max(0, currentCount - 1);
+                }
+
+                // If no rows remain, show empty row
+                const tbody = document.getElementById('suppliers-table-body');
+                if (tbody && tbody.querySelectorAll('tr').length === 0) {
+                    tbody.innerHTML = '<tr id="no-suppliers-row"><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">No supplier records found.</td></tr>';
+                }
+            } else {
+                if (window.WTSBill && window.WTSBill.Toast) {
+                    window.WTSBill.Toast.show(data.message || 'Failed to delete supplier.', 'danger');
+                }
+            }
+        } catch (err) {
+            console.error('Delete supplier error:', err);
+            // Fallback to standard form submit
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/suppliers/' + id + '/delete';
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_csrf_token';
+            csrfInput.value = metaToken;
+            form.appendChild(csrfInput);
+            document.body.appendChild(form);
+            form.submit();
         }
     };
 </script>

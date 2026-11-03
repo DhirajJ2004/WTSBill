@@ -5,6 +5,7 @@
  * @var array $invoice
  * @var array $items
  * @var array $customers
+ * @var array $categories
  * @var array $products
  */
 $errorMsg = \WTSBill\Core\Session::getFlash('error');
@@ -21,7 +22,7 @@ $csrfToken = \WTSBill\Core\Session::getCsrfToken();
     </div>
 </div>
 
-<div class="card" style="max-width: 960px; margin: 0 auto 2rem auto;">
+<div class="card" style="max-width: 1000px; margin: 0 auto 2rem auto;">
     <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
         <h3 class="card-title" style="margin: 0;">Edit Invoice Form</h3>
         <span class="badge badge-<?= $invoice['status'] === 'PAID' ? 'success' : ($invoice['status'] === 'PARTIAL' ? 'warning' : 'danger') ?>">
@@ -129,17 +130,27 @@ $csrfToken = \WTSBill\Core\Session::getCsrfToken();
                 </button>
             </div>
 
+            <style>
+                #items-table th, #items-table td {
+                    padding: 0.5rem 0.4rem;
+                    vertical-align: middle;
+                }
+                #items-table .form-control {
+                    padding: 0.4rem 0.55rem;
+                }
+            </style>
             <div class="table-container" style="margin-bottom: 1rem; overflow-x: auto;">
-                <table class="table" id="items-table" style="width: 100%; min-width: 780px;">
+                <table class="table" id="items-table" style="width: 100%; min-width: 860px;">
                     <thead>
                         <tr>
-                            <th style="width: 32%;">Product / Item</th>
-                            <th style="width: 14%;">HSN/SAC</th>
-                            <th style="width: 11%; text-align: right;">Qty</th>
-                            <th style="width: 14%; text-align: right;">Rate (₹)</th>
-                            <th style="width: 13%; text-align: right;">GST Rate</th>
-                            <th style="width: 12%; text-align: right;">Amount (₹)</th>
-                            <th style="width: 4%; text-align: center;"></th>
+                            <th style="width: 19%;">Category</th>
+                            <th style="width: 24%;">Product / Item</th>
+                            <th style="width: 12%;">HSN/SAC</th>
+                            <th style="width: 9%; text-align: right;">Qty</th>
+                            <th style="width: 12%; text-align: right;">Rate (₹)</th>
+                            <th style="width: 12%; text-align: right;">GST Rate</th>
+                            <th style="width: 10%; text-align: right;">Amount (₹)</th>
+                            <th style="width: 2%; text-align: center;"></th>
                         </tr>
                     </thead>
                     <tbody id="items-table-body">
@@ -203,15 +214,29 @@ $csrfToken = \WTSBill\Core\Session::getCsrfToken();
     </div>
 </div>
 
-<!-- Hidden catalog products JSON for client row generation -->
+<!-- Hidden categories JSON for client row generation -->
+<script id="categories-data" type="application/json">
+<?= json_encode(array_map(function($c) {
+    return [
+        'id' => (int)$c['id'],
+        'name' => (string)$c['name'],
+        'code' => (string)($c['code'] ?? ''),
+    ];
+}, $categories ?? [])) ?>
+</script>
+
+<!-- Hidden catalog products JSON for client caching / fallback -->
 <script id="catalog-products-data" type="application/json">
 <?= json_encode(array_map(function($p) {
     return [
         'id' => (int)$p['id'],
+        'category_id' => (int)($p['category_id'] ?? 0),
         'name' => (string)$p['name'],
+        'sku' => (string)($p['sku'] ?? ''),
         'price' => (float)$p['selling_price'],
         'hsn' => (string)($p['hsn_sac'] ?? '7318'),
-        'tax' => (float)$p['tax_rate'],
+        'tax' => (float)($p['tax_rate'] ?? 18),
+        'unit' => (string)($p['unit'] ?? 'Pcs'),
     ];
 }, $products ?? [])) ?>
 </script>
@@ -220,6 +245,7 @@ $csrfToken = \WTSBill\Core\Session::getCsrfToken();
 <script id="existing-items-data" type="application/json">
 <?= json_encode(array_map(function($it) {
     return [
+        'category_id' => (int)($it['category_id'] ?? 0),
         'product_id' => (int)($it['product_id'] ?? 0),
         'quantity' => (float)($it['quantity'] ?? 1),
         'rate' => (float)($it['unit_price'] ?? 0),
@@ -231,9 +257,30 @@ $csrfToken = \WTSBill\Core\Session::getCsrfToken();
 </script>
 
 <script>
+    const categoriesList = JSON.parse(document.getElementById('categories-data').textContent || '[]');
     const catalogProducts = JSON.parse(document.getElementById('catalog-products-data').textContent || '[]');
     const existingItems = JSON.parse(document.getElementById('existing-items-data').textContent || '[]');
+
+    // In-memory products cache keyed by categoryId
+    window.categoryProductsCache = {};
+
+    // Pre-populate cache from initial products catalog where category_id is present
+    catalogProducts.forEach(p => {
+        if (p.category_id) {
+            if (!window.categoryProductsCache[p.category_id]) {
+                window.categoryProductsCache[p.category_id] = [];
+            }
+            window.categoryProductsCache[p.category_id].push(p);
+        }
+    });
+
     let rowCounter = 0;
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text || '';
+        return div.innerHTML;
+    }
 
     window.addLineItem = function(initialData = null) {
         rowCounter++;
@@ -243,25 +290,31 @@ $csrfToken = \WTSBill\Core\Session::getCsrfToken();
         tr.className = 'invoice-item-row';
         tr.dataset.rowId = rowCounter;
 
-        let optionsHtml = '<option value="">-- Choose Catalog Product --</option>';
-        catalogProducts.forEach(p => {
-            const isSelected = initialData && parseInt(initialData.product_id) === p.id;
-            optionsHtml += `<option value="${p.id}" data-price="${p.price}" data-hsn="${p.hsn}" data-tax="${p.tax}" ${isSelected ? 'selected' : ''}>${p.name} (₹${p.price.toFixed(2)})</option>`;
+        // Build Category options
+        let catOptionsHtml = '<option value="">-- Select Category --</option>';
+        categoriesList.forEach(c => {
+            const isCatSelected = initialData && parseInt(initialData.category_id) === c.id;
+            catOptionsHtml += `<option value="${c.id}" ${isCatSelected ? 'selected' : ''}>${escapeHtml(c.name)}</option>`;
         });
 
         const defaultQty = initialData && initialData.quantity !== undefined ? initialData.quantity : 1;
-        const defaultRate = initialData && initialData.rate !== undefined ? initialData.rate : (catalogProducts[0] ? catalogProducts[0].price : 100.00);
-        const defaultHsn = initialData && initialData.hsn_sac ? initialData.hsn_sac : (catalogProducts[0] ? catalogProducts[0].hsn : '7318');
+        const defaultRate = initialData && initialData.rate !== undefined ? initialData.rate : 0.00;
+        const defaultHsn = initialData && initialData.hsn_sac ? initialData.hsn_sac : '';
         const defaultGst = initialData && initialData.gst_rate !== undefined ? initialData.gst_rate : 18;
 
         tr.innerHTML = `
             <td>
-                <select name="items[${rowCounter}][product_id]" class="form-control item-product" style="font-size: 0.85rem;" onchange="window.onRowProductChange(${rowCounter})">
-                    ${optionsHtml}
+                <select name="items[${rowCounter}][category_id]" class="form-control item-category" style="font-size: 0.85rem;" onchange="window.onRowCategoryChange(${rowCounter})">
+                    ${catOptionsHtml}
                 </select>
             </td>
             <td>
-                <input type="text" name="items[${rowCounter}][hsn_sac]" class="form-control item-hsn" value="${defaultHsn}" style="font-size: 0.85rem;">
+                <select name="items[${rowCounter}][product_id]" class="form-control item-product" style="font-size: 0.85rem;" onchange="window.onRowProductChange(${rowCounter})">
+                    <option value="">-- Select Category First --</option>
+                </select>
+            </td>
+            <td>
+                <input type="text" name="items[${rowCounter}][hsn_sac]" class="form-control item-hsn" value="${escapeHtml(defaultHsn)}" placeholder="HSN/SAC" style="font-size: 0.85rem;">
             </td>
             <td>
                 <input type="number" name="items[${rowCounter}][quantity]" class="form-control item-qty" value="${defaultQty}" min="0.01" step="0.01" style="text-align: right; font-size: 0.85rem;" oninput="window.recalculateTotals()">
@@ -292,9 +345,15 @@ $csrfToken = \WTSBill\Core\Session::getCsrfToken();
 
         tbody.appendChild(tr);
 
-        if (initialData && initialData.product_id) {
-            const sel = tr.querySelector('.item-product');
-            sel.value = initialData.product_id;
+        // Preload or fetch products if category is given
+        if (initialData && initialData.category_id) {
+            window.loadCategoryProducts(rowCounter, parseInt(initialData.category_id), initialData.product_id || null, false);
+        } else if (initialData && initialData.product_id) {
+            const prod = catalogProducts.find(p => p.id === parseInt(initialData.product_id));
+            if (prod && prod.category_id) {
+                tr.querySelector('.item-category').value = prod.category_id;
+                window.loadCategoryProducts(rowCounter, prod.category_id, initialData.product_id, false);
+            }
         }
 
         window.recalculateTotals();
@@ -315,14 +374,122 @@ $csrfToken = \WTSBill\Core\Session::getCsrfToken();
         }
     };
 
-    window.onRowProductChange = function(rowId) {
+    window.onRowCategoryChange = function(rowId) {
+        const row = document.getElementById('item-row-' + rowId);
+        if (!row) return;
+
+        const catSelect = row.querySelector('.item-category');
+        const categoryId = catSelect.value ? parseInt(catSelect.value) : 0;
+        const prodSelect = row.querySelector('.item-product');
+
+        // Clear previous product selection when category changes
+        prodSelect.value = '';
+        row.querySelector('.item-rate').value = '0.00';
+        row.querySelector('.item-hsn').value = '';
+        window.recalculateTotals();
+
+        if (!categoryId) {
+            prodSelect.innerHTML = '<option value="">-- Select Category First --</option>';
+            prodSelect.disabled = false;
+            return;
+        }
+
+        window.loadCategoryProducts(rowId, categoryId, null, true);
+    };
+
+    window.loadCategoryProducts = async function(rowId, categoryId, preselectedProductId = null, isUserChange = false) {
+        const row = document.getElementById('item-row-' + rowId);
+        if (!row) return;
+
+        const prodSelect = row.querySelector('.item-product');
+
+        // If products for this category are already cached, use them immediately for instant render
+        if (window.categoryProductsCache[categoryId] && !isUserChange) {
+            renderProductOptions(rowId, window.categoryProductsCache[categoryId], preselectedProductId);
+            return;
+        }
+
+        // Show loading state while fetching products
+        prodSelect.disabled = true;
+        prodSelect.innerHTML = '<option value="">Loading products...</option>';
+
+        try {
+            const metaToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const resp = await fetch('/api/categories/' + encodeURIComponent(categoryId) + '/products', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': metaToken
+                }
+            });
+
+            if (!resp.ok) {
+                throw new Error('Server returned HTTP ' + resp.status);
+            }
+
+            const result = await resp.json();
+            if (result && result.success && Array.isArray(result.products)) {
+                window.categoryProductsCache[categoryId] = result.products;
+                renderProductOptions(rowId, result.products, preselectedProductId);
+                if (result.products.length === 0 && isUserChange && window.WTSBill && window.WTSBill.Toast) {
+                    window.WTSBill.Toast.show('No active products found in this category.', 'info');
+                }
+            } else {
+                throw new Error(result.message || 'Failed to load category products.');
+            }
+        } catch (err) {
+            console.error('Category products fetch error:', err);
+
+            // Resilient fallback to cache
+            if (window.categoryProductsCache[categoryId] && window.categoryProductsCache[categoryId].length > 0) {
+                renderProductOptions(rowId, window.categoryProductsCache[categoryId], preselectedProductId);
+            } else {
+                prodSelect.innerHTML = '<option value="">Failed to load products</option>';
+                prodSelect.disabled = false;
+                if (window.WTSBill && window.WTSBill.Toast) {
+                    window.WTSBill.Toast.show('Could not load products for selected category.', 'danger');
+                }
+            }
+        }
+
+        window.recalculateTotals();
+    };
+
+    function renderProductOptions(rowId, products, preselectedProductId = null) {
+        const row = document.getElementById('item-row-' + rowId);
+        if (!row) return;
+        const prodSelect = row.querySelector('.item-product');
+
+        if (!products || products.length === 0) {
+            prodSelect.innerHTML = '<option value="">No products available in this category</option>';
+            prodSelect.disabled = true;
+        } else {
+            let optionsHtml = '<option value="">-- Choose Catalog Product --</option>';
+            products.forEach(p => {
+                const isSelected = preselectedProductId && parseInt(preselectedProductId) === p.id;
+                optionsHtml += `<option value="${p.id}" data-price="${p.price}" data-hsn="${p.hsn_sac || p.hsn}" data-tax="${p.tax_rate || p.tax}" data-unit="${p.unit || 'Pcs'}" ${isSelected ? 'selected' : ''}>${escapeHtml(p.name)} (₹${parseFloat(p.price).toFixed(2)})</option>`;
+            });
+            prodSelect.innerHTML = optionsHtml;
+            prodSelect.disabled = false;
+
+            if (preselectedProductId) {
+                prodSelect.value = preselectedProductId;
+                window.onRowProductChange(rowId, false);
+            }
+        }
+    }
+
+    window.onRowProductChange = function(rowId, overwriteRate = true) {
         const row = document.getElementById('item-row-' + rowId);
         if (!row) return;
 
         const sel = row.querySelector('.item-product');
         const opt = sel.options[sel.selectedIndex];
         if (opt && opt.dataset.price) {
-            row.querySelector('.item-rate').value = parseFloat(opt.dataset.price).toFixed(2);
+            if (overwriteRate) {
+                row.querySelector('.item-rate').value = parseFloat(opt.dataset.price).toFixed(2);
+            }
             row.querySelector('.item-hsn').value = opt.dataset.hsn || '7318';
             row.querySelector('.item-gst').value = opt.dataset.tax || '18';
         }
@@ -449,14 +616,18 @@ $csrfToken = \WTSBill\Core\Session::getCsrfToken();
         if (existingItems && existingItems.length > 0) {
             existingItems.forEach(it => window.addLineItem(it));
         } else {
-            const firstProduct = catalogProducts[0] || null;
-            window.addLineItem({
-                product_id: firstProduct ? firstProduct.id : '',
-                quantity: 1,
-                rate: firstProduct ? firstProduct.price : 100.00,
-                hsn_sac: firstProduct ? firstProduct.hsn : '7318',
-                gst_rate: 18
-            });
+            const firstCat = categoriesList[0] || null;
+            if (firstCat) {
+                window.addLineItem({
+                    category_id: firstCat.id,
+                    quantity: 1,
+                    rate: 0,
+                    hsn_sac: '',
+                    gst_rate: 18
+                });
+            } else {
+                window.addLineItem();
+            }
         }
     });
 </script>

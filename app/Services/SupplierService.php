@@ -104,6 +104,27 @@ class SupplierService
     }
 
     /**
+     * Delete / deactivate a supplier.
+     */
+    public function deleteSupplier(int $id): bool
+    {
+        $existing = $this->supplierRepo->find($id);
+        if ($existing === null) {
+            return false;
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $this->supplierRepo->update($id, [
+            'is_active' => 0,
+            'deleted_at' => $now,
+            'status' => 'INACTIVE',
+            'updated_at' => $now,
+        ]);
+
+        return true;
+    }
+
+    /**
      * Validate payload fields for supplier registration.
      */
     protected function validateSupplierData(array $data, ?int $excludeId = null): array

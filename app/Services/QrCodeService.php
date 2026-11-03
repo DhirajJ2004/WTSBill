@@ -378,6 +378,7 @@ class QrCodeService
 
     /**
      * Build standard UPI deep link string.
+     * Enforces valid UPI ID format, positive outstanding amount, and URL-encoded payee/reference.
      */
     public static function buildUpiPayload(
         string $vpa,
@@ -386,8 +387,16 @@ class QrCodeService
         string $invoiceNumber
     ): string {
         $pa = trim($vpa);
+        if ($pa === '' || !preg_match('/^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/', $pa)) {
+            return '';
+        }
+
+        if ($amount <= 0.001) {
+            return '';
+        }
+
         $pn = trim($payeeName);
-        $am = sprintf('%.2f', max(0, $amount));
+        $am = sprintf('%.2f', max(0.0, round($amount, 2)));
         $cu = 'INR';
         $tn = trim($invoiceNumber);
 

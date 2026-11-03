@@ -12,7 +12,11 @@
 | :--- | :--- | :--- |
 | `app/Controllers/AuthController.php` | `WTSBill\Controllers` | Authentication, login, logout, password reset |
 | `app/Controllers/BranchController.php` | `WTSBill\Controllers` | Branch switching, admin CRUD, Add Branch creation (`POST /branches`), dynamic branch list (`GET /api/branches`), user branch assignments |
-| `app/Controllers/ProductController.php` | `WTSBill\Controllers` | Product catalog CRUD, modal registration, SKU check, search |
+| `app/Controllers/RoleController.php` | `WTSBill\Controllers` | RBAC role creation, permission matrix toggles, assignment |
+| `app/Controllers/SalesController.php` | `WTSBill\Controllers` | Tax invoice generation, multi-line items, category product filter API (`/api/categories/{id}/products`), invoice installment payments (`POST /sales/invoices/{id}/payments`), print templates |
+| `app/Controllers/QuotationController.php` | `WTSBill\Controllers` | Dedicated commercial quotations workflow (`/sales/quotations`), line item categories, draft/save, duplicate, print, and one-click conversion to Tax Invoice (`POST /sales/quotations/{id}/convert`) |
+| `app/Controllers/PaymentController.php` | `WTSBill\Controllers` | Payments & Collections workspace, dual-tab UI (Vouchers & Partial Payments/Invoice Balances), payment recording, and receipts |
+| `app/Controllers/SettingsController.php` | `WTSBill\Controllers` | General company profile, branch settings, document numbering |
 
 ---
 
@@ -22,6 +26,7 @@
 | :--- | :--- | :--- |
 | `app/Services/AuthService.php` | `WTSBill\Services` | Authentication state, Bcrypt verification, session binding |
 | `app/Services/BranchService.php` | `WTSBill\Services` | Branch switching authorization, branch creation with contact person & validation, session context |
+| `app/Services/PaymentService.php` | `WTSBill\Services` | Partial invoice payment calculations, multiple installments, status transitions (UNPAID/PARTIAL/PAID), customer ledger decrements, and double-entry GL journal posting |
 | `app/Services/ProductService.php` | `WTSBill\Services` | Product business rules, SKU uniqueness, GST rates, stock adjustments |
 
 ---
@@ -80,13 +85,16 @@
 | `views/dashboard/index.php` | Enterprise dashboard with metrics and recent invoices |
 | `views/inventory/products.php` | Product catalog with working modal registration and CRUD actions |
 | `views/inventory/stock.php` | Stock balances & adjustments view |
-| `views/inventory/categories.php` | Product categories view |
+| `views/inventory/categories.php` | Product categories view with taxonomy overview, linked products counter, Manage Category modal, Edit Category modal, Delete safeguard, and quick status toggles |
 | `views/parties/customers.php` | Customer directory view |
 | `views/parties/suppliers.php` | Supplier directory view |
 | `views/parties/create.php` | Customer onboarding form view |
-| `views/sales/invoices.php` | Sales invoices directory view |
-| `views/sales/create.php` | Tax invoice creation view |
-| `views/sales/quotations.php` | Quotations and estimates view |
+| `views/sales/invoices.php` | Sales invoices directory view with + Pay partial payments action, payment history installments table, and Record Payment modal |
+| `views/sales/create.php` | Tax invoice creation view with dynamic product category filtering per line item |
+| `views/sales/quotations.php` | Quotations and estimates view with status pipeline KPIs, Convert to Invoice action, duplicate, print, and view modal |
+| `views/sales/quotation_create.php` | Dedicated quotation creation view with + New Customer quick modal, line item category dropdowns, and draft/save |
+| `views/sales/quotation_edit.php` | Dedicated quotation edit view preserving line item categories, recalculations, and status transitions |
+| `views/payments/index.php` | Payments workspace with Vouchers Register and Partial Payments & Invoice Balances tabs, filters, and payment modals |
 | `views/sales/challans.php` | Delivery challans view |
 | `views/purchases/bills.php` | Purchase bills view |
 | `views/expenses/index.php` | Expenses ledger view |
@@ -128,6 +136,13 @@
 | `tests/Integration/RouteParityTest.php` | Integration | 21 routes HTTP 200, guest 302 |
 | `tests/Integration/PrintOutputParityTest.php` | Integration | @media print, number_to_words_inr |
 | `tests/Feature/FullWorkflowRegressionTest.php` | Feature | End-to-end commercial ERP cycle |
-| `tests/Feature/ProductManagementTest.php` | Feature | Product creation, validation, duplicate SKU rejection, persistence |
-| `tests/Feature/BranchSwitchingTest.php` | Feature | 33 assertions: Branch switching, Add Branch modal, permissions, API, validation |
-| `tests/run_tests.php` | Master Runner | Executes all suites (407 assertions, 100% pass) |
+| `tests/Feature/ProductManagementTest.php` | Feature | 10 assertions: Product creation, validation, duplicate SKU rejection, editing, persistence, and deletion |
+| `tests/Feature/InvoiceCategoryFilterTest.php` | Feature | 15 assertions: Dynamic category-filtered products API, multi-category line items, DB persistence, validation, edit/update |
+| `tests/Feature/CategoryManagementTest.php` | Feature | 10 assertions: Category actions, show/manage API, edit update, status toggles, linked product deletion guard, and deletion |
+| `tests/Feature/InvoiceEditDeleteTest.php` | Feature | Tax invoice editing, line item modification, deletion safety |
+| `tests/Feature/PartialPaymentTest.php` | Feature | 13 assertions: Partial payments, installments, UNPAID->PARTIAL->PAID status, A/R & bank GL posting, overpayment rejection |
+| `tests/Feature/QuotationManagementTest.php` | Feature | 11 assertions: Quotation lifecycle, line item categories, draft, edit, clone duplicate, one-click conversion to Tax Invoice |
+| `tests/Feature/SupplierDeleteTest.php` | Feature | 7 assertions: Supplier directory deletion button, modal confirmation, deletion execution, directory exclusion |
+| `tests/Feature/AccountManagementTest.php` | Feature | 10 assertions: Chart of accounts edit/delete, GL modal binding, system account deletion protection (HTTP 422), soft/hard delete |
+| `tests/Feature/DynamicUpiQrPaymentTest.php` | Feature | 10 assertions: Dynamic remaining balance UPI QR, real-time recalculation, QR hiding on full settlement, UPI config fallback, unverified payment protection, duplicate reference rejection |
+| `tests/run_tests.php` | Master Runner | Executes all 44 test suites (610 assertions, 100% pass) |

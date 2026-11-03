@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace WTSBill\Controllers;
 
+use WTSBill\Auth\Gate;
 use WTSBill\Core\Database;
 use WTSBill\Core\Request;
 use WTSBill\Core\Response;
 use WTSBill\Core\Session;
 use WTSBill\Core\View;
 use WTSBill\Core\Exceptions\ValidationException;
+use WTSBill\Services\AuditLogger;
 use WTSBill\Services\ProductService;
 
 /**
@@ -169,10 +171,17 @@ class ProductController
      */
     public function delete(Request $req, mixed $id = null): Response
     {
-        $productId = (int)(is_array($id) ? ($id['id'] ?? 0) : ($id ?: ($req->post('id') ?? 0)));
-        $deleted = $this->productService->deleteProduct($productId);
+        Gate::authorize('items.delete', $req);
 
-        if (!$deleted) {
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $productId = (int)(is_array($id) ? ($id['id'] ?? 0) : ($id ?: ($req->post('id') ?? $req->query('id') ?? 0)));
+
+        $existing = Database::selectOne(
+            "SELECT * FROM products WHERE id = ? AND company_id = ?",
+            [$productId, $companyId]
+        );
+
+        if (!$existing) {
             if ($this->expectsJson($req)) {
                 return Response::json(['success' => false, 'message' => 'Product not found.'], 404);
             }
@@ -180,11 +189,56 @@ class ProductController
             return Response::redirect('/products');
         }
 
-        if ($this->expectsJson($req)) {
-            return Response::json(['success' => true, 'message' => 'Product status updated to inactive.']);
+        // Check if product is used in invoices
+        $invoiceUsage = Database::selectOne(
+            "SELECT COUNT(*) as cnt FROM invoice_items WHERE product_id = ? AND company_id = ?",
+            [$productId, $companyId]
+        );
+        $hasInvoices = (int)($invoiceUsage['cnt'] ?? 0) > 0;
+
+        if ($hasInvoices) {
+            // Soft delete to protect financial audit and invoice line integrity
+            Database::update(
+                'products',
+                [
+                    'is_active' => 0,
+                    'deleted_at' => date('Y-m-d H:i:s'),
+                    'updated_at' => date('Y-m-d H:i:s'),
+                ],
+                'id = ? AND company_id = ?',
+                [$productId, $companyId]
+            );
+            $msg = "Product '{$existing['name']}' has historical invoice records and was archived.";
+        } else {
+            // Clean permanent deletion
+            Database::execute("DELETE FROM stock_balances WHERE product_id = ?", [$productId]);
+            Database::execute("DELETE FROM products WHERE id = ? AND company_id = ?", [$productId, $companyId]);
+            $msg = "Product '{$existing['name']}' deleted successfully.";
         }
 
-        Session::flash('success', 'Product has been deactivated.');
+        AuditLogger::log(
+            action: 'delete',
+            module: 'inventory',
+            entityType: 'PRODUCT',
+            entityId: $productId,
+            entityLabel: $existing['name'],
+            oldValues: [
+                'sku' => $existing['sku'],
+                'name' => $existing['name'],
+            ],
+            status: 'success',
+            notes: $msg
+        );
+
+        if ($this->expectsJson($req)) {
+            return Response::json([
+                'success' => true,
+                'message' => $msg,
+                'product_id' => $productId,
+            ]);
+        }
+
+        Session::flash('success', $msg);
         return Response::redirect('/products');
     }
 

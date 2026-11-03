@@ -19,6 +19,15 @@
     </div>
 </div>
 
+<style>
+    #products-table {
+        table-layout: fixed;
+        width: 100%;
+    }
+    #products-table th, #products-table td {
+        vertical-align: middle;
+    }
+</style>
 <div class="card">
     <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
         <h3 class="card-title">Catalog Inventory (<span id="products-count"><?= count($products ?? []) ?></span> Items)</h3>
@@ -27,22 +36,22 @@
         <table class="table" id="products-table">
             <thead>
                 <tr>
-                    <th>#</th>
-                    <th>Product Name & SKU</th>
-                    <th>Category</th>
-                    <th>HSN / SAC</th>
-                    <th style="text-align: right;">Selling Price</th>
-                    <th style="text-align: center;">GST %</th>
-                    <th style="text-align: right;">Current Stock</th>
-                    <th style="text-align: center;">Status</th>
-                    <th style="text-align: center;">Actions</th>
+                    <th style="width: 50px; text-align: center;">#</th>
+                    <th style="width: auto;">Product Name & SKU</th>
+                    <th style="width: 130px;">Category</th>
+                    <th style="width: 100px; text-align: center;">HSN / SAC</th>
+                    <th style="width: 115px; text-align: right;">Selling Price</th>
+                    <th style="width: 75px; text-align: center;">GST %</th>
+                    <th style="width: 125px; text-align: right;">Current Stock</th>
+                    <th style="width: 90px; text-align: center;">Status</th>
+                    <th style="width: 135px; text-align: center;">Actions</th>
                 </tr>
             </thead>
             <tbody id="products-table-body">
                 <?php if (!empty($products)): ?>
                     <?php foreach ($products as $p): ?>
                         <tr id="product-row-<?= e((string)$p['id']) ?>">
-                            <td><?= e((string)$p['id']) ?></td>
+                            <td style="text-align: center;"><?= e((string)$p['id']) ?></td>
                             <td>
                                 <strong><?= e($p['name']) ?></strong>
                                 <?php if (!empty($p['sku'])): ?>
@@ -52,7 +61,7 @@
                             <td>
                                 <?= e($p['category_name'] ?? 'General') ?>
                             </td>
-                            <td><code><?= e($p['hsn_sac'] ?? ($p['hsn_code'] ?? '8471')) ?></code></td>
+                            <td style="text-align: center;"><code><?= e($p['hsn_sac'] ?? ($p['hsn_code'] ?? '8471')) ?></code></td>
                             <td style="text-align: right; font-weight: 600;">
                                 <?= format_currency((float)($p['selling_price'] ?? ($p['sales_price'] ?? 0))) ?>
                             </td>
@@ -67,9 +76,14 @@
                                     <?= ($p['is_active'] ?? 1) ? 'ACTIVE' : 'INACTIVE' ?>
                                 </span>
                             </td>
-                            <td style="text-align: center;">
-                                <div style="display: flex; gap: 0.25rem; justify-content: center;">
-                                    <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="window.editProduct(<?= (int)$p['id'] ?>)">Edit</button>
+                            <td style="text-align: center; white-space: nowrap;">
+                                <div style="display: flex; gap: 0.35rem; justify-content: center; align-items: center;">
+                                    <?php if (\WTSBill\Auth\Gate::can('items.edit')): ?>
+                                        <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.55rem; font-size: 0.78rem;" onclick="window.editProduct(<?= (int)$p['id'] ?>)">Edit</button>
+                                    <?php endif; ?>
+                                    <?php if (\WTSBill\Auth\Gate::can('items.delete')): ?>
+                                        <button type="button" class="btn btn-outline-danger" style="padding: 0.25rem 0.55rem; font-size: 0.78rem; color: var(--danger); border-color: var(--danger);" onclick="window.deleteProduct(<?= (int)$p['id'] ?>, '<?= e(addslashes($p['name'])) ?>')">Delete</button>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>
@@ -184,9 +198,16 @@
                 </div>
             </div>
 
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="window.closeProductModal()">Cancel</button>
-                <button type="submit" id="product-submit-btn" class="btn btn-primary">Save Product</button>
+            <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <?php if (\WTSBill\Auth\Gate::can('items.delete')): ?>
+                        <button type="button" id="modal-product-delete-btn" class="btn btn-outline-danger" style="display: none; padding: 0.35rem 0.75rem; font-size: 0.82rem; color: var(--danger); border-color: var(--danger);" onclick="window.deleteCurrentModalProduct()">Delete Product</button>
+                    <?php endif; ?>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="window.closeProductModal()">Cancel</button>
+                    <button type="submit" id="product-submit-btn" class="btn btn-primary">Save Product</button>
+                </div>
             </div>
         </form>
     </div>
@@ -202,6 +223,8 @@
         document.getElementById('product-modal-error').style.display = 'none';
         document.getElementById('product-modal-error').innerHTML = '';
         document.getElementById('product-submit-btn').innerText = 'Save Product';
+        const delBtn = document.getElementById('modal-product-delete-btn');
+        if (delBtn) delBtn.style.display = 'none';
         
         if (window.WTSBill && window.WTSBill.Modal) {
             window.WTSBill.Modal.open('product-modal');
@@ -224,6 +247,8 @@
         document.getElementById('prod-id').value = id;
         document.getElementById('opening-stock-group').style.display = 'none'; // Opening stock only on create
         document.getElementById('product-submit-btn').innerText = 'Update Product';
+        const delBtn = document.getElementById('modal-product-delete-btn');
+        if (delBtn) delBtn.style.display = 'inline-block';
 
         fetch('/products/' + id, {
             headers: { 'Accept': 'application/json' }
@@ -323,19 +348,22 @@
 
                 const existingRow = document.getElementById('product-row-' + p.id);
                 const rowHtml = `
-                    <td>${p.id}</td>
+                    <td style="text-align: center;">${p.id}</td>
                     <td>
                         <strong>${escapeHtml(p.name)}</strong>
                         <div style="font-size: 0.75rem; color: var(--text-muted);">SKU: <code>${escapeHtml(p.sku)}</code></div>
                     </td>
                     <td>General</td>
-                    <td><code>${escapeHtml(p.hsn_sac || '8471')}</code></td>
+                    <td style="text-align: center;"><code>${escapeHtml(p.hsn_sac || '8471')}</code></td>
                     <td style="text-align: right; font-weight: 600;">₹${parseFloat(p.sales_price || 0).toFixed(2)}</td>
                     <td style="text-align: center;"><span class="badge badge-info">${parseFloat(p.tax_rate || 18)}%</span></td>
                     <td style="text-align: right; font-weight: 600;">${parseFloat(p.current_stock || 0).toFixed(3)} ${escapeHtml(p.unit || 'Pcs')}</td>
                     <td style="text-align: center;"><span class="badge badge-success">ACTIVE</span></td>
-                    <td style="text-align: center;">
-                        <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="window.editProduct(${p.id})">Edit</button>
+                    <td style="text-align: center; white-space: nowrap;">
+                        <div style="display: flex; gap: 0.35rem; justify-content: center; align-items: center;">
+                            <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.55rem; font-size: 0.78rem;" onclick="window.editProduct(${p.id})">Edit</button>
+                            <button type="button" class="btn btn-outline-danger" style="padding: 0.25rem 0.55rem; font-size: 0.78rem; color: var(--danger); border-color: var(--danger);" onclick="window.deleteProduct(${p.id}, '${escapeHtml(p.name)}')">Delete</button>
+                        </div>
                     </td>
                 `;
 
@@ -360,6 +388,68 @@
             submitBtn.innerText = prodId ? 'Update Product' : 'Save Product';
             errBox.innerHTML = err.message;
             errBox.style.display = 'block';
+        });
+    };
+
+    window.deleteModalProduct = function() {
+        const prodId = document.getElementById('prod-id').value;
+        const prodName = document.getElementById('prod-name').value;
+        if (prodId) {
+            window.closeProductModal();
+            window.deleteProduct(prodId, prodName);
+        }
+    };
+
+    window.deleteProduct = function(id, name) {
+        if (!confirm('Are you sure you want to delete product "' + (name || '#' + id) + '"? This will remove it from the catalog.')) {
+            return;
+        }
+
+        const metaToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        const formData = new FormData();
+        formData.append('_token', metaToken);
+
+        fetch('/products/' + id + '/delete', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': metaToken
+            },
+            body: formData
+        })
+        .then(async res => {
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                throw new Error(data.message || 'Failed to delete product.');
+            }
+            return data;
+        })
+        .then(data => {
+            if (window.WTSBill && window.WTSBill.Toast) {
+                window.WTSBill.Toast.show(data.message || 'Product deleted successfully.', 'success');
+            }
+
+            const row = document.getElementById('product-row-' + id);
+            if (row) {
+                row.style.transition = 'opacity 0.3s ease';
+                row.style.opacity = '0';
+                setTimeout(() => row.remove(), 300);
+            }
+
+            const countElem = document.getElementById('products-count');
+            if (countElem) {
+                const current = parseInt(countElem.innerText || '0');
+                if (current > 0) countElem.innerText = current - 1;
+            }
+
+            setTimeout(() => window.location.reload(), 400);
+        })
+        .catch(err => {
+            console.error('Delete product error:', err);
+            if (window.WTSBill && window.WTSBill.Toast) {
+                window.WTSBill.Toast.show(err.message || 'Network or server error while deleting product.', 'danger');
+            }
         });
     };
 

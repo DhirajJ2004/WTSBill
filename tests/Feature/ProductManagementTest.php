@@ -164,6 +164,30 @@ class ProductManagementTest
 
             $assert('PROD-08', 'Refreshed catalog page contains the newly registered product and updated name', 
                 str_contains($refreshContent, $testSku) && str_contains($refreshContent, htmlspecialchars($updatedName, ENT_QUOTES)));
+
+            // 10. Product Deletion via POST /products/{id}/delete
+            $delReq = new Request([], [
+                '_token' => $csrfToken,
+            ], [
+                'REQUEST_METHOD' => 'POST',
+                'REQUEST_URI' => "/products/{$createdId}/delete",
+                'HTTP_ACCEPT' => 'application/json',
+                'HTTP_X_REQUESTED_WITH' => 'XMLHttpRequest',
+                'HTTP_X_CSRF_TOKEN' => $csrfToken,
+            ]);
+            $delRes = $router->dispatch($delReq, ['id' => (string)$createdId]);
+            $delJson = json_decode($delRes->getContent(), true);
+
+            $assert('PROD-09', 'POST /products/{id}/delete successfully deletes product',
+                $delRes->getStatusCode() === 200 && ($delJson['success'] ?? false) === true);
+
+            // 11. Refreshed catalog verifies deleted product is removed
+            $afterDelReq = new Request([], [], ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/products']);
+            $afterDelRes = $router->dispatch($afterDelReq);
+            $afterDelContent = $afterDelRes->getContent();
+
+            $assert('PROD-10', 'Refreshed catalog excludes deleted product from active listing',
+                !str_contains($afterDelContent, 'product-row-' . $createdId));
         } finally {
             if ($createdId > 0) {
                 Database::statement("DELETE FROM stock_balances WHERE product_id = ?", [$createdId]);

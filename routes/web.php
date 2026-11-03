@@ -12,6 +12,7 @@ use WTSBill\Controllers\InventoryController;
 use WTSBill\Controllers\PaymentController;
 use WTSBill\Controllers\ProductController;
 use WTSBill\Controllers\PurchaseController;
+use WTSBill\Controllers\QuotationController;
 use WTSBill\Controllers\ReportController;
 use WTSBill\Controllers\RoleController;
 use WTSBill\Controllers\SalesController;
@@ -71,6 +72,9 @@ $router->get('/suppliers', [$supplierController, 'index'], [$auth, $can('supplie
 $router->post('/suppliers', [$supplierController, 'store'], [$auth, $csrf, $can('suppliers.create')]);
 $router->get('/suppliers/{id}', [$supplierController, 'show'], [$auth, $can('suppliers.view')]);
 $router->post('/suppliers/{id}/update', [$supplierController, 'update'], [$auth, $csrf, $can('suppliers.edit')]);
+$router->post('/suppliers/{id}/delete', [$supplierController, 'delete'], [$auth, $csrf, $can('suppliers.delete')]);
+$router->get('/suppliers/{id}/delete', [$supplierController, 'delete'], [$auth, $can('suppliers.delete')]);
+$router->delete('/suppliers/{id}', [$supplierController, 'delete'], [$auth, $csrf, $can('suppliers.delete')]);
 
 // 6. Product Catalog & Inventory (Inventory Manager / Admin)
 $productController = new ProductController();
@@ -79,6 +83,8 @@ $router->post('/products', [$productController, 'store'], [$auth, $csrf, $can('i
 $router->get('/products/{id}', [$productController, 'show'], [$auth, $can('items.view')]);
 $router->post('/products/{id}/update', [$productController, 'update'], [$auth, $csrf, $can('items.edit')]);
 $router->post('/products/{id}/delete', [$productController, 'delete'], [$auth, $csrf, $can('items.delete')]);
+$router->get('/products/{id}/delete', [$productController, 'delete'], [$auth, $can('items.delete')]);
+$router->delete('/products/{id}', [$productController, 'delete'], [$auth, $csrf, $can('items.delete')]);
 
 // 7. Tax Invoices (Accountant / Admin / Sales)
 $salesController = new SalesController();
@@ -92,12 +98,28 @@ $router->post('/sales/invoices/{id}/delete', [$salesController, 'invoiceDelete']
 $router->get('/sales/invoices/{id}/delete', [$salesController, 'invoiceDelete'], [$auth, $can('invoices.delete')]);
 $router->delete('/sales/invoices/{id}', [$salesController, 'invoiceDelete'], [$auth, $csrf, $can('invoices.delete')]);
 $router->get('/sales/invoices/{id}/print', [$salesController, 'invoicePrint'], [$auth, $can('invoices.print')]);
+$router->get('/api/categories/{id}/products', [$salesController, 'categoryProductsApi'], [$auth, $can(['invoices.create', 'invoices.edit', 'invoices.view', 'items.view'])]);
+$router->get('/api/categories/products', [$salesController, 'categoryProductsApi'], [$auth, $can(['invoices.create', 'invoices.edit', 'invoices.view', 'items.view'])]);
+$router->post('/sales/invoices/{id}/payments', [$salesController, 'recordPayment'], [$auth, $csrf, $can('payments.create')]);
+$router->post('/sales/invoices/{id}/verify-payment', [$salesController, 'verifyPayment'], [$auth, $csrf, $can('payments.create')]);
+$router->get('/sales/invoices/{id}/payments', [$salesController, 'invoicePayments'], [$auth, $can('payments.view')]);
 
 // 8. Sales Quotations & Orders (Accountant / Admin / Sales)
-$router->get('/sales/quotations', [$salesController, 'quotationsIndex'], [$auth, $can('quotations.view')]);
-$router->post('/sales/quotations', [$salesController, 'quotationStore'], [$auth, $csrf, $can('quotations.create')]);
-$router->get('/sales/quotations/{id}/print', [$salesController, 'quotationPrint'], [$auth, $can('quotations.print')]);
-$router->get('/sales/quotations/{id}', [$salesController, 'quotationPrint'], [$auth, $can(['quotations.print', 'quotations.view'])]);
+$quotationController = new QuotationController();
+$router->get('/sales/quotations', [$quotationController, 'index'], [$auth, $can('quotations.view')]);
+$router->get('/sales/quotations/create', [$quotationController, 'createForm'], [$auth, $can('quotations.create')]);
+$router->post('/sales/quotations/create', [$quotationController, 'store'], [$auth, $csrf, $can('quotations.create')]);
+$router->post('/sales/quotations', [$quotationController, 'store'], [$auth, $csrf, $can('quotations.create')]);
+$router->get('/sales/quotations/{id}', [$quotationController, 'show'], [$auth, $can(['quotations.print', 'quotations.view'])]);
+$router->get('/sales/quotations/{id}/edit', [$quotationController, 'editForm'], [$auth, $can('quotations.edit')]);
+$router->post('/sales/quotations/{id}/update', [$quotationController, 'update'], [$auth, $csrf, $can('quotations.edit')]);
+$router->post('/sales/quotations/{id}/convert', [$quotationController, 'convertToInvoice'], [$auth, $csrf, $can(['quotations.edit', 'invoices.create'])]);
+$router->post('/sales/quotations/{id}/duplicate', [$quotationController, 'duplicate'], [$auth, $csrf, $can('quotations.create')]);
+$router->post('/sales/quotations/{id}/status', [$quotationController, 'updateStatus'], [$auth, $csrf, $can('quotations.edit')]);
+$router->post('/sales/quotations/{id}/delete', [$quotationController, 'delete'], [$auth, $csrf, $can('quotations.delete')]);
+$router->get('/sales/quotations/{id}/delete', [$quotationController, 'delete'], [$auth, $can('quotations.delete')]);
+$router->delete('/sales/quotations/{id}', [$quotationController, 'delete'], [$auth, $csrf, $can('quotations.delete')]);
+$router->get('/sales/quotations/{id}/print', [$quotationController, 'print'], [$auth, $can('quotations.print')]);
 
 // 9. Delivery Challans (Admin / Sales)
 $router->get('/sales/challans', [$salesController, 'challansIndex'], [$auth, $can('challans.view')]);
@@ -126,6 +148,7 @@ $router->post('/expenses/{id}/delete', [$expenseController, 'delete'], [$auth, $
 $paymentController = new PaymentController();
 $router->get('/payments', [$paymentController, 'index'], [$auth, $can('payments.view')]);
 $router->post('/payments', [$paymentController, 'store'], [$auth, $csrf, $can('payments.create')]);
+$router->post('/payments/{id}/verify', [$paymentController, 'verifyPayment'], [$auth, $csrf, $can('payments.create')]);
 $router->get('/payments/{id}/print', [$paymentController, 'printReceipt'], [$auth, $can('payments.print')]);
 $router->post('/payments/{id}/delete', [$paymentController, 'delete'], [$auth, $csrf, $can('payments.delete')]);
 $router->get('/payments/{id}/delete', [$paymentController, 'delete'], [$auth, $can('payments.delete')]);
@@ -150,6 +173,12 @@ $router->post('/api/inventory/adjustments', [$inventoryController, 'stockAdjustm
 // Product Categories (Inventory Manager / Admin)
 $router->get('/categories', [$inventoryController, 'categoriesIndex'], [$auth, $can('categories.view')]);
 $router->post('/categories', [$inventoryController, 'categoryStore'], [$auth, $csrf, $can('categories.create')]);
+$router->get('/categories/{id}', [$inventoryController, 'categoryShow'], [$auth, $can('categories.view')]);
+$router->post('/categories/{id}/update', [$inventoryController, 'categoryUpdate'], [$auth, $csrf, $can('categories.edit')]);
+$router->post('/categories/{id}/delete', [$inventoryController, 'categoryDelete'], [$auth, $csrf, $can('categories.delete')]);
+$router->get('/categories/{id}/delete', [$inventoryController, 'categoryDelete'], [$auth, $can('categories.delete')]);
+$router->delete('/categories/{id}', [$inventoryController, 'categoryDelete'], [$auth, $csrf, $can('categories.delete')]);
+$router->post('/categories/{id}/toggle-status', [$inventoryController, 'categoryToggleStatus'], [$auth, $csrf, $can('categories.edit')]);
 
 // 14. Double-Entry Accounting (Admin / Chief Accountant)
 $accountingController = new AccountingController();
@@ -164,6 +193,11 @@ $router->get('/accounts/ledger', function (Request $req) {
     ], 'layouts/app');
     return Response::html($html);
 }, [$auth, $can('accounting.view')]);
+$router->get('/accounts/{id}', [$accountingController, 'accountShow'], [$auth, $can('accounting.view')]);
+$router->post('/accounts/{id}/update', [$accountingController, 'accountUpdate'], [$auth, $csrf, $can('accounting.edit')]);
+$router->post('/accounts/{id}/delete', [$accountingController, 'accountDelete'], [$auth, $csrf, $can('accounting.delete')]);
+$router->get('/accounts/{id}/delete', [$accountingController, 'accountDelete'], [$auth, $can('accounting.delete')]);
+$router->delete('/accounts/{id}', [$accountingController, 'accountDelete'], [$auth, $csrf, $can('accounting.delete')]);
 
 // 15. Financial & Compliance Reports (Admin Only)
 $reportController = new ReportController();

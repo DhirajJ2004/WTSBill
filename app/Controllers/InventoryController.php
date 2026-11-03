@@ -140,6 +140,310 @@ class InventoryController
     }
 
     /**
+     * Retrieve category details and its linked products (for Manage / Edit modal).
+     * Route: GET /categories/{id}
+     */
+    public function categoryShow(Request $req, mixed $id = null): Response
+    {
+        Gate::authorize('categories.view', $req);
+
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $categoryId = (int)(is_array($id) ? ($id['id'] ?? 0) : ($id ?: ($req->query('id') ?? 0)));
+
+        $category = Database::selectOne(
+            "SELECT c.*, COUNT(p.id) as product_count 
+             FROM categories c 
+             LEFT JOIN products p ON p.category_id = c.id AND p.company_id = c.company_id AND p.deleted_at IS NULL 
+             WHERE c.id = ? AND c.company_id = ? 
+             GROUP BY c.id",
+            [$categoryId, $companyId]
+        );
+
+        if (!$category) {
+            return Response::json(['success' => false, 'message' => 'Category not found.'], 404);
+        }
+
+        $products = Database::select(
+            "SELECT id, name, sku, hsn_sac, COALESCE(selling_price, sales_price, 0) as price, current_stock, unit, is_active 
+             FROM products 
+             WHERE category_id = ? AND company_id = ? AND deleted_at IS NULL 
+             ORDER BY name ASC",
+            [$categoryId, $companyId]
+        );
+
+        return Response::json([
+            'success' => true,
+            'category' => $category,
+            'products' => $products,
+            'count' => count($products),
+        ]);
+    }
+
+    /**
+     * Update existing category.
+     * Route: POST /categories/{id}/update
+     */
+    public function categoryUpdate(Request $req, mixed $id = null): Response
+    {
+        Gate::authorize('categories.edit', $req);
+
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $categoryId = (int)(is_array($id) ? ($id['id'] ?? 0) : ($id ?: ($req->post('id') ?? $req->query('id') ?? 0)));
+
+        $existing = Database::selectOne(
+            "SELECT * FROM categories WHERE id = ? AND company_id = ?",
+            [$categoryId, $companyId]
+        );
+
+        if (!$existing) {
+            if ($this->expectsJson($req)) {
+                return Response::json(['success' => false, 'message' => 'Category not found.'], 404);
+            }
+            Session::flash('error', 'Category not found.');
+            return Response::redirect('/categories');
+        }
+
+        $payload = !empty($req->json()) ? $req->json() : $req->post();
+        $name = trim((string)($payload['name'] ?? ''));
+        $code = strtoupper(trim((string)($payload['code'] ?? '')));
+        $desc = trim((string)($payload['description'] ?? ''));
+        $status = strtoupper(trim((string)($payload['status'] ?? 'ACTIVE')));
+        if (!in_array($status, ['ACTIVE', 'INACTIVE'], true)) {
+            $status = 'ACTIVE';
+        }
+
+        if (empty($name)) {
+            $err = ['name' => 'Category name is required.'];
+            if ($this->expectsJson($req)) {
+                return Response::json(['success' => false, 'message' => 'Category name is required.', 'errors' => $err], 422);
+            }
+            Session::flash('error', 'Category name is required.');
+            return Response::redirect('/categories');
+        }
+
+        if (empty($code)) {
+            $code = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $name), 0, 4));
+        }
+
+        // Check uniqueness excluding current category
+        $duplicate = Database::selectOne(
+            "SELECT id FROM categories WHERE company_id = ? AND (name = ? OR code = ?) AND id != ?",
+            [$companyId, $name, $code, $categoryId]
+        );
+        if ($duplicate) {
+            $err = ['name' => 'Another category with this name or code already exists.'];
+            if ($this->expectsJson($req)) {
+                return Response::json(['success' => false, 'message' => 'Another category with this name or code already exists.', 'errors' => $err], 422);
+            }
+            Session::flash('error', 'Another category with this name or code already exists.');
+            return Response::redirect('/categories');
+        }
+
+        try {
+            Database::update(
+                'categories',
+                [
+                    'name' => $name,
+                    'code' => $code,
+                    'description' => $desc,
+                    'status' => $status,
+                    'updated_at' => date('Y-m-d H:i:s'),
+                ],
+                'id = ? AND company_id = ?',
+                [$categoryId, $companyId]
+            );
+
+            AuditLogger::log(
+                action: 'update',
+                module: 'inventory',
+                entityType: 'CATEGORY',
+                entityId: $categoryId,
+                entityLabel: $name,
+                oldValues: [
+                    'name' => $existing['name'],
+                    'code' => $existing['code'],
+                    'description' => $existing['description'],
+                    'status' => $existing['status'],
+                ],
+                newValues: [
+                    'name' => $name,
+                    'code' => $code,
+                    'description' => $desc,
+                    'status' => $status,
+                ],
+                status: 'success',
+                notes: "Updated product category '{$name}'"
+            );
+
+            if ($this->expectsJson($req)) {
+                return Response::json([
+                    'success' => true,
+                    'message' => "Category '{$name}' updated successfully.",
+                    'category' => ['id' => $categoryId, 'name' => $name, 'code' => $code, 'status' => $status],
+                ]);
+            }
+
+            Session::flash('success', "Category '{$name}' updated successfully.");
+            return Response::redirect('/categories');
+        } catch (\Throwable $e) {
+            if ($this->expectsJson($req)) {
+                return Response::json(['success' => false, 'message' => 'Failed to update category: ' . $e->getMessage()], 500);
+            }
+            Session::flash('error', 'Failed to update category: ' . $e->getMessage());
+            return Response::redirect('/categories');
+        }
+    }
+
+    /**
+     * Delete category with linked product safeguard.
+     * Route: POST /categories/{id}/delete, DELETE /categories/{id}
+     */
+    public function categoryDelete(Request $req, mixed $id = null): Response
+    {
+        Gate::authorize('categories.delete', $req);
+
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $categoryId = (int)(is_array($id) ? ($id['id'] ?? 0) : ($id ?: ($req->post('id') ?? $req->query('id') ?? 0)));
+
+        $existing = Database::selectOne(
+            "SELECT * FROM categories WHERE id = ? AND company_id = ?",
+            [$categoryId, $companyId]
+        );
+
+        if (!$existing) {
+            if ($this->expectsJson($req)) {
+                return Response::json(['success' => false, 'message' => 'Category not found.'], 404);
+            }
+            Session::flash('error', 'Category not found.');
+            return Response::redirect('/categories');
+        }
+
+        // Safety check: Cannot delete if products are linked
+        $linkedCountRow = Database::selectOne(
+            "SELECT COUNT(*) as cnt FROM products WHERE category_id = ? AND company_id = ? AND deleted_at IS NULL",
+            [$categoryId, $companyId]
+        );
+        $linkedCount = (int)($linkedCountRow['cnt'] ?? 0);
+
+        if ($linkedCount > 0) {
+            $msg = "Cannot delete category '{$existing['name']}' because it has {$linkedCount} linked product(s). Please reassign or remove the products first, or mark the category as Inactive.";
+            if ($this->expectsJson($req)) {
+                return Response::json([
+                    'success' => false,
+                    'message' => $msg,
+                    'linked_products_count' => $linkedCount,
+                ], 422);
+            }
+            Session::flash('error', $msg);
+            return Response::redirect('/categories');
+        }
+
+        try {
+            Database::execute("DELETE FROM categories WHERE id = ? AND company_id = ?", [$categoryId, $companyId]);
+
+            AuditLogger::log(
+                action: 'delete',
+                module: 'inventory',
+                entityType: 'CATEGORY',
+                entityId: $categoryId,
+                entityLabel: $existing['name'],
+                oldValues: [
+                    'name' => $existing['name'],
+                    'code' => $existing['code'],
+                ],
+                status: 'success',
+                notes: "Deleted product category '{$existing['name']}'"
+            );
+
+            if ($this->expectsJson($req)) {
+                return Response::json([
+                    'success' => true,
+                    'message' => "Category '{$existing['name']}' deleted successfully.",
+                ]);
+            }
+
+            Session::flash('success', "Category '{$existing['name']}' deleted successfully.");
+            return Response::redirect('/categories');
+        } catch (\Throwable $e) {
+            if ($this->expectsJson($req)) {
+                return Response::json(['success' => false, 'message' => 'Failed to delete category: ' . $e->getMessage()], 500);
+            }
+            Session::flash('error', 'Failed to delete category: ' . $e->getMessage());
+            return Response::redirect('/categories');
+        }
+    }
+
+    /**
+     * Toggle category active/inactive status.
+     * Route: POST /categories/{id}/toggle-status
+     */
+    public function categoryToggleStatus(Request $req, mixed $id = null): Response
+    {
+        Gate::authorize('categories.edit', $req);
+
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $categoryId = (int)(is_array($id) ? ($id['id'] ?? 0) : ($id ?: ($req->post('id') ?? $req->query('id') ?? 0)));
+
+        $existing = Database::selectOne(
+            "SELECT * FROM categories WHERE id = ? AND company_id = ?",
+            [$categoryId, $companyId]
+        );
+
+        if (!$existing) {
+            if ($this->expectsJson($req)) {
+                return Response::json(['success' => false, 'message' => 'Category not found.'], 404);
+            }
+            Session::flash('error', 'Category not found.');
+            return Response::redirect('/categories');
+        }
+
+        $newStatus = ($existing['status'] === 'ACTIVE') ? 'INACTIVE' : 'ACTIVE';
+
+        try {
+            Database::update(
+                'categories',
+                ['status' => $newStatus, 'updated_at' => date('Y-m-d H:i:s')],
+                'id = ? AND company_id = ?',
+                [$categoryId, $companyId]
+            );
+
+            AuditLogger::log(
+                action: 'toggle_status',
+                module: 'inventory',
+                entityType: 'CATEGORY',
+                entityId: $categoryId,
+                entityLabel: $existing['name'],
+                oldValues: ['status' => $existing['status']],
+                newValues: ['status' => $newStatus],
+                status: 'success',
+                notes: "Toggled status of category '{$existing['name']}' to {$newStatus}"
+            );
+
+            if ($this->expectsJson($req)) {
+                return Response::json([
+                    'success' => true,
+                    'message' => "Category '{$existing['name']}' status changed to {$newStatus}.",
+                    'status' => $newStatus,
+                    'category' => [
+                        'id' => $categoryId,
+                        'name' => $existing['name'],
+                        'status' => $newStatus,
+                    ],
+                ]);
+            }
+
+            Session::flash('success', "Category '{$existing['name']}' status changed to {$newStatus}.");
+            return Response::redirect('/categories');
+        } catch (\Throwable $e) {
+            if ($this->expectsJson($req)) {
+                return Response::json(['success' => false, 'message' => 'Failed to toggle category status: ' . $e->getMessage()], 500);
+            }
+            Session::flash('error', 'Failed to toggle category status: ' . $e->getMessage());
+            return Response::redirect('/categories');
+        }
+    }
+
+    /**
      * Stock balances and adjustments view.
      */
     public function stockIndex(Request $req): Response

@@ -810,9 +810,32 @@ $formatDateOrBlank = function (?string $date): string {
 
                     <div class="qr-section-right">
                         <div class="qr-title">UPI Payment QR Code</div>
-                        <div class="qr-container">
-                            <?= $qrSvg ?>
-                        </div>
+                        <?php if (($amountDue ?? ($invoice['amount_due'] ?? 0)) > 0.001 && !empty($hasMerchantUpi)): ?>
+                            <div class="qr-container">
+                                <?= $qrSvg ?>
+                            </div>
+                            <div style="font-size: 7.5pt; font-weight: bold; color: #b91c1c; margin-top: 3px;">
+                                Pay Remaining: ₹<?= format_inr_amount($amountDue ?? $invoice['amount_due'], false, 2) ?>
+                            </div>
+                            <div style="font-size: 6pt; color: #475569; margin-top: 1px; line-height: 1.15;">
+                                Scan to pay outstanding balance<br>
+                                UPI: <strong><?= e($merchantUpi ?? ($seller['upi_id'] ?? '')) ?></strong> | Ref: <strong><?= e($invoice['invoice_number'] ?? '') ?></strong>
+                            </div>
+                        <?php elseif (($amountDue ?? ($invoice['amount_due'] ?? 0)) <= 0.001): ?>
+                            <div style="border: 2px solid #16a34a; border-radius: 4px; padding: 10px 4px; margin: 4px 0; background: #f0fdf4; color: #15803d; text-align: center; width: 90%;">
+                                <div style="font-size: 13pt; font-weight: bold; letter-spacing: 0.05em;">PAID IN FULL</div>
+                                <div style="font-size: 7.5pt; margin-top: 2px;">Outstanding: ₹0.00 Due</div>
+                            </div>
+                            <div style="font-size: 6pt; color: #64748b;">No outstanding payment required.</div>
+                        <?php else: ?>
+                            <div style="border: 1px dashed #cbd5e1; border-radius: 4px; padding: 8px 4px; margin: 4px 0; background: #f8fafc; color: #64748b; font-size: 7pt; text-align: center; width: 90%;">
+                                <strong>UPI Not Configured</strong><br>
+                                <span style="font-size: 6pt;">Configure Merchant UPI in Settings</span>
+                            </div>
+                            <div style="font-size: 7.5pt; font-weight: bold; color: #b91c1c; margin-top: 2px;">
+                                Balance Due: ₹<?= format_inr_amount($amountDue ?? $invoice['amount_due'], false, 2) ?>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
 
@@ -946,6 +969,20 @@ $formatDateOrBlank = function (?string $date): string {
                             <span>Grand Total</span>
                             <span><?= format_inr_amount($taxSummary['grand_total'], false, 0) ?></span>
                         </div>
+                        <?php 
+                        $curPaid = (float)($amountPaid ?? ($invoice['amount_paid'] ?? 0));
+                        $curDue = (float)($amountDue ?? ($invoice['amount_due'] ?? ($taxSummary['grand_total'] - $curPaid)));
+                        if ($curPaid > 0.001 || ($invoice['pay_status'] ?? '') !== 'Unpaid'): 
+                        ?>
+                            <div class="totals-row" style="border-top: 1px dashed #cbd5e1; margin-top: 2px; padding-top: 2px;">
+                                <span>Amount Received</span>
+                                <span style="color: #15803d; font-weight: 600;">₹<?= format_inr_amount($curPaid, false, 2) ?></span>
+                            </div>
+                            <div class="totals-row" style="font-weight: bold; color: <?= $curDue > 0.001 ? '#b91c1c' : '#15803d' ?>;">
+                                <span>Remaining Balance</span>
+                                <span>₹<?= format_inr_amount($curDue, false, 2) ?></span>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
 

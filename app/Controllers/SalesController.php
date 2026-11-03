@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WTSBill\Controllers;
 
+use WTSBill\Auth\Gate;
 use WTSBill\Core\Database;
 use WTSBill\Core\Exceptions\ValidationException;
 use WTSBill\Core\Request;
@@ -27,7 +28,7 @@ class SalesController
         $branchId = Session::getBranchId() ?? 1;
         $invoices = Database::select(
             "SELECT i.id, i.invoice_number, i.customer_id, COALESCE(c.name, i.customer_name, 'Direct Customer') as customer_name,
-                    i.invoice_date, i.due_date, i.sub_total, i.total_tax, i.grand_total, i.amount_due, i.status 
+                    i.invoice_date, i.due_date, i.sub_total, i.total_tax, i.grand_total, i.amount_paid, i.amount_due, i.status 
              FROM invoices i 
              LEFT JOIN customers c ON i.customer_id = c.id 
              WHERE i.company_id = ? AND (i.branch_id = ? OR i.branch_id IS NULL)
@@ -37,10 +38,19 @@ class SalesController
             [$companyId, $branchId]
         );
 
+        $bankAccounts = Database::select(
+            "SELECT id, bank_name, account_name, account_number 
+             FROM bank_accounts 
+             WHERE company_id = ? AND is_active = 1 
+             ORDER BY is_primary DESC, id ASC",
+            [$companyId]
+        );
+
         $html = View::renderWithLayout('sales/invoices', [
             'title' => 'Tax Invoices',
             'currentUri' => '/sales/invoices',
             'invoices' => $invoices,
+            'bankAccounts' => $bankAccounts,
         ], 'layouts/app');
 
         return Response::html($html);
@@ -77,10 +87,206 @@ class SalesController
             [$invId, $companyId]
         );
 
+        $paymentService = new \WTSBill\Services\PaymentService();
+        $payments = $paymentService->getInvoicePaymentHistory($companyId, $invId);
+
+        $bankAccounts = Database::select(
+            "SELECT id, bank_name, account_name, account_number, current_balance 
+             FROM bank_accounts 
+             WHERE company_id = ? AND is_active = 1 
+             ORDER BY is_primary DESC, id ASC",
+            [$companyId]
+        );
+
+        // Compute confirmed paid amount and exact outstanding balance
+        $confirmedAlloc = Database::selectOne(
+            "SELECT COALESCE(SUM(pa.allocated_amount), 0) AS total_paid
+             FROM payment_allocations pa
+             JOIN payments py ON pa.payment_id = py.id
+             WHERE pa.document_type = 'INVOICE'
+               AND pa.document_id = ?
+               AND pa.company_id = ?
+               AND py.deleted_at IS NULL
+               AND py.status IN ('COMPLETED', 'CONFIRMED', 'VERIFIED')",
+            [$invId, $companyId]
+        );
+        $totalPaid = round((float)($confirmedAlloc['total_paid'] ?? $invoice['amount_paid']), 2);
+        $grandTotal = round((float)$invoice['grand_total'], 2);
+        $outstanding = max(0.00, round($grandTotal - $totalPaid, 2));
+
+        $payStatus = 'UNPAID';
+        if ($outstanding <= 0.001) {
+            $payStatus = 'PAID';
+            $outstanding = 0.00;
+        } elseif ($totalPaid > 0.001) {
+            $payStatus = 'PARTIAL';
+        }
+
+        // Fetch company merchant UPI settings
+        $company = Database::selectOne(
+            "SELECT c.upi_id, c.upi_display_name, c.payment_instructions, c.name, c.legal_name,
+                    b.upi_id AS branch_upi_id
+             FROM companies c
+             LEFT JOIN branches b ON b.id = ?
+             WHERE c.id = ?",
+            [(int)($invoice['branch_id'] ?? 1), $companyId]
+        );
+
+        $merchantUpi = trim((string)($company['upi_id'] ?? ($company['branch_upi_id'] ?? '')));
+        $merchantName = trim((string)($company['upi_display_name'] ?? ($company['legal_name'] ?: $company['name'])));
+        $paymentInstructions = trim((string)($company['payment_instructions'] ?? 'Scan this QR code using any supported UPI application to pay the outstanding invoice balance.'));
+        $hasMerchantUpi = ($merchantUpi !== '' && preg_match('/^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/', $merchantUpi));
+
+        $qrSvg = '';
+        $upiPayload = '';
+        if ($outstanding > 0.001 && $hasMerchantUpi) {
+            $upiPayload = QrCodeService::buildUpiPayload(
+                $merchantUpi,
+                $merchantName,
+                $outstanding,
+                (string)$invoice['invoice_number']
+            );
+            $qrSvg = QrCodeService::generateSvg($upiPayload, 110);
+        }
+
         return Response::json([
             'success' => true,
-            'invoice' => $invoice,
+            'invoice' => array_merge($invoice, [
+                'amount_paid' => $totalPaid,
+                'amount_due' => $outstanding,
+                'status' => $payStatus,
+                'payment_status' => $payStatus === 'PAID' ? 'PAID' : ($payStatus === 'PARTIAL' ? 'PARTIALLY_PAID' : 'UNPAID'),
+            ]),
             'items' => $items,
+            'payments' => $payments,
+            'bank_accounts' => $bankAccounts,
+            'qr_svg' => $qrSvg,
+            'upi_payload' => $upiPayload,
+            'merchant_upi' => $merchantUpi,
+            'merchant_name' => $merchantName,
+            'payment_instructions' => $paymentInstructions,
+            'has_merchant_upi' => $hasMerchantUpi,
+            'outstanding_amount' => $outstanding,
+            'total_paid' => $totalPaid,
+            'payment_status' => $payStatus,
+        ]);
+    }
+
+    /**
+     * Verify a pending UPI payment or record and verify in one atomic step.
+     * Route: POST /sales/invoices/{id}/verify-payment
+     */
+    public function verifyPayment(Request $req, mixed $id = null): Response
+    {
+        Gate::authorize('payments.create', $req);
+
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $userId = (int)(Session::getUserId() ?? 1);
+        $userName = (string)(Session::get('user_name') ?? 'Admin');
+        $invId = (int)(is_array($id) ? ($id['id'] ?? 0) : ($id ?: ($req->query('id') ?? 0)));
+
+        $paymentId = (int)$req->input('payment_id', 0);
+        $externalRef = trim((string)$req->input('transaction_reference', ''));
+
+        $paymentService = new \WTSBill\Services\PaymentService();
+
+        try {
+            if ($paymentId > 0) {
+                $result = $paymentService->verifyPayment($companyId, $paymentId, $userId, $userName, $externalRef ?: null);
+            } else {
+                $amount = (float)$req->input('amount', 0);
+                $branchId = (int)(Session::getBranchId() ?? 1);
+                $result = $paymentService->recordInvoicePayment($companyId, $branchId, $userId, $userName, $invId, [
+                    'amount' => $amount,
+                    'payment_mode' => 'UPI',
+                    'reference_no' => $externalRef,
+                    'notes' => 'Verified UPI payment reconciliation',
+                ]);
+            }
+
+            return Response::json(array_merge(['success' => true], $result), 200);
+        } catch (\WTSBill\Core\Exceptions\ValidationException $e) {
+            return Response::json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'errors' => $e->getErrors(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Record payment installment against invoice.
+     * Route: POST /sales/invoices/{id}/payments
+     */
+    public function recordPayment(Request $req, mixed $id = null): Response
+    {
+        Gate::authorize('payments.create', $req);
+
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $branchId = (int)(Session::getBranchId() ?? 1);
+        $userId = (int)(Session::getUserId() ?? 1);
+        $userName = (string)Session::get('user_name', 'System');
+        $invId = (int)(is_array($id) ? ($id['id'] ?? 0) : ($id ?: ($req->post('invoice_id') ?? $req->param('id') ?? 0)));
+
+        $payload = !empty($req->json()) ? $req->json() : $req->post();
+
+        try {
+            $paymentService = new \WTSBill\Services\PaymentService();
+            $result = $paymentService->recordInvoicePayment(
+                $companyId,
+                $branchId,
+                $userId,
+                $userName,
+                $invId,
+                $payload
+            );
+
+            if ($this->expectsJson($req)) {
+                return Response::json($result, 201);
+            }
+
+            Session::flash('success', $result['message']);
+            return Response::redirect('/sales/invoices');
+        } catch (\WTSBill\Core\Exceptions\ValidationException $e) {
+            if ($this->expectsJson($req)) {
+                return Response::json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                    'errors' => $e->getErrors(),
+                ], 422);
+            }
+            Session::flash('error', $e->getMessage());
+            return Response::redirect('/sales/invoices');
+        } catch (\Throwable $e) {
+            if ($this->expectsJson($req)) {
+                return Response::json([
+                    'success' => false,
+                    'message' => 'Failed to record payment: ' . $e->getMessage(),
+                ], 500);
+            }
+            Session::flash('error', 'Failed to record payment: ' . $e->getMessage());
+            return Response::redirect('/sales/invoices');
+        }
+    }
+
+    /**
+     * Fetch payment installments history for an invoice (JSON).
+     * Route: GET /sales/invoices/{id}/payments
+     */
+    public function invoicePayments(Request $req, mixed $id = null): Response
+    {
+        Gate::authorize('payments.view', $req);
+
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $invId = (int)(is_array($id) ? ($id['id'] ?? 0) : ($id ?: ($req->query('id') ?? $req->param('id') ?? 0)));
+
+        $paymentService = new \WTSBill\Services\PaymentService();
+        $payments = $paymentService->getInvoicePaymentHistory($companyId, $invId);
+
+        return Response::json([
+            'success' => true,
+            'invoice_id' => $invId,
+            'payments' => $payments,
         ]);
     }
 
@@ -166,7 +372,9 @@ class SalesController
             comp.logo_url AS company_logo_url,
             comp.stamp_signature_url AS company_stamp_url,
             COALESCE(i.terms_and_conditions, comp.terms_and_conditions, b.terms_and_conditions, '') AS company_terms,
-            COALESCE(comp.upi_id, b.upi_id, '9881032297@kotak') AS company_upi_id,
+            COALESCE(comp.upi_id, b.upi_id) AS company_upi_id,
+            COALESCE(comp.upi_display_name, comp.legal_name, comp.name, b.name) AS company_upi_name,
+            COALESCE(comp.payment_instructions, 'Scan this QR code using any supported UPI application to pay the outstanding invoice balance.') AS payment_instructions,
 
             b.name AS branch_name,
             b.branch_code AS branch_code,
@@ -313,16 +521,29 @@ class SalesController
             $prevAmountFormatted = '0';
         }
 
-        $amountPaid = (float)($invData['amount_paid'] ?? 0);
-        $amountDue = (float)($invData['amount_due'] ?? ($grandTotal - $amountPaid));
+        // Fetch confirmed paid amount from payment_allocations
+        $confirmedAlloc = Database::selectOne(
+            "SELECT COALESCE(SUM(pa.allocated_amount), 0) AS total_paid
+             FROM payment_allocations pa
+             JOIN payments py ON pa.payment_id = py.id
+             WHERE pa.document_type = 'INVOICE'
+               AND pa.document_id = ?
+               AND pa.company_id = ?
+               AND py.deleted_at IS NULL
+               AND py.status IN ('COMPLETED', 'CONFIRMED', 'VERIFIED')",
+            [$invId, $companyId]
+        );
+        $amountPaid = round((float)($confirmedAlloc['total_paid'] ?? $invData['amount_paid']), 2);
+        $amountDue = max(0.00, round($grandTotal - $amountPaid, 2));
         $statusUpper = strtoupper((string)($invData['status'] ?? ''));
 
-        if ($amountPaid >= $grandTotal || $statusUpper === 'PAID') {
+        if ($amountDue <= 0.001 || $statusUpper === 'PAID') {
             $payStatus = 'Paid';
+            $amountDue = 0.00;
             $newBalance = $prevBalance;
-        } elseif ($amountPaid > 0 || $statusUpper === 'PARTIAL') {
+        } elseif ($amountPaid > 0.001 || $statusUpper === 'PARTIAL') {
             $payStatus = 'Partially Paid';
-            $newBalance = $prevBalance + ($grandTotal - $amountPaid);
+            $newBalance = $prevBalance + $amountDue;
         } else {
             $payStatus = 'Unpaid';
             $newBalance = $prevBalance + $grandTotal;
@@ -364,24 +585,41 @@ class SalesController
             $copyLabel = 'Original for Recipient';
         }
 
-        // UPI QR code generation
-        $upiVpa = !empty($invData['company_upi_id']) ? $invData['company_upi_id'] : '9881032297@kotak';
-        $upiName = !empty($invData['company_legal_name']) ? $invData['company_legal_name'] : $invData['company_name'];
-        $balanceForQr = ($payStatus === 'Paid') ? $grandTotal : ($amountDue > 0 ? $amountDue : $grandTotal);
-        $upiPayload = QrCodeService::buildUpiPayload(
-            $upiVpa,
-            $upiName,
-            $balanceForQr,
-            (string)$invData['invoice_number']
-        );
-        $qrSvg = QrCodeService::generateSvg($upiPayload, 95);
+        // Dynamic UPI QR code generation: strictly from configured merchant details and exact remaining balance
+        $upiVpa = trim((string)($invData['company_upi_id'] ?? ''));
+        $upiName = trim((string)($invData['company_upi_name'] ?? ($invData['company_legal_name'] ?: $invData['company_name'])));
+        $paymentInstructions = trim((string)($invData['payment_instructions'] ?? 'Scan this QR code using any supported UPI application to pay the outstanding invoice balance.'));
+        $hasMerchantUpi = ($upiVpa !== '' && preg_match('/^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/', $upiVpa));
+
+        $qrSvg = '';
+        $upiPayload = '';
+        if ($amountDue > 0.001 && $hasMerchantUpi) {
+            $upiPayload = QrCodeService::buildUpiPayload(
+                $upiVpa,
+                $upiName,
+                $amountDue,
+                (string)$invData['invoice_number']
+            );
+            $qrSvg = QrCodeService::generateSvg($upiPayload, 95);
+        }
 
         // Render standalone printable view
         $html = View::render('sales/print', [
             'invoice' => array_merge($invData, [
                 'pay_status' => $payStatus,
                 'due_date' => $dueDateStr,
+                'amount_paid' => $amountPaid,
+                'amount_due' => $amountDue,
             ]),
+            'qrSvg' => $qrSvg,
+            'upiPayload' => $upiPayload,
+            'hasMerchantUpi' => $hasMerchantUpi,
+            'merchantUpi' => $upiVpa,
+            'merchantName' => $upiName,
+            'paymentInstructions' => $paymentInstructions,
+            'amountDue' => $amountDue,
+            'amountPaid' => $amountPaid,
+            'payStatus' => $payStatus,
             'items' => $computedItems,
             'buyer' => [
                 'name' => $invData['buyer_name'],
@@ -446,11 +684,99 @@ class SalesController
     }
 
     /**
+     * Retrieve products filtered by category ID (JSON AJAX endpoint for dynamic invoice line items).
+     * Route: GET /api/categories/{id}/products
+     */
+    public function categoryProductsApi(Request $req, mixed $id = null): Response
+    {
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $activeBranchId = (int)(Session::getBranchId() ?? 1);
+
+        $categoryId = (int)(is_array($id) ? ($id['id'] ?? 0) : ($id ?: ($req->query('id') ?? $req->query('category_id') ?? 0)));
+
+        if ($categoryId <= 0) {
+            return Response::json([
+                'success' => false,
+                'message' => 'Please provide a valid category ID.',
+                'products' => [],
+                'count' => 0,
+            ], 422);
+        }
+
+        // Verify category exists and is ACTIVE for the active company scope
+        $category = Database::selectOne(
+            "SELECT id, name, code, status FROM categories WHERE id = ? AND company_id = ? AND status = 'ACTIVE'",
+            [$categoryId, $companyId]
+        );
+
+        if (!$category) {
+            return Response::json([
+                'success' => false,
+                'message' => 'Category not found, inactive, or unauthorized.',
+                'products' => [],
+                'count' => 0,
+            ], 404);
+        }
+
+        // Fetch active, available products belonging strictly to this category
+        $products = Database::select(
+            "SELECT id, category_id, name, sku, hsn_sac,
+                    COALESCE(selling_price, sales_price, 0) as price,
+                    tax_rate, gst_rate, unit, current_stock, is_active
+             FROM products 
+             WHERE category_id = ? 
+               AND company_id = ? 
+               AND is_active = 1 
+               AND deleted_at IS NULL
+             ORDER BY name ASC",
+            [$categoryId, $companyId]
+        );
+
+        $formatted = array_map(function ($p) {
+            return [
+                'id' => (int)$p['id'],
+                'category_id' => (int)$p['category_id'],
+                'name' => (string)$p['name'],
+                'sku' => (string)$p['sku'],
+                'price' => (float)$p['price'],
+                'selling_price' => (float)$p['price'],
+                'hsn' => (string)($p['hsn_sac'] ?: '7318'),
+                'hsn_sac' => (string)($p['hsn_sac'] ?: '7318'),
+                'tax' => (float)($p['tax_rate'] ?? 18.0),
+                'tax_rate' => (float)($p['tax_rate'] ?? 18.0),
+                'gst_rate' => (float)($p['gst_rate'] ?? $p['tax_rate'] ?? 18.0),
+                'unit' => (string)($p['unit'] ?: 'Pcs'),
+                'current_stock' => (float)($p['current_stock'] ?? 0.0),
+            ];
+        }, $products);
+
+        return Response::json([
+            'success' => true,
+            'category' => [
+                'id' => (int)$category['id'],
+                'name' => (string)$category['name'],
+                'code' => (string)($category['code'] ?? ''),
+            ],
+            'products' => $formatted,
+            'count' => count($formatted),
+            'branch_id' => $activeBranchId,
+        ]);
+    }
+
+    /**
      * Render sales invoice creation page.
      */
     public function invoiceCreateForm(Request $req): Response
     {
         $companyId = Session::getCompanyId() ?? 1;
+
+        $categories = Database::select(
+            "SELECT id, name, code, description 
+             FROM categories 
+             WHERE company_id = ? AND status = 'ACTIVE' 
+             ORDER BY name ASC",
+            [$companyId]
+        );
 
         $customers = Database::select(
             "SELECT id, name, company_name, gstin, phone, state_code FROM customers WHERE company_id = ? AND is_active = 1 ORDER BY name ASC",
@@ -458,9 +784,9 @@ class SalesController
         );
 
         $products = Database::select(
-            "SELECT id, name, sku, COALESCE(selling_price, sales_price, 0) as selling_price, hsn_sac, tax_rate, current_stock, unit 
+            "SELECT id, category_id, name, sku, COALESCE(selling_price, sales_price, 0) as selling_price, hsn_sac, tax_rate, current_stock, unit 
              FROM products 
-             WHERE company_id = ? AND is_active = 1 
+             WHERE company_id = ? AND is_active = 1 AND deleted_at IS NULL
              ORDER BY name ASC",
             [$companyId]
         );
@@ -468,6 +794,7 @@ class SalesController
         $html = View::renderWithLayout('sales/create', [
             'title' => 'Generate Tax Invoice',
             'currentUri' => '/sales/invoices/create',
+            'categories' => $categories,
             'customers' => $customers,
             'products' => $products,
         ], 'layouts/app');
@@ -515,22 +842,66 @@ class SalesController
             foreach ($rawItems as $it) {
                 if (!is_array($it)) continue;
                 $pId = (int)($it['product_id'] ?? 0);
+                $catId = (int)($it['category_id'] ?? 0);
                 $q = (float)($it['quantity'] ?? 1);
                 $r = (float)($it['rate'] ?? 0);
                 $g = (float)($it['gst_rate'] ?? 18);
-                $h = trim((string)($it['hsn_sac'] ?? '7318'));
+                $h = trim((string)($it['hsn_sac'] ?? ''));
                 $d = (float)($it['discount_rate'] ?? 0);
 
-                if ($r <= 0 && $pId > 0) {
-                    $prod = Database::selectOne("SELECT COALESCE(selling_price, sales_price, 0) as price FROM products WHERE id = ?", [$pId]);
-                    if ($prod) {
+                if ($pId > 0) {
+                    $prod = Database::selectOne(
+                        "SELECT id, category_id, name, sku, hsn_sac, COALESCE(selling_price, sales_price, 0) as price, tax_rate, is_active 
+                         FROM products 
+                         WHERE id = ? AND company_id = ? AND is_active = 1 AND deleted_at IS NULL",
+                        [$pId, $companyId]
+                    );
+
+                    if (!$prod) {
+                        if ($this->expectsJson($req)) {
+                            return Response::json(['success' => false, 'message' => "Selected product (ID: {$pId}) is inactive, unauthorized, or does not exist."], 422);
+                        }
+                        Session::flash('error', "Selected product (ID: {$pId}) is invalid or inactive.");
+                        return Response::redirect('/sales/invoices/create');
+                    }
+
+                    if ($catId > 0) {
+                        $cat = Database::selectOne(
+                            "SELECT id, name, status FROM categories WHERE id = ? AND company_id = ? AND status = 'ACTIVE'",
+                            [$catId, $companyId]
+                        );
+                        if (!$cat) {
+                            if ($this->expectsJson($req)) {
+                                return Response::json(['success' => false, 'message' => "Selected category (ID: {$catId}) is invalid or inactive."], 422);
+                            }
+                            Session::flash('error', "Selected category is invalid or inactive.");
+                            return Response::redirect('/sales/invoices/create');
+                        }
+                        if ((int)$prod['category_id'] !== $catId) {
+                            if ($this->expectsJson($req)) {
+                                return Response::json(['success' => false, 'message' => "Product '{$prod['name']}' does not belong to category '{$cat['name']}'."], 422);
+                            }
+                            Session::flash('error', "Product '{$prod['name']}' does not belong to category '{$cat['name']}'.");
+                            return Response::redirect('/sales/invoices/create');
+                        }
+                    } else {
+                        $catId = (int)($prod['category_id'] ?? 0);
+                    }
+
+                    if ($r <= 0) {
                         $r = (float)$prod['price'];
                     }
+                    if (empty($h) && !empty($prod['hsn_sac'])) {
+                        $h = (string)$prod['hsn_sac'];
+                    }
                 }
+
+                if (empty($h)) $h = '7318';
                 if ($r <= 0) $r = 100.00;
                 if ($q <= 0) $q = 1.0;
 
                 $items[] = [
+                    'category_id' => $catId > 0 ? $catId : null,
                     'product_id' => $pId,
                     'quantity' => $q,
                     'rate' => $r,
@@ -543,25 +914,49 @@ class SalesController
 
         if (empty($items)) {
             $productId = (int)($payload['product_id'] ?? 0);
+            $catId = (int)($payload['category_id'] ?? 0);
             $qty = (float)($payload['quantity'] ?? 1);
             $rate = (float)($payload['rate'] ?? 0);
             $gstRate = (float)($payload['gst_rate'] ?? 18);
-            $hsn = trim((string)($payload['hsn_sac'] ?? '7318'));
+            $hsn = trim((string)($payload['hsn_sac'] ?? ''));
 
-            if ($rate <= 0 && $productId > 0) {
-                $p = Database::selectOne("SELECT COALESCE(selling_price, sales_price, 0) as price FROM products WHERE id = ?", [$productId]);
+            if ($productId > 0) {
+                $p = Database::selectOne(
+                    "SELECT id, category_id, name, sku, hsn_sac, COALESCE(selling_price, sales_price, 0) as price, tax_rate, is_active 
+                     FROM products 
+                     WHERE id = ? AND company_id = ? AND is_active = 1 AND deleted_at IS NULL",
+                    [$productId, $companyId]
+                );
                 if ($p) {
-                    $rate = (float)$p['price'];
+                    if ($catId > 0) {
+                        $cat = Database::selectOne(
+                            "SELECT id, name, status FROM categories WHERE id = ? AND company_id = ? AND status = 'ACTIVE'",
+                            [$catId, $companyId]
+                        );
+                        if (!$cat || (int)$p['category_id'] !== $catId) {
+                            if ($this->expectsJson($req)) {
+                                return Response::json(['success' => false, 'message' => "Product does not belong to the selected category."], 422);
+                            }
+                            Session::flash('error', "Product does not belong to the selected category.");
+                            return Response::redirect('/sales/invoices/create');
+                        }
+                    } else {
+                        $catId = (int)($p['category_id'] ?? 0);
+                    }
+                    if ($rate <= 0) {
+                        $rate = (float)$p['price'];
+                    }
+                    if (empty($hsn) && !empty($p['hsn_sac'])) {
+                        $hsn = (string)$p['hsn_sac'];
+                    }
                 }
             }
-            if ($rate <= 0) {
-                $rate = 100.00;
-            }
-            if ($qty <= 0) {
-                $qty = 1.0;
-            }
+            if (empty($hsn)) $hsn = '7318';
+            if ($rate <= 0) $rate = 100.00;
+            if ($qty <= 0) $qty = 1.0;
 
             $items[] = [
+                'category_id' => $catId > 0 ? $catId : null,
                 'product_id' => $productId,
                 'quantity' => $qty,
                 'rate' => $rate,
@@ -707,6 +1102,7 @@ class SalesController
                         'company_id' => $companyId,
                         'invoice_id' => $invoiceId,
                         'product_id' => $pId > 0 ? $pId : null,
+                        'category_id' => !empty($item['category_id']) ? (int)$item['category_id'] : null,
                         'item_name' => $productName,
                         'hsn_sac' => $item['hsn_sac'] ?: '7318',
                         'quantity' => $item['quantity'],
@@ -782,8 +1178,20 @@ class SalesController
             return Response::redirect('/sales/invoices');
         }
 
+        $categories = Database::select(
+            "SELECT id, name, code, description 
+             FROM categories 
+             WHERE company_id = ? AND status = 'ACTIVE' 
+             ORDER BY name ASC",
+            [$companyId]
+        );
+
         $items = Database::select(
-            "SELECT * FROM invoice_items WHERE invoice_id = ? AND company_id = ? ORDER BY id ASC",
+            "SELECT ii.*, COALESCE(ii.category_id, p.category_id) AS category_id, p.name AS product_name 
+             FROM invoice_items ii 
+             LEFT JOIN products p ON ii.product_id = p.id 
+             WHERE ii.invoice_id = ? AND ii.company_id = ? 
+             ORDER BY ii.id ASC",
             [$invId, $companyId]
         );
 
@@ -793,9 +1201,9 @@ class SalesController
         );
 
         $products = Database::select(
-            "SELECT id, name, sku, COALESCE(selling_price, sales_price, 0) as selling_price, hsn_sac, tax_rate, current_stock, unit 
+            "SELECT id, category_id, name, sku, COALESCE(selling_price, sales_price, 0) as selling_price, hsn_sac, tax_rate, current_stock, unit 
              FROM products 
-             WHERE company_id = ? AND is_active = 1 
+             WHERE company_id = ? AND is_active = 1 AND deleted_at IS NULL 
              ORDER BY name ASC",
             [$companyId]
         );
@@ -804,6 +1212,7 @@ class SalesController
             'title' => "Edit Invoice #{$invoice['invoice_number']}",
             'currentUri' => '/sales/invoices',
             'invoice' => $invoice,
+            'categories' => $categories,
             'items' => $items,
             'customers' => $customers,
             'products' => $products,
@@ -856,22 +1265,66 @@ class SalesController
             foreach ($rawItems as $it) {
                 if (!is_array($it)) continue;
                 $pId = (int)($it['product_id'] ?? 0);
+                $catId = (int)($it['category_id'] ?? 0);
                 $q = (float)($it['quantity'] ?? 1);
                 $r = (float)($it['rate'] ?? 0);
                 $g = (float)($it['gst_rate'] ?? 18);
-                $h = trim((string)($it['hsn_sac'] ?? '7318'));
+                $h = trim((string)($it['hsn_sac'] ?? ''));
                 $d = (float)($it['discount_rate'] ?? 0);
 
-                if ($r <= 0 && $pId > 0) {
-                    $prod = Database::selectOne("SELECT COALESCE(selling_price, sales_price, 0) as price FROM products WHERE id = ?", [$pId]);
-                    if ($prod) {
+                if ($pId > 0) {
+                    $prod = Database::selectOne(
+                        "SELECT id, category_id, name, sku, hsn_sac, COALESCE(selling_price, sales_price, 0) as price, tax_rate, is_active 
+                         FROM products 
+                         WHERE id = ? AND company_id = ? AND is_active = 1 AND deleted_at IS NULL",
+                        [$pId, $companyId]
+                    );
+
+                    if (!$prod) {
+                        if ($this->expectsJson($req)) {
+                            return Response::json(['success' => false, 'message' => "Selected product (ID: {$pId}) is inactive, unauthorized, or does not exist."], 422);
+                        }
+                        Session::flash('error', "Selected product (ID: {$pId}) is invalid or inactive.");
+                        return Response::redirect("/sales/invoices/{$invId}/edit");
+                    }
+
+                    if ($catId > 0) {
+                        $cat = Database::selectOne(
+                            "SELECT id, name, status FROM categories WHERE id = ? AND company_id = ? AND status = 'ACTIVE'",
+                            [$catId, $companyId]
+                        );
+                        if (!$cat) {
+                            if ($this->expectsJson($req)) {
+                                return Response::json(['success' => false, 'message' => "Selected category (ID: {$catId}) is invalid or inactive."], 422);
+                            }
+                            Session::flash('error', "Selected category is invalid or inactive.");
+                            return Response::redirect("/sales/invoices/{$invId}/edit");
+                        }
+                        if ((int)$prod['category_id'] !== $catId) {
+                            if ($this->expectsJson($req)) {
+                                return Response::json(['success' => false, 'message' => "Product '{$prod['name']}' does not belong to category '{$cat['name']}'."], 422);
+                            }
+                            Session::flash('error', "Product '{$prod['name']}' does not belong to category '{$cat['name']}'.");
+                            return Response::redirect("/sales/invoices/{$invId}/edit");
+                        }
+                    } else {
+                        $catId = (int)($prod['category_id'] ?? 0);
+                    }
+
+                    if ($r <= 0) {
                         $r = (float)$prod['price'];
                     }
+                    if (empty($h) && !empty($prod['hsn_sac'])) {
+                        $h = (string)$prod['hsn_sac'];
+                    }
                 }
+
+                if (empty($h)) $h = '7318';
                 if ($r <= 0) $r = 100.00;
                 if ($q <= 0) $q = 1.0;
 
                 $items[] = [
+                    'category_id' => $catId > 0 ? $catId : null,
                     'product_id' => $pId,
                     'quantity' => $q,
                     'rate' => $r,
@@ -884,19 +1337,47 @@ class SalesController
 
         if (empty($items)) {
             $productId = (int)($payload['product_id'] ?? 0);
+            $catId = (int)($payload['category_id'] ?? 0);
             $qty = (float)($payload['quantity'] ?? 1);
             $rate = (float)($payload['rate'] ?? 0);
             $gstRate = (float)($payload['gst_rate'] ?? 18);
-            $hsn = trim((string)($payload['hsn_sac'] ?? '7318'));
+            $hsn = trim((string)($payload['hsn_sac'] ?? ''));
 
-            if ($rate <= 0 && $productId > 0) {
-                $p = Database::selectOne("SELECT COALESCE(selling_price, sales_price, 0) as price FROM products WHERE id = ?", [$productId]);
-                if ($p) $rate = (float)$p['price'];
+            if ($productId > 0) {
+                $p = Database::selectOne(
+                    "SELECT id, category_id, name, sku, hsn_sac, COALESCE(selling_price, sales_price, 0) as price, tax_rate, is_active 
+                     FROM products 
+                     WHERE id = ? AND company_id = ? AND is_active = 1 AND deleted_at IS NULL",
+                    [$productId, $companyId]
+                );
+                if ($p) {
+                    if ($catId > 0) {
+                        $cat = Database::selectOne(
+                            "SELECT id, name, status FROM categories WHERE id = ? AND company_id = ? AND status = 'ACTIVE'",
+                            [$catId, $companyId]
+                        );
+                        if (!$cat || (int)$p['category_id'] !== $catId) {
+                            if ($this->expectsJson($req)) {
+                                return Response::json(['success' => false, 'message' => "Product does not belong to the selected category."], 422);
+                            }
+                            Session::flash('error', "Product does not belong to the selected category.");
+                            return Response::redirect("/sales/invoices/{$invId}/edit");
+                        }
+                    } else {
+                        $catId = (int)($p['category_id'] ?? 0);
+                    }
+                    if ($rate <= 0) $rate = (float)$p['price'];
+                    if (empty($hsn) && !empty($p['hsn_sac'])) {
+                        $hsn = (string)$p['hsn_sac'];
+                    }
+                }
             }
+            if (empty($hsn)) $hsn = '7318';
             if ($rate <= 0) $rate = 100.00;
             if ($qty <= 0) $qty = 1.0;
 
             $items[] = [
+                'category_id' => $catId > 0 ? $catId : null,
                 'product_id' => $productId,
                 'quantity' => $qty,
                 'rate' => $rate,
@@ -1061,6 +1542,7 @@ class SalesController
                         'company_id' => $companyId,
                         'invoice_id' => $invId,
                         'product_id' => $pId > 0 ? $pId : null,
+                        'category_id' => !empty($item['category_id']) ? (int)$item['category_id'] : null,
                         'item_name' => $productName,
                         'hsn_sac' => $item['hsn_sac'] ?: '7318',
                         'quantity' => $item['quantity'],
@@ -1359,7 +1841,7 @@ class SalesController
             COALESCE(comp.phone, '020 47252364') AS company_phone,
             COALESCE(comp.email, 'info@wtsindia.co.in') AS company_email,
             COALESCE(comp.website, 'http://www.wtsindia.co.in') AS company_website,
-            COALESCE(comp.upi_id, '9881032297@kotak') AS company_upi_id,
+            comp.upi_id AS company_upi_id,
 
             b.name AS branch_name,
 
@@ -1541,15 +2023,18 @@ class SalesController
             : number_format($grandTotal, 2);
 
         // Server-side SVG UPI QR Code
-        $upiVpa = !empty($quote['company_upi_id']) ? $quote['company_upi_id'] : '9881032297@kotak';
+        $upiVpa = trim((string)($quote['company_upi_id'] ?? ''));
         $upiName = !empty($quote['company_legal_name']) ? $quote['company_legal_name'] : $quote['company_name'];
-        $upiPayload = QrCodeService::buildUpiPayload(
-            $upiVpa,
-            $upiName,
-            $grandTotal,
-            (string)$quote['quotation_number']
-        );
-        $qrSvg = QrCodeService::generateSvg($upiPayload, 78);
+        $qrSvg = '';
+        if ($upiVpa !== '' && $grandTotal > 0) {
+            $upiPayload = QrCodeService::buildUpiPayload(
+                $upiVpa,
+                $upiName,
+                $grandTotal,
+                (string)$quote['quotation_number']
+            );
+            $qrSvg = QrCodeService::generateSvg($upiPayload, 78);
+        }
 
         // Kind Attn resolution
         $kindAttn = trim((string)($quote['kind_attn'] ?: ($quote['customer_contact_person'] ?: '')));

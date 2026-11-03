@@ -72,4 +72,33 @@
   - Real GSTR-1 CSV export stream (`GET /reports/gst/export?format=csv`).
 - [x] **Automated Regression Suite:**
   - Created `tests/Feature/GlobalPopupFixTest.php` with 21 new end-to-end assertions (`POPUP-01` through `POPUP-21`).
-  - Total test suite assertions: **329 / 329 Passed (100% Pass Rate)**.
+  - Created `tests/Feature/PartialPaymentTest.php` with 13 assertions (`PARTPAY-01` through `PARTPAY-13`).
+  - Created `tests/Feature/QuotationManagementTest.php` with 11 assertions (`QUOTE-01` through `QUOTE-11`).
+  - Total test suite assertions: **583 / 583 Passed (100% Pass Rate)**.
+
+- [x] **Partial Payment Management (Feature A):**
+  - Payment statuses dynamically maintained: `UNPAID`, `PARTIALLY_PAID` (`PARTIAL`), `PAID`, `OVERDUE`.
+  - Formula: `Total Paid = SUM(valid allocations); Outstanding Balance = Grand Total - Total Paid`.
+  - Accessible `#record-payment-modal` with auto-computed balance due, max payable constraints, and payment modes (Cash, UPI, Bank Transfer, Cheque, Card).
+  - Multiple installments against the same invoice; each stored as distinct records in `payments` and `payment_allocations`.
+  - Payment history table in `#invoice-view-modal` showing date, receipt #, mode, reference #, recorded by, amount, status, and printable receipt.
+  - Dedicated "Partial Payments & Invoice Balances" tab in `/payments` with receivables KPI cards and filters (Customer, Status, Date Range, Search).
+  - Double-entry GL integration: Dr Bank/Cash (100200/100100) and Cr Accounts Receivable (100300) with customer ledger decrement.
+
+- [x] **Complete Quotation Management & Conversion (Feature B):**
+  - Dedicated commercial quotation creation (`/sales/quotations/create`) and editing (`/sales/quotations/{id}/edit`) matching Tax Invoice layout.
+  - Visible `+ New Customer` action button opening quick AJAX modal (`#new-customer-modal`) to register and select customer immediately without page reload or loss of entered quotation line items.
+  - Dynamic line item product category filtering (Category dropdown filters Product dropdown independently per row).
+  - Real-time commercial calculations: Taxable Subtotal, CGST + SGST (or IGST), Round Off, Grand Total.
+  - Quotation actions: Save as Draft, Save & Generate Quotation, Preview Modal, Print, Edit, Duplicate, Delete.
+  - One-click Convert to Invoice workflow (`POST /sales/quotations/{id}/convert`): generates sequential Tax Invoice (`INV-YYYY-XXXX`), copies line items, sets quotation `status = 'CONVERTED'`, links `converted_invoice_id`, and blocks duplicate conversion.
+
+- [x] **Dynamic Remaining Balance UPI QR Code & Payment Reconciliation:**
+  - Automated real-time recalculation of outstanding balance from confirmed payments: `Outstanding Balance = Grand Total - SUM(confirmed payments)`.
+  - Dynamic generation of ISO/IEC 18004 Model 2 vector SVG UPI QR codes formatted specifically for the exact remaining balance (`am=REMAINING_AMOUNT`).
+  - Strict merchant UPI configuration from company settings (`upi_id`, `upi_display_name`, `payment_instructions`) with zero hardcoded sample IDs.
+  - Automatic QR hiding and "PAID IN FULL" status display when balance is fully settled (₹0.00 due).
+  - Helpful merchant configuration warning when UPI is not set up, safely suppressing invalid QR generation.
+  - Payment reconciliation workflows distinguishing pending/unverified payments from confirmed payments.
+  - Duplicate transaction reference defense enforcing HTTP 422 safeguards.
+  - Synchronized across Invoice Details Modal (`#invoice-view-modal`), Printable Invoice (`/sales/invoices/{id}/print`), and REST APIs.

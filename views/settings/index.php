@@ -22,7 +22,9 @@ $compPhone = $comp['phone'] ?? '020 47252364';
 $compEmail = $comp['email'] ?? 'info@wtsindia.co.in';
 $compWebsite = $comp['website'] ?? 'http://www.wtsindia.co.in';
 $compMsme = $comp['msme_no'] ?? 'UDYAM-MH-26-0734598';
-$compUpi = $comp['upi_id'] ?? '9881032297@kotak';
+$compUpi = $comp['upi_id'] ?? '';
+$compUpiName = $comp['upi_display_name'] ?? ($comp['legal_name'] ?? $comp['name'] ?? '');
+$compPaymentInstructions = $comp['payment_instructions'] ?? 'Scan this QR code using any supported UPI application to pay the outstanding invoice balance.';
 $compAddress = trim(($comp['address_line1'] ?? '') . ' ' . ($comp['address_line2'] ?? ''));
 $compPincode = $comp['pincode'] ?? '411041';
 $compCurrency = $comp['currency'] ?? 'INR';
@@ -56,12 +58,12 @@ $compTerms = $comp['terms_and_conditions'] ?? '';
 </div>
 
 <div class="tabs-nav" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
-    <button type="button" id="tab-btn-general" class="btn btn-primary active" onclick="switchSettingsTab('general')" style="font-size: 0.85rem; padding: 0.45rem 0.9rem; display: flex; align-items: center; gap: 0.4rem;">
+    <button type="button" id="tab-btn-general" class="btn <?= ($activeTab ?? 'general') === 'audit' ? 'btn-secondary' : 'btn-primary active' ?>" onclick="switchSettingsTab('general')" style="font-size: 0.85rem; padding: 0.45rem 0.9rem; display: flex; align-items: center; gap: 0.4rem;">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
         <span>Organization & Operating Branches</span>
     </button>
     <?php if ($isAdmin): ?>
-        <button type="button" id="tab-btn-audit" class="btn btn-secondary" onclick="switchSettingsTab('audit')" style="font-size: 0.85rem; padding: 0.45rem 0.9rem; display: flex; align-items: center; gap: 0.4rem;">
+        <button type="button" id="tab-btn-audit" class="btn <?= ($activeTab ?? 'general') === 'audit' ? 'btn-primary active' : 'btn-secondary' ?>" onclick="switchSettingsTab('audit')" style="font-size: 0.85rem; padding: 0.45rem 0.9rem; display: flex; align-items: center; gap: 0.4rem;">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
             <span>Audit Trail & System Logs (Admin Only)</span>
             <span class="badge badge-primary" style="font-size: 0.7rem; padding: 0.15rem 0.4rem;" id="audit-badge-count"><?= (int)($auditSummary['total'] ?? 0) ?></span>
@@ -69,7 +71,7 @@ $compTerms = $comp['terms_and_conditions'] ?? '';
     <?php endif; ?>
 </div>
 
-<div id="settings-sec-general">
+<div id="settings-sec-general" style="<?= ($activeTab ?? 'general') === 'audit' ? 'display: none;' : '' ?>">
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
     <!-- 1. Tenant Organization Profile Card -->
     <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
@@ -157,7 +159,7 @@ $compTerms = $comp['terms_and_conditions'] ?? '';
                     </div>
                     <div>
                         <span style="color: var(--text-muted);">MSME:</span> <strong><?= e($compMsme ?: '—') ?></strong><br>
-                        <span style="color: var(--text-muted);">UPI ID:</span> <strong><?= e($compUpi ?: '—') ?></strong>
+                        <span style="color: var(--text-muted);">UPI ID:</span> <strong style="color: <?= $compUpi ? 'var(--color-primary)' : 'var(--text-muted)' ?>;"><?= e($compUpi ?: 'Not Configured') ?></strong>
                     </div>
                 </div>
             </div>
@@ -253,7 +255,7 @@ $compTerms = $comp['terms_and_conditions'] ?? '';
 <!-- ========================================== -->
 <!-- 2. AUDIT TRAIL & SYSTEM LOGS SECTION       -->
 <!-- ========================================== -->
-<div id="settings-sec-audit" style="display: none; margin-bottom: 2rem;">
+<div id="settings-sec-audit" style="<?= ($activeTab ?? 'general') === 'audit' ? 'display: block;' : 'display: none;' ?> margin-bottom: 2rem;">
     <!-- 4 KPI Summary Cards -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
         <div class="card" style="padding: 1.25rem;">
@@ -512,8 +514,19 @@ $compTerms = $comp['terms_and_conditions'] ?? '';
                         <input type="text" id="company-website" name="website" class="form-control" value="<?= e($compWebsite) ?>" placeholder="http://www.wtsindia.co.in">
                     </div>
                     <div>
-                        <label class="form-label">UPI ID for Invoices</label>
-                        <input type="text" id="company-upi" name="upi_id" class="form-control" value="<?= e($compUpi) ?>" placeholder="9881032297@kotak">
+                        <label class="form-label">Merchant UPI ID (e.g. merchant@bank)</label>
+                        <input type="text" id="company-upi" name="upi_id" class="form-control" value="<?= e($compUpi) ?>" placeholder="merchant@upi">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label class="form-label">Merchant Payee Display Name</label>
+                        <input type="text" id="company-upi-name" name="upi_display_name" class="form-control" value="<?= e($compUpiName) ?>" placeholder="Legal or Brand Name">
+                    </div>
+                    <div>
+                        <label class="form-label">Default UPI Payment Instructions</label>
+                        <input type="text" id="company-payment-instructions" name="payment_instructions" class="form-control" value="<?= e($compPaymentInstructions) ?>" placeholder="Scan this QR code using any supported UPI application to pay the outstanding invoice balance.">
                     </div>
                 </div>
 
@@ -679,6 +692,8 @@ function openEditCompanyModal() {
                 document.getElementById('company-msme').value = c.msme_no || '';
                 document.getElementById('company-website').value = c.website || '';
                 document.getElementById('company-upi').value = c.upi_id || '';
+                document.getElementById('company-upi-name').value = c.upi_display_name || c.legal_name || c.name || '';
+                document.getElementById('company-payment-instructions').value = c.payment_instructions || '';
                 document.getElementById('company-terms').value = c.terms_and_conditions || '';
             }
             WTSBill.Modal.open('company-modal');
@@ -849,6 +864,9 @@ function switchSettingsTab(tab) {
             audBtn.classList.remove('btn-secondary');
             audBtn.classList.add('active', 'btn-primary');
         }
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState({}, '', '/settings/audit-logs');
+        }
         loadAuditLogs(1);
     } else {
         if (generalSec) generalSec.style.display = 'block';
@@ -860,6 +878,9 @@ function switchSettingsTab(tab) {
         if (audBtn) {
             audBtn.classList.remove('active', 'btn-primary');
             audBtn.classList.add('btn-secondary');
+        }
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState({}, '', '/settings');
         }
     }
 }
@@ -1016,7 +1037,7 @@ function closeAuditModal() {
 
 document.addEventListener('DOMContentLoaded', function() {
     var urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('tab') === 'audit') {
+    if (urlParams.get('tab') === 'audit' || window.location.pathname.indexOf('audit-logs') !== -1) {
         switchSettingsTab('audit');
     }
 });

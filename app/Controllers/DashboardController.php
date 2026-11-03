@@ -27,7 +27,7 @@ class DashboardController
     {
         $authService = new AuthService();
         if (!$authService->check()) {
-            return $this->renderPublicLanding();
+            return (new AuthController($authService))->loginForm($req);
         }
 
         $companyId = (int)(Session::getCompanyId() ?? 1);

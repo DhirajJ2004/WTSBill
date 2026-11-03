@@ -52,6 +52,9 @@
                                 </span>
                             </td>
                             <td style="text-align: right; white-space: nowrap;">
+                                <?php if (\WTSBill\Auth\Gate::can('payments.create') && (float)($inv['amount_due'] ?? 0) > 0.001): ?>
+                                    <button type="button" class="btn btn-success" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; margin-right: 3px;" onclick="window.openRecordPaymentModal(<?= (int)$inv['id'] ?>, '<?= e(addslashes($inv['invoice_number'])) ?>', '<?= e(addslashes($inv['customer_name'] ?: 'Customer #' . $inv['customer_id'])) ?>', <?= (float)$inv['grand_total'] ?>, <?= (float)($inv['amount_paid'] ?? 0) ?>, <?= (float)($inv['amount_due'] ?? 0) ?>)">+ Pay</button>
+                                <?php endif; ?>
                                 <?php if (\WTSBill\Auth\Gate::can('invoices.print')): ?>
                                     <a href="/sales/invoices/<?= (int)$inv['id'] ?>/print" target="_blank" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; text-decoration: none; margin-right: 3px;">Print</a>
                                 <?php endif; ?>
@@ -97,6 +100,8 @@
                     <div style="text-align: right;">
                         <span id="inv-view-badge" class="badge"></span>
                         <div style="font-size: 1.25rem; font-weight: 700; color: var(--color-primary); margin-top: 0.25rem;" id="inv-view-total"></div>
+                        <div style="font-size: 0.82rem; color: var(--color-success); margin-top: 0.2rem;">Paid: <span id="inv-view-paid">₹0.00</span></div>
+                        <div style="font-size: 0.82rem; color: var(--color-danger); font-weight: 600;">Due: <span id="inv-view-due">₹0.00</span></div>
                     </div>
                 </div>
 
@@ -131,11 +136,100 @@
                     </table>
                 </div>
 
+                <!-- Prominent Payment Summary & Dynamic Remaining Balance QR Code -->
+                <div id="inv-payment-summary-card" style="margin-top: 1.25rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg, 8px); padding: 1.25rem; box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.05));">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.6rem;">
+                        <div>
+                            <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin: 0;">Payment &amp; Reconciliation Summary</h4>
+                            <span style="font-size: 0.78rem; color: var(--text-muted);">Real-time settlement status &amp; dynamic remaining balance UPI QR</span>
+                        </div>
+                        <span id="inv-summary-pay-badge" class="badge"></span>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                        <div style="background: var(--bg-hover); padding: 0.75rem 1rem; border-radius: var(--radius); border-left: 3px solid var(--color-primary);">
+                            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Invoice Total</div>
+                            <div id="inv-summary-total" style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-top: 0.25rem;">₹0.00</div>
+                        </div>
+                        <div style="background: var(--bg-hover); padding: 0.75rem 1rem; border-radius: var(--radius); border-left: 3px solid var(--color-success);">
+                            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Total Paid</div>
+                            <div id="inv-summary-paid" style="font-size: 1.15rem; font-weight: 700; color: var(--color-success); margin-top: 0.25rem;">₹0.00</div>
+                        </div>
+                        <div style="background: var(--bg-hover); padding: 0.75rem 1rem; border-radius: var(--radius); border-left: 3px solid var(--color-danger);">
+                            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Outstanding Balance</div>
+                            <div id="inv-summary-due" style="font-size: 1.25rem; font-weight: 800; color: var(--color-danger); margin-top: 0.25rem;">₹0.00</div>
+                        </div>
+                    </div>
+
+                    <!-- Remaining Balance Dynamic UPI QR Container -->
+                    <div id="inv-summary-qr-container" style="display: flex; gap: 1.25rem; align-items: center; background: #0f172a; border: 1px solid #334155; border-radius: var(--radius); padding: 1rem; color: #f8fafc;">
+                        <div id="inv-summary-qr-svg" style="background: #ffffff; padding: 6px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; min-width: 110px; min-height: 110px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);">
+                            <!-- QR SVG injected here -->
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                                <span class="badge" style="background: #0284c7; color: #ffffff; font-size: 0.7rem; padding: 2px 8px;">DYNAMIC UPI QR</span>
+                                <span id="inv-summary-qr-amount-badge" style="font-size: 1.1rem; font-weight: 700; color: #38bdf8;">₹0.00</span>
+                            </div>
+                            <p style="margin: 0.25rem 0 0.4rem 0; font-size: 0.85rem; color: #cbd5e1; line-height: 1.4;" id="inv-summary-qr-instruction">
+                                Scan this QR code using any supported UPI application to pay the outstanding invoice balance.
+                            </p>
+                            <div style="font-size: 0.78rem; color: #94a3b8; display: flex; flex-direction: column; gap: 0.2rem;">
+                                <div>Merchant UPI ID: <strong id="inv-summary-merchant-vpa" style="color: #e2e8f0; font-family: monospace;">-</strong></div>
+                                <div>Invoice Reference: <strong id="inv-summary-invoice-ref" style="color: #e2e8f0; font-family: monospace;">-</strong></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Paid in Full Container (Hidden when balance > 0) -->
+                    <div id="inv-summary-paid-full" style="display: none; text-align: center; padding: 1.25rem; background: #064e3b; border: 1px solid #059669; border-radius: var(--radius); color: #ecfdf5;">
+                        <div style="font-size: 1.5rem; margin-bottom: 0.2rem; color: #34d399;">✓</div>
+                        <h4 style="margin: 0 0 0.25rem 0; font-size: 1.05rem; font-weight: 700; color: #34d399;">Invoice Fully Paid &amp; Settled</h4>
+                        <p style="margin: 0; font-size: 0.82rem; color: #a7f3d0;">No outstanding balance remains (₹0.00 due). Dynamic UPI QR is deactivated.</p>
+                    </div>
+
+                    <!-- Merchant UPI Missing Warning Container -->
+                    <div id="inv-summary-upi-missing" style="display: none; padding: 1rem 1.25rem; background: #451a03; border: 1px solid #78350f; border-radius: var(--radius); color: #fef3c7;">
+                        <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 0.25rem;">⚠️ Merchant UPI Not Configured</div>
+                        <div style="font-size: 0.82rem; color: #fde68a;">A merchant UPI ID is required to generate dynamic payment QR codes. Please configure your UPI ID in <a href="/settings" style="color: #38bdf8; text-decoration: underline;">Settings &rarr; Company Profile</a>.</div>
+                    </div>
+                </div>
+
+                <!-- Payment Installments & History Section -->
+                <div style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <h4 style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin: 0;">Payment History & Installments</h4>
+                        <span id="inv-view-installments-count" class="badge badge-info" style="font-size: 0.75rem;"></span>
+                    </div>
+                    <div class="table-container" style="margin-bottom: 1rem;">
+                        <table class="table" style="font-size: 0.82rem;">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Receipt #</th>
+                                    <th>Mode</th>
+                                    <th>Reference</th>
+                                    <th>Recorded By</th>
+                                    <th style="text-align: right;">Amount Paid</th>
+                                    <th style="text-align: center;">Status</th>
+                                    <th style="text-align: right;">Receipt</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inv-payments-table-body">
+                                <tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 1rem;">No payment installments recorded.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <div id="inv-view-notes" style="font-size: 0.8rem; color: var(--text-muted); padding: 0.75rem; background: var(--bg-hover); border-radius: var(--radius);"></div>
             </div>
         </div>
         <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
             <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <?php if (\WTSBill\Auth\Gate::can('payments.create')): ?>
+                    <button type="button" id="inv-modal-record-pay-btn" class="btn btn-success" style="display: none;" onclick="window.openPaymentFromViewModal()">+ Record Payment</button>
+                <?php endif; ?>
                 <?php if (\WTSBill\Auth\Gate::can('invoices.print')): ?>
                     <a id="inv-modal-print-btn" href="#" target="_blank" class="btn btn-secondary" style="text-decoration: none;"><i class="icon">🖨️</i> Print Tax Invoice</a>
                 <?php endif; ?>
@@ -148,6 +242,94 @@
             </div>
             <button type="button" class="btn btn-secondary" onclick="window.closeInvoiceModal()">Close</button>
         </div>
+    </div>
+</div>
+
+<!-- Working Record Payment Modal -->
+<div id="record-payment-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="rpm-title" style="display: none;">
+    <div class="modal-dialog" style="max-width: 540px;">
+        <div class="modal-header">
+            <h3 id="rpm-title" class="modal-title">Record Invoice Payment</h3>
+            <button type="button" class="modal-close" onclick="window.closeRecordPaymentModal()" aria-label="Close dialog">&times;</button>
+        </div>
+        <form id="record-payment-form" onsubmit="window.submitRecordPayment(event)">
+            <input type="hidden" id="rpm-invoice-id" name="invoice_id" value="">
+            
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem;">
+                <!-- Read-Only Invoice Summary Bar -->
+                <div style="background: var(--bg-hover); padding: 0.85rem 1rem; border-radius: var(--radius); border: 1px solid var(--border-color); display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.85rem;">
+                    <div>
+                        <div style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Invoice #</div>
+                        <strong id="rpm-invoice-number" style="color: var(--text-primary); font-size: 0.95rem;">-</strong>
+                    </div>
+                    <div>
+                        <div style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Customer</div>
+                        <strong id="rpm-customer-name" style="color: var(--text-primary); font-size: 0.95rem;">-</strong>
+                    </div>
+                    <div style="margin-top: 0.35rem;">
+                        <div style="color: var(--text-muted); font-size: 0.75rem;">Invoice Total: <strong id="rpm-invoice-total">₹0.00</strong></div>
+                        <div style="color: var(--color-success); font-size: 0.75rem;">Previously Paid: <strong id="rpm-previously-paid">₹0.00</strong></div>
+                    </div>
+                    <div style="margin-top: 0.35rem; text-align: right;">
+                        <div style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Outstanding Due</div>
+                        <div id="rpm-outstanding-balance" style="font-size: 1.15rem; font-weight: 700; color: var(--color-danger);">₹0.00</div>
+                    </div>
+                </div>
+
+                <div id="rpm-error-alert" class="alert alert-danger" style="display: none; padding: 0.6rem 0.85rem; font-size: 0.85rem; border-radius: var(--radius); background: rgba(239, 68, 68, 0.15); border: 1px solid var(--danger); color: #fca5a5;"></div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="rpm-amount" style="font-size: 0.85rem; font-weight: 600;">Payment Amount (₹) <span style="color: var(--danger);">*</span></label>
+                        <input type="number" step="0.01" min="0.01" id="rpm-amount" name="amount" class="form-control" placeholder="0.00" required autofocus style="font-weight: 700; font-size: 1rem;">
+                        <small style="color: var(--text-muted); font-size: 0.72rem;">Max payable: <span id="rpm-max-hint">₹0.00</span></small>
+                    </div>
+                    <div class="form-group">
+                        <label for="rpm-payment-date" style="font-size: 0.85rem; font-weight: 600;">Payment Date <span style="color: var(--danger);">*</span></label>
+                        <input type="date" id="rpm-payment-date" name="payment_date" class="form-control" value="<?= date('Y-m-d') ?>" required>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="rpm-payment-mode" style="font-size: 0.85rem; font-weight: 600;">Payment Mode <span style="color: var(--danger);">*</span></label>
+                        <select id="rpm-payment-mode" name="payment_mode" class="form-control" required>
+                            <option value="UPI">UPI / QR Code</option>
+                            <option value="Bank Transfer">Bank Transfer / NEFT / RTGS</option>
+                            <option value="Cash">Cash</option>
+                            <option value="Cheque">Cheque</option>
+                            <option value="Card">Credit / Debit Card</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="rpm-reference-no" style="font-size: 0.85rem; font-weight: 600;">Transaction Ref / UTR / Cheque #</label>
+                        <input type="text" id="rpm-reference-no" name="reference_no" class="form-control" placeholder="e.g. UTR-982182 or CHQ-0012">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="rpm-bank-account" style="font-size: 0.85rem; font-weight: 600;">Bank / Cash Deposit Account</label>
+                    <select id="rpm-bank-account" name="bank_account_id" class="form-control">
+                        <option value="">-- Primary Operating Account --</option>
+                        <?php foreach ($bankAccounts ?? [] as $ba): ?>
+                            <option value="<?= (int)$ba['id'] ?>">
+                                <?= e($ba['bank_name']) ?> - <?= e($ba['account_name'] ?: $ba['account_number']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="rpm-notes" style="font-size: 0.85rem; font-weight: 600;">Notes / Remarks</label>
+                    <textarea id="rpm-notes" name="notes" class="form-control" rows="2" placeholder="e.g. Cleared installment via Bank Transfer"></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+                <button type="button" class="btn btn-secondary" onclick="window.closeRecordPaymentModal()">Cancel</button>
+                <button type="submit" id="rpm-submit-btn" class="btn btn-success" style="padding: 0.5rem 1.25rem; font-weight: 600;">Record Payment &rarr;</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -202,6 +384,75 @@
                 document.getElementById('inv-view-dates').textContent = 'Date: ' + inv.invoice_date + ' | Due: ' + (inv.due_date || 'Immediate');
                 document.getElementById('inv-view-total').textContent = '₹' + parseFloat(inv.grand_total).toLocaleString('en-IN', {minimumFractionDigits: 2});
                 
+                const grandTotal = parseFloat(inv.grand_total || 0);
+                const amountPaid = parseFloat(inv.amount_paid || 0);
+                const amountDue = parseFloat(inv.amount_due !== undefined ? inv.amount_due : (grandTotal - amountPaid));
+                
+                document.getElementById('inv-view-paid').textContent = '₹' + amountPaid.toLocaleString('en-IN', {minimumFractionDigits: 2});
+                document.getElementById('inv-view-due').textContent = '₹' + (amountDue > 0 ? amountDue.toLocaleString('en-IN', {minimumFractionDigits: 2}) : '0.00');
+
+                const payBtn = document.getElementById('inv-modal-record-pay-btn');
+                if (payBtn) {
+                    if (amountDue > 0.001) {
+                        payBtn.style.display = 'inline-block';
+                        window.currentModalInvoiceData = {
+                            id: inv.id,
+                            invoice_number: inv.invoice_number,
+                            customer_name: inv.customer_name || 'Direct Customer',
+                            grand_total: grandTotal,
+                            amount_paid: amountPaid,
+                            amount_due: amountDue
+                        };
+                    } else {
+                        payBtn.style.display = 'none';
+                        window.currentModalInvoiceData = null;
+                    }
+                }
+
+                // Dynamic Payment Summary & Remaining Balance QR Code
+                const sumTotal = document.getElementById('inv-summary-total');
+                if (sumTotal) sumTotal.textContent = '₹' + grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2});
+                const sumPaid = document.getElementById('inv-summary-paid');
+                if (sumPaid) sumPaid.textContent = '₹' + amountPaid.toLocaleString('en-IN', {minimumFractionDigits: 2});
+                const sumDue = document.getElementById('inv-summary-due');
+                if (sumDue) sumDue.textContent = '₹' + (amountDue > 0 ? amountDue.toLocaleString('en-IN', {minimumFractionDigits: 2}) : '0.00');
+
+                const sumBadge = document.getElementById('inv-summary-pay-badge');
+                if (sumBadge) {
+                    sumBadge.className = 'badge badge-' + (amountDue <= 0.001 ? 'success' : (amountPaid > 0.001 ? 'warning' : 'danger'));
+                    sumBadge.textContent = amountDue <= 0.001 ? 'PAID' : (amountPaid > 0.001 ? 'PARTIALLY PAID' : 'UNPAID');
+                }
+
+                const qrContainer = document.getElementById('inv-summary-qr-container');
+                const paidContainer = document.getElementById('inv-summary-paid-full');
+                const upiMissing = document.getElementById('inv-summary-upi-missing');
+
+                if (amountDue <= 0.001) {
+                    if (qrContainer) qrContainer.style.display = 'none';
+                    if (upiMissing) upiMissing.style.display = 'none';
+                    if (paidContainer) paidContainer.style.display = 'block';
+                } else if (!data.has_merchant_upi) {
+                    if (qrContainer) qrContainer.style.display = 'none';
+                    if (paidContainer) paidContainer.style.display = 'none';
+                    if (upiMissing) upiMissing.style.display = 'block';
+                } else {
+                    if (paidContainer) paidContainer.style.display = 'none';
+                    if (upiMissing) upiMissing.style.display = 'none';
+                    if (qrContainer) {
+                        qrContainer.style.display = 'flex';
+                        const qrSvgBox = document.getElementById('inv-summary-qr-svg');
+                        if (qrSvgBox && data.qr_svg) qrSvgBox.innerHTML = data.qr_svg;
+                        const qrAmtBadge = document.getElementById('inv-summary-qr-amount-badge');
+                        if (qrAmtBadge) qrAmtBadge.textContent = '₹' + amountDue.toLocaleString('en-IN', {minimumFractionDigits: 2});
+                        const vpaElem = document.getElementById('inv-summary-merchant-vpa');
+                        if (vpaElem) vpaElem.textContent = data.merchant_upi || '-';
+                        const refElem = document.getElementById('inv-summary-invoice-ref');
+                        if (refElem) refElem.textContent = inv.invoice_number;
+                        const instrElem = document.getElementById('inv-summary-qr-instruction');
+                        if (instrElem && data.payment_instructions) instrElem.textContent = data.payment_instructions;
+                    }
+                }
+
                 const badge = document.getElementById('inv-view-badge');
                 badge.className = 'badge badge-' + (inv.status === 'PAID' ? 'success' : (inv.status === 'PARTIAL' ? 'warning' : 'danger'));
                 badge.textContent = inv.status;
@@ -228,6 +479,36 @@
                     `;
                     tbody.appendChild(row);
                 });
+
+                // Render payment history installments
+                const payments = data.payments || [];
+                const ptbody = document.getElementById('inv-payments-table-body');
+                ptbody.innerHTML = '';
+                const histBadge = document.getElementById('inv-view-installments-count');
+                if (histBadge) {
+                    histBadge.textContent = payments.length + (payments.length === 1 ? ' Installment' : ' Installments');
+                }
+
+                if (payments.length > 0) {
+                    payments.forEach(p => {
+                        const pr = document.createElement('tr');
+                        pr.innerHTML = `
+                            <td>${p.payment_date || '-'}</td>
+                            <td><strong>${p.receipt_number || p.payment_number || '-'}</strong></td>
+                            <td>${p.payment_mode || 'Cash'}</td>
+                            <td><code>${p.reference_no || '-'}</code></td>
+                            <td style="color: var(--text-muted);">${p.recorded_by_name || 'System'}</td>
+                            <td style="text-align: right; font-weight: 600; color: var(--color-success);">₹${parseFloat(p.allocated_amount || p.amount || 0).toFixed(2)}</td>
+                            <td style="text-align: center;"><span class="badge badge-success">${p.status || 'COMPLETED'}</span></td>
+                            <td style="text-align: right;">
+                                <a href="/payments/${p.id}/print" target="_blank" class="btn btn-sm btn-secondary" style="padding: 0.15rem 0.45rem; font-size: 0.75rem; text-decoration: none;">Print</a>
+                            </td>
+                        `;
+                        ptbody.appendChild(pr);
+                    });
+                } else {
+                    ptbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 1rem;">No payment installments recorded yet.</td></tr>';
+                }
 
                 document.getElementById('inv-view-notes').textContent = inv.notes || 'Standard terms & conditions apply.';
 
@@ -303,5 +584,108 @@
             document.body.appendChild(form);
             form.submit();
         });
+    };
+
+    window.openPaymentFromViewModal = function() {
+        if (window.currentModalInvoiceData) {
+            window.closeInvoiceModal();
+            const d = window.currentModalInvoiceData;
+            window.openRecordPaymentModal(d.id, d.invoice_number, d.customer_name, d.grand_total, d.amount_paid, d.amount_due);
+        }
+    };
+
+    window.openRecordPaymentModal = function(id, invoiceNumber, customerName, total, paid, due) {
+        document.getElementById('rpm-invoice-id').value = id;
+        document.getElementById('rpm-invoice-number').textContent = invoiceNumber;
+        document.getElementById('rpm-customer-name').textContent = customerName;
+        document.getElementById('rpm-invoice-total').textContent = '₹' + parseFloat(total).toLocaleString('en-IN', {minimumFractionDigits: 2});
+        document.getElementById('rpm-previously-paid').textContent = '₹' + parseFloat(paid).toLocaleString('en-IN', {minimumFractionDigits: 2});
+        
+        const balanceDue = Math.max(0, parseFloat(due));
+        document.getElementById('rpm-outstanding-balance').textContent = '₹' + balanceDue.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        document.getElementById('rpm-max-hint').textContent = '₹' + balanceDue.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        
+        const amountInput = document.getElementById('rpm-amount');
+        amountInput.max = balanceDue.toFixed(2);
+        amountInput.value = balanceDue.toFixed(2);
+        
+        document.getElementById('rpm-error-alert').style.display = 'none';
+        document.getElementById('rpm-error-alert').textContent = '';
+
+        const modal = document.getElementById('record-payment-modal');
+        if (modal) {
+            modal.style.display = 'flex';
+            amountInput.focus();
+        }
+    };
+
+    window.closeRecordPaymentModal = function() {
+        const modal = document.getElementById('record-payment-modal');
+        if (modal) modal.style.display = 'none';
+    };
+
+    window.submitRecordPayment = async function(event) {
+        event.preventDefault();
+        const form = event.target;
+        const btn = document.getElementById('rpm-submit-btn');
+        const errAlert = document.getElementById('rpm-error-alert');
+        errAlert.style.display = 'none';
+
+        const invId = document.getElementById('rpm-invoice-id').value;
+        const amount = parseFloat(document.getElementById('rpm-amount').value || 0);
+        const maxPayable = parseFloat(document.getElementById('rpm-amount').max || 0);
+
+        if (amount <= 0) {
+            errAlert.textContent = 'Please enter a valid payment amount greater than zero.';
+            errAlert.style.display = 'block';
+            return;
+        }
+
+        if (maxPayable > 0 && amount > maxPayable + 0.01) {
+            errAlert.textContent = 'Payment amount cannot exceed the outstanding balance of ₹' + maxPayable.toFixed(2);
+            errAlert.style.display = 'block';
+            return;
+        }
+
+        const metaToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        const formData = new FormData(form);
+        const payload = Object.fromEntries(formData.entries());
+        payload._csrf_token = metaToken;
+
+        btn.disabled = true;
+        btn.textContent = 'Recording Payment...';
+
+        try {
+            const resp = await fetch('/sales/invoices/' + invId + '/payments', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': metaToken,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await resp.json();
+            if (data.success) {
+                if (window.WTSBill && window.WTSBill.Toast) {
+                    window.WTSBill.Toast.show(data.message || 'Payment recorded successfully!', 'success');
+                }
+                window.closeRecordPaymentModal();
+                setTimeout(() => window.location.reload(), 400);
+            } else {
+                errAlert.textContent = data.message || 'Failed to record payment.';
+                errAlert.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Record Payment →';
+            }
+        } catch (err) {
+            console.error('Payment submission error:', err);
+            errAlert.textContent = 'Server connection error. Please try again.';
+            errAlert.style.display = 'block';
+            btn.disabled = false;
+            btn.textContent = 'Record Payment →';
+        }
     };
 </script>

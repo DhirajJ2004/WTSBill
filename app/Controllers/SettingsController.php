@@ -30,11 +30,15 @@ class SettingsController
      * Settings overview page with Organization Profile and Active Branches.
      * Route: GET /settings
      */
-    public function index(Request $req): Response
+    public function index(Request $req, string $activeTab = 'general'): Response
     {
         $companyId = (int)(Session::getCompanyId() ?? 1);
         $userRole = strtoupper((string)(Session::get('user_role') ?? (Session::get('role') ?? (Session::getUser()['role'] ?? (Session::get('auth_user')['role'] ?? 'STAFF')))));
         $isAdmin = in_array($userRole, ['ADMIN', 'SUPERADMIN', 'OWNER'], true);
+
+        if ($req->query('tab') === 'audit' || str_ends_with($req->getPath(), '/audit-logs')) {
+            $activeTab = 'audit';
+        }
 
         $company = Database::selectOne(
             "SELECT * FROM `companies` WHERE id = ? AND deleted_at IS NULL",
@@ -72,13 +76,14 @@ class SettingsController
         }
 
         $html = View::renderWithLayout('settings/index', [
-            'title' => 'System Settings',
-            'currentUri' => '/settings',
+            'title' => $activeTab === 'audit' ? 'Security Audit Trail' : 'System Settings',
+            'currentUri' => $activeTab === 'audit' ? '/settings/audit-logs' : '/settings',
             'company' => $company,
             'branches' => $branches,
             'allUsers' => $allUsers,
             'activeBranchId' => $activeBranchId,
             'isAdmin' => $isAdmin,
+            'activeTab' => $activeTab,
             'auditLogs' => $auditLogs,
             'auditSummary' => $auditSummary,
         ], 'layouts/app');
@@ -136,6 +141,8 @@ class SettingsController
         $msmeNo = trim((string)($payload['msme_no'] ?? ''));
         $website = trim((string)($payload['website'] ?? ''));
         $upiId = trim((string)($payload['upi_id'] ?? ''));
+        $upiDisplayName = trim((string)($payload['upi_display_name'] ?? ''));
+        $paymentInstructions = trim((string)($payload['payment_instructions'] ?? ''));
         $termsAndConditions = trim((string)($payload['terms_and_conditions'] ?? ''));
         $financialYearStart = trim((string)($payload['financial_year_start'] ?? '04-01'));
         $currency = trim((string)($payload['currency'] ?? 'INR'));
@@ -155,6 +162,10 @@ class SettingsController
 
         if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $errors['email'] = 'Invalid email address format.';
+        }
+
+        if (!empty($upiId) && !preg_match('/^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/', $upiId)) {
+            $errors['upi_id'] = 'Invalid UPI ID format (e.g. merchant@bank or 9881032297@kotak).';
         }
 
         if (!empty($errors)) {
@@ -199,6 +210,8 @@ class SettingsController
                     `msme_no` = :msme_no,
                     `website` = :website,
                     `upi_id` = :upi_id,
+                    `upi_display_name` = :upi_display_name,
+                    `payment_instructions` = :payment_instructions,
                     `terms_and_conditions` = :terms_and_conditions,
                     `updated_at` = NOW()
                  WHERE `id` = :id",
@@ -220,6 +233,8 @@ class SettingsController
                     'msme_no' => $msmeNo ?: null,
                     'website' => $website ?: null,
                     'upi_id' => $upiId ?: null,
+                    'upi_display_name' => $upiDisplayName ?: null,
+                    'payment_instructions' => $paymentInstructions ?: null,
                     'terms_and_conditions' => $termsAndConditions ?: null,
                     'id' => $companyId,
                 ]
@@ -272,6 +287,15 @@ class SettingsController
     public function auditLogs(Request $req): Response
     {
         $this->ensureAdmin();
+
+        $isJsonExpected = $req->expectsJson()
+            || str_starts_with($req->getPath(), '/api/')
+            || strtolower((string)$req->header('X-Requested-With')) === 'xmlhttprequest'
+            || str_contains(strtolower((string)$req->header('Accept')), 'application/json');
+
+        if (!$isJsonExpected) {
+            return $this->index($req, 'audit');
+        }
 
         $filters = [
             'search' => trim((string)($req->query('search') ?? '')),

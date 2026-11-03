@@ -12,13 +12,21 @@ use WTSBill\Core\Response;
 use WTSBill\Core\Session;
 use WTSBill\Core\View;
 use WTSBill\Services\AuditLogger;
+use WTSBill\Services\PaymentService;
 
 /**
  * Payments & Receipts Controller.
- * Manages customer collection receipts, supplier disbursements, voucher printing, and audits.
+ * Manages customer collection receipts, partial invoice payments, supplier disbursements, voucher printing, and audits.
  */
 class PaymentController
 {
+    protected PaymentService $paymentService;
+
+    public function __construct(?PaymentService $paymentService = null)
+    {
+        $this->paymentService = $paymentService ?? new PaymentService();
+    }
+
     /**
      * Payments & Receipts master directory view.
      */
@@ -27,6 +35,7 @@ class PaymentController
         Gate::authorize('payments.view', $req);
 
         $companyId = (int)(Session::getCompanyId() ?? 1);
+        $tab = strtolower(trim((string)$req->query('tab', 'vouchers')));
         $type = strtoupper(trim((string)$req->query('type', 'ALL')));
         $search = trim((string)$req->query('search', ''));
 
@@ -68,11 +77,36 @@ class PaymentController
         // Fetch parties for receipt / payment modal
         $customers = Database::select("SELECT id, name FROM `customers` WHERE company_id = ? AND deleted_at IS NULL ORDER BY name ASC", [$companyId]);
         $suppliers = Database::select("SELECT id, name FROM `suppliers` WHERE company_id = ? AND deleted_at IS NULL ORDER BY name ASC", [$companyId]);
+        $bankAccounts = Database::select("SELECT id, bank_name, account_name, account_number, current_balance FROM `bank_accounts` WHERE company_id = ? AND is_active = 1 ORDER BY is_primary DESC, id ASC", [$companyId]);
+
+        // Invoice Payments & Partial Balances
+        $filters = [
+            'search' => $search,
+            'customer_id' => $req->query('customer_id'),
+            'from_date' => $req->query('from_date'),
+            'to_date' => $req->query('to_date'),
+            'status' => $req->query('payment_status', 'ALL'),
+        ];
+        $invoicePayments = $this->paymentService->getInvoicePaymentsList($companyId, $filters);
+
+        // Calculate Invoice Receivables KPI Summary
+        $invKpi = Database::selectOne(
+            "SELECT 
+                COALESCE(SUM(grand_total), 0) AS total_invoiced,
+                COALESCE(SUM(amount_paid), 0) AS total_collected,
+                COALESCE(SUM(amount_due), 0) AS total_outstanding,
+                COUNT(CASE WHEN amount_due > 0.001 AND due_date < CURRENT_DATE THEN 1 END) AS overdue_count
+             FROM `invoices` 
+             WHERE company_id = ? AND deleted_at IS NULL AND status != 'CANCELLED'",
+            [$companyId]
+        );
 
         if ($req->expectsJson()) {
             return Response::success([
                 'payments' => $payments,
                 'summary' => $summary,
+                'invoice_payments' => $invoicePayments,
+                'invoice_kpi' => $invKpi,
             ]);
         }
 
@@ -82,9 +116,14 @@ class PaymentController
             'payments' => $payments,
             'summary' => $summary,
             'activeType' => $type,
+            'activeTab' => $tab,
             'search' => $search,
             'customers' => $customers,
             'suppliers' => $suppliers,
+            'bankAccounts' => $bankAccounts,
+            'invoicePayments' => $invoicePayments,
+            'invoiceKpi' => $invKpi,
+            'filters' => $filters,
         ], 'layouts/app');
 
         return Response::html($html);
@@ -100,6 +139,40 @@ class PaymentController
         $companyId = (int)(Session::getCompanyId() ?? 1);
         $branchId = Session::getBranchId();
         $payload = !empty($req->json()) ? $req->json() : $req->post();
+
+        // Check if this payment is directly allocated to an invoice
+        $invoiceId = (int)($payload['invoice_id'] ?? 0);
+        if ($invoiceId > 0) {
+            try {
+                $result = $this->paymentService->recordInvoicePayment(
+                    $companyId,
+                    (int)($branchId ?: 1),
+                    (int)(Session::getUserId() ?: 1),
+                    (string)Session::get('user_name', 'System'),
+                    $invoiceId,
+                    $payload
+                );
+
+                if ($req->expectsJson()) {
+                    return Response::json($result, 201);
+                }
+
+                Session::flash('success', $result['message']);
+                return Response::redirect('/payments?tab=invoices');
+            } catch (ValidationException $e) {
+                if ($req->expectsJson()) {
+                    return Response::json(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->getErrors()], 422);
+                }
+                Session::flash('error', $e->getMessage());
+                return Response::redirect('/payments?tab=invoices');
+            } catch (\Throwable $e) {
+                if ($req->expectsJson()) {
+                    return Response::json(['success' => false, 'message' => $e->getMessage()], 500);
+                }
+                Session::flash('error', 'Failed to record invoice payment: ' . $e->getMessage());
+                return Response::redirect('/payments?tab=invoices');
+            }
+        }
 
         $paymentType = strtoupper(trim((string)($payload['payment_type'] ?? 'RECEIPT')));
         if (!in_array($paymentType, ['RECEIPT', 'PAYMENT'], true)) {
@@ -260,6 +333,49 @@ class PaymentController
             'status' => 'CANCELLED',
         ], 'id = ?', [$paymentId]);
 
+        // Roll back invoice allocations if payment was linked to sales invoices
+        $allocations = Database::select(
+            "SELECT * FROM payment_allocations WHERE payment_id = ? AND company_id = ?",
+            [$paymentId, $companyId]
+        );
+        foreach ($allocations as $alloc) {
+            if ($alloc['document_type'] === 'INVOICE') {
+                $inv = Database::selectOne("SELECT * FROM invoices WHERE id = ? AND company_id = ?", [$alloc['document_id'], $companyId]);
+                if ($inv) {
+                    $newPaid = max(0.00, round((float)$inv['amount_paid'] - (float)$alloc['allocated_amount'], 2));
+                    $newDue = round((float)$inv['grand_total'] - $newPaid, 2);
+                    $newStatus = ($newDue <= 0.001) ? 'PAID' : (($newPaid > 0.001) ? 'PARTIAL' : 'UNPAID');
+                    $newPaymentStatus = ($newDue <= 0.001) ? 'PAID' : (($newPaid > 0.001) ? 'PARTIALLY_PAID' : 'UNPAID');
+
+                    Database::update('invoices', [
+                        'amount_paid' => $newPaid,
+                        'amount_due' => $newDue,
+                        'status' => $newStatus,
+                        'payment_status' => $newPaymentStatus,
+                        'updated_at' => date('Y-m-d H:i:s'),
+                    ], 'id = ?', [$inv['id']]);
+
+                    // Roll back customer balance
+                    if (!empty($inv['customer_id'])) {
+                        $cust = Database::selectOne("SELECT current_balance FROM customers WHERE id = ?", [$inv['customer_id']]);
+                        if ($cust) {
+                            $newCustBal = round((float)$cust['current_balance'] + (float)$alloc['allocated_amount'], 2);
+                            Database::update('customers', ['current_balance' => $newCustBal], 'id = ?', [$inv['customer_id']]);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Roll back bank balance if present
+        if (!empty($payment['bank_account_id'])) {
+            $ba = Database::selectOne("SELECT current_balance FROM bank_accounts WHERE id = ?", [$payment['bank_account_id']]);
+            if ($ba) {
+                $newBankBal = round((float)$ba['current_balance'] - (float)$payment['amount'], 2);
+                Database::update('bank_accounts', ['current_balance' => $newBankBal], 'id = ?', [$payment['bank_account_id']]);
+            }
+        }
+
         AuditLogger::log(
             action: 'delete',
             module: 'payments',
@@ -278,5 +394,42 @@ class PaymentController
 
         Session::flash('success', 'Payment voucher cancelled successfully.');
         return Response::redirect('/payments');
+    }
+
+    /**
+     * Verify a pending payment transaction.
+     * Route: POST /payments/{id}/verify
+     */
+    public function verifyPayment(Request $req, mixed $id = null): Response
+    {
+        Gate::authorize('payments.create', $req);
+
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $userId = (int)(Session::getUserId() ?? 1);
+        $userName = (string)(Session::get('user_name') ?? 'Admin');
+        $paymentId = (int)(is_array($id) ? ($id['id'] ?? 0) : ($id ?: ($req->input('payment_id') ?? 0)));
+        $externalRef = trim((string)$req->input('transaction_reference', ''));
+
+        try {
+            $result = $this->paymentService->verifyPayment($companyId, $paymentId, $userId, $userName, $externalRef ?: null);
+
+            if ($req->expectsJson()) {
+                return Response::json($result, 200);
+            }
+
+            Session::flash('success', 'Payment verified and confirmed successfully.');
+            return Response::redirect('/payments');
+        } catch (ValidationException $e) {
+            if ($req->expectsJson()) {
+                return Response::json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                    'errors' => $e->getErrors(),
+                ], 422);
+            }
+
+            Session::flash('error', $e->getMessage());
+            return Response::redirect('/payments');
+        }
     }
 }

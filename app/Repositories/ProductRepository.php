@@ -47,7 +47,7 @@ class ProductRepository extends BaseRepository
                        c.name as category_name
                 FROM `{$this->table}` p
                 LEFT JOIN `categories` c ON p.category_id = c.id
-                WHERE p.company_id = ?";
+                WHERE p.company_id = ? AND p.deleted_at IS NULL";
         $params = [$companyId];
 
         if (!empty(trim($search))) {

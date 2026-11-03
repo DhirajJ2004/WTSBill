@@ -332,48 +332,48 @@ $ledgerList = $initialLedger['rows'] ?? $initialLedger['data'] ?? [];
             </div>
         </div>
 
-        <div class="table-container stock-table-responsive" style="position: relative; overflow-x: auto;">
+        <div class="table-container stock-table-responsive" style="position: relative;">
             <table class="table stock-table" id="table-balances">
                 <thead>
                     <tr>
-                        <th style="width: 40px; text-align: center;" class="no-print">
+                        <th style="width: 2.5%; text-align: center;" class="no-print">
                             <input type="checkbox" id="check-all-balances" onclick="window.WTSStock.toggleCheckAll(this)">
                         </th>
-                        <th style="width: 50px;">#</th>
-                        <th class="sortable-th pinned-column" data-sort="product_name" onclick="window.WTSStock.applySort('product_name')">
+                        <th style="width: 2.5%; text-align: center;">#</th>
+                        <th class="sortable-th pinned-column" style="width: 21%;" data-sort="product_name" onclick="window.WTSStock.applySort('product_name')">
                             Product & SKU <span class="sort-icon">⇅</span>
                         </th>
-                        <th class="sortable-th" data-sort="category" onclick="window.WTSStock.applySort('category')">
+                        <th class="sortable-th" style="width: 7%; text-align: center;" data-sort="category" onclick="window.WTSStock.applySort('category')">
                             Category <span class="sort-icon">⇅</span>
                         </th>
-                        <th class="sortable-th" data-sort="warehouse" onclick="window.WTSStock.applySort('warehouse')">
+                        <th class="sortable-th" style="width: 10%;" data-sort="warehouse" onclick="window.WTSStock.applySort('warehouse')">
                             Warehouse <span class="sort-icon">⇅</span>
                         </th>
-                        <th class="sortable-th numeric-col" data-sort="quantity" onclick="window.WTSStock.applySort('quantity')">
+                        <th class="sortable-th numeric-col" style="width: 7%; text-align: right;" data-sort="quantity" onclick="window.WTSStock.applySort('quantity')">
                             On Hand <span class="sort-icon">⇅</span>
                         </th>
-                        <th class="sortable-th numeric-col" data-sort="reserved" onclick="window.WTSStock.applySort('reserved')">
+                        <th class="sortable-th numeric-col" style="width: 5%; text-align: right;" data-sort="reserved" onclick="window.WTSStock.applySort('reserved')">
                             Reserved <span class="sort-icon">⇅</span>
                         </th>
-                        <th class="sortable-th numeric-col" data-sort="available" onclick="window.WTSStock.applySort('available')">
+                        <th class="sortable-th numeric-col" style="width: 6%; text-align: right;" data-sort="available" onclick="window.WTSStock.applySort('available')">
                             Available <span class="sort-icon">⇅</span>
                         </th>
-                        <th class="sortable-th numeric-col" data-sort="reorder_level" onclick="window.WTSStock.applySort('reorder_level')">
-                            Reorder Level <span class="sort-icon">⇅</span>
+                        <th class="sortable-th numeric-col" style="width: 5%; text-align: right;" data-sort="reorder_level" onclick="window.WTSStock.applySort('reorder_level')" title="Reorder Level">
+                            Reorder <span class="sort-icon">⇅</span>
                         </th>
-                        <th class="sortable-th numeric-col" data-sort="unit_price" onclick="window.WTSStock.applySort('unit_price')">
-                            Unit Price <span class="sort-icon">⇅</span>
+                        <th class="sortable-th numeric-col" style="width: 7%; text-align: right;" data-sort="unit_price" onclick="window.WTSStock.applySort('unit_price')">
+                            Price <span class="sort-icon">⇅</span>
                         </th>
-                        <th class="sortable-th numeric-col" data-sort="stock_value" onclick="window.WTSStock.applySort('stock_value')">
-                            Stock Value <span class="sort-icon">⇅</span>
+                        <th class="sortable-th numeric-col" style="width: 9%; text-align: right;" data-sort="stock_value" onclick="window.WTSStock.applySort('stock_value')">
+                            Value <span class="sort-icon">⇅</span>
                         </th>
-                        <th class="sortable-th" style="text-align: center;" data-sort="last_movement" onclick="window.WTSStock.applySort('last_movement')">
-                            Last Movement <span class="sort-icon">⇅</span>
+                        <th class="sortable-th" style="text-align: center; width: 6%;" data-sort="last_movement" onclick="window.WTSStock.applySort('last_movement')" title="Last Movement">
+                            Move <span class="sort-icon">⇅</span>
                         </th>
-                        <th class="sortable-th" style="text-align: center;" data-sort="status" onclick="window.WTSStock.applySort('status')">
+                        <th class="sortable-th" style="text-align: center; width: 6%;" data-sort="status" onclick="window.WTSStock.applySort('status')">
                             Status <span class="sort-icon">⇅</span>
                         </th>
-                        <th style="text-align: right; width: 120px;" class="no-print">Actions</th>
+                        <th style="text-align: center; width: 6%;" class="no-print">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="balances-tbody">
@@ -390,83 +390,83 @@ $ledgerList = $initialLedger['rows'] ?? $initialLedger['data'] ?? [];
                                 <td style="text-align: center;" class="no-print">
                                     <input type="checkbox" class="stock-row-check" value="<?= e((string)$sb['id']) ?>" onchange="window.WTSStock.onRowCheckChange()">
                                 </td>
-                                <td style="color: var(--text-muted); font-size: 0.8rem;"><?= $i + 1 ?></td>
-                                <td class="pinned-column">
-                                    <div style="font-weight: 600; color: var(--text-primary);"><?= e($sb['product_name']) ?></div>
-                                    <div style="font-size: 0.75rem; color: #cbd5e1; margin-top: 2px;">
-                                        SKU: <code style="color: #93c5fd; background: rgba(59,130,246,0.15); padding: 1px 4px; border-radius: 3px;"><?= e($sb['sku']) ?></code>
+                                <td style="color: var(--text-muted); font-size: 0.75rem; text-align: center;"><?= $i + 1 ?></td>
+                                <td class="pinned-column" style="white-space: normal; line-height: 1.25;">
+                                    <div style="font-weight: 600; color: var(--text-primary); font-size: 0.78rem; line-height: 1.25;"><?= e($sb['product_name']) ?></div>
+                                    <div style="font-size: 0.68rem; color: #cbd5e1; margin-top: 2px; display: flex; flex-wrap: wrap; gap: 3px; align-items: center;">
+                                        <code style="color: #93c5fd; background: rgba(59,130,246,0.15); padding: 1px 3px; border-radius: 3px;"><?= e($sb['sku']) ?></code>
                                         <?php if (!empty($sb['barcode'])): ?>
-                                            &bull; <span style="color: var(--text-muted);">Barcode: <?= e($sb['barcode']) ?></span>
+                                            <span style="color: var(--text-muted); font-size: 0.65rem;" title="Barcode: <?= e($sb['barcode']) ?>">&bull; <?= e($sb['barcode']) ?></span>
                                         <?php endif; ?>
                                     </div>
                                 </td>
-                                <td>
-                                    <span class="badge" style="background: rgba(148,163,184,0.15); color: var(--text-secondary); font-size: 0.75rem;">
+                                <td style="text-align: center;">
+                                    <span class="badge" style="background: rgba(148,163,184,0.15); color: var(--text-secondary); font-size: 0.68rem; padding: 2px 5px;">
                                         <?= e($sb['category_name'] ?? 'General') ?>
                                     </span>
                                 </td>
-                                <td><?= e($sb['warehouse_name'] ?: 'Central Hub') ?></td>
+                                <td style="white-space: normal; line-height: 1.2; font-size: 0.74rem; max-width: 85px;"><?= e($sb['warehouse_name'] ?: 'Central Hub') ?></td>
                                 
                                 <!-- On Hand with Mini Stock Progress Bar -->
-                                <td class="numeric-col" style="font-weight: 700;">
-                                    <div><?= number_format((float)$sb['quantity'], 0) ?> <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 400;"><?= e($sb['unit'] ?? 'Pcs') ?></span></div>
-                                    <div class="stock-mini-bar-bg" title="On Hand vs Reorder Threshold">
+                                <td class="numeric-col" style="font-weight: 700; font-size: 0.78rem;">
+                                    <div><?= number_format((float)$sb['quantity'], 0) ?> <span style="font-size: 0.68rem; color: var(--text-muted); font-weight: 400;"><?= e($sb['unit'] ?? 'Pcs') ?></span></div>
+                                    <div class="stock-mini-bar-bg" style="height: 3px; margin-top: 2px;" title="On Hand vs Reorder Threshold">
                                         <div class="stock-mini-bar-fill <?= $isOos ? 'bar-danger' : ($isLow ? 'bar-warning' : 'bar-success') ?>" 
                                              style="width: <?= (int)($sb['stock_bar_percent'] ?? 50) ?>%;"></div>
                                     </div>
                                 </td>
 
                                 <!-- Reserved Quantity -->
-                                <td class="numeric-col" style="color: <?= (float)$sb['reserved_quantity'] > 0 ? 'var(--color-warning)' : 'var(--text-muted)' ?>;">
+                                <td class="numeric-col" style="font-size: 0.78rem; color: <?= (float)$sb['reserved_quantity'] > 0 ? 'var(--color-warning)' : 'var(--text-muted)' ?>;">
                                     <?= number_format((float)$sb['reserved_quantity'], 0) ?>
                                 </td>
 
                                 <!-- Available Quantity -->
-                                <td class="numeric-col" style="font-weight: 700; color: <?= (float)$sb['available_quantity'] > 0 ? 'var(--color-success)' : 'var(--color-danger)' ?>;">
+                                <td class="numeric-col" style="font-weight: 700; font-size: 0.78rem; color: <?= (float)$sb['available_quantity'] > 0 ? 'var(--color-success)' : 'var(--color-danger)' ?>;">
                                     <?= number_format((float)$sb['available_quantity'], 0) ?>
                                 </td>
 
                                 <!-- Reorder Level -->
-                                <td class="numeric-col" style="color: var(--text-muted);">
+                                <td class="numeric-col" style="color: var(--text-muted); font-size: 0.78rem;">
                                     <?= number_format((float)$sb['reorder_level'], 0) ?>
                                 </td>
 
                                 <!-- Unit Price -->
-                                <td class="numeric-col">
+                                <td class="numeric-col" style="font-size: 0.76rem;">
                                     <?= e($sb['unit_price_formatted'] ?? format_currency((float)($sb['unit_price'] ?? 0))) ?>
                                 </td>
 
                                 <!-- Stock Value -->
-                                <td class="numeric-col" style="font-weight: 700; color: var(--color-primary);">
+                                <td class="numeric-col" style="font-weight: 700; font-size: 0.78rem; color: var(--color-primary);">
                                     <?= e($sb['stock_value_formatted'] ?? format_currency((float)($sb['stock_value'] ?? 0))) ?>
                                 </td>
 
                                 <!-- Last Movement -->
-                                <td style="text-align: center; font-size: 0.8rem; color: var(--text-muted);">
+                                <td style="text-align: center; font-size: 0.74rem; color: var(--text-muted); white-space: nowrap;">
                                     <?= e($sb['last_movement'] ?? '—') ?>
                                 </td>
 
                                 <!-- Status Badge -->
-                                <td style="text-align: center;">
-                                    <span class="badge <?= $statusBadgeClass ?>" style="font-size: 0.72rem; padding: 3px 8px; font-weight: 700;">
+                                <td style="text-align: center; white-space: nowrap;">
+                                    <span class="badge <?= $statusBadgeClass ?>" style="font-size: 0.65rem; padding: 2px 4px; font-weight: 700;">
                                         <?= e($sb['status'] ?? 'HEALTHY') ?>
                                     </span>
                                 </td>
 
                                 <!-- Action Buttons -->
-                                <td style="text-align: right;" class="no-print">
-                                    <div style="display: flex; gap: 4px; justify-content: flex-end;">
-                                        <button type="button" class="btn-icon" title="Adjust Stock" onclick="window.WTSStock.openAdjustmentModal(<?= (int)$sb['product_id'] ?>, <?= (int)$sb['warehouse_id'] ?>)" aria-label="Adjust Stock">
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                                <td style="text-align: center; white-space: nowrap;" class="no-print">
+                                    <div style="display: flex; gap: 2px; justify-content: center;">
+                                        <button type="button" class="btn-icon btn-icon-compact" title="Adjust Stock" onclick="window.WTSStock.openAdjustmentModal(<?= (int)$sb['product_id'] ?>, <?= (int)$sb['warehouse_id'] ?>)" aria-label="Adjust Stock">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
                                         </button>
-                                        <button type="button" class="btn-icon" title="View Ledger" onclick="window.WTSStock.viewItemLedger(<?= (int)$sb['product_id'] ?>)" aria-label="View Ledger">
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                                        <button type="button" class="btn-icon btn-icon-compact" title="View Ledger" onclick="window.WTSStock.viewItemLedger(<?= (int)$sb['product_id'] ?>)" aria-label="View Ledger">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
                                         </button>
-                                        <button type="button" class="btn-icon" title="Warehouse Transfer" onclick="window.WTSStock.openTransferModal(<?= (int)$sb['product_id'] ?>, <?= (int)$sb['warehouse_id'] ?>, <?= (float)$sb['available_quantity'] ?>)" aria-label="Warehouse Transfer">
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+                                        <button type="button" class="btn-icon btn-icon-compact" title="Warehouse Transfer" onclick="window.WTSStock.openTransferModal(<?= (int)$sb['product_id'] ?>, <?= (int)$sb['warehouse_id'] ?>, <?= (float)$sb['available_quantity'] ?>)" aria-label="Warehouse Transfer">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
                                         </button>
-                                        <button type="button" class="btn-icon" title="Item Details" onclick="window.WTSStock.openItemDetails(<?= (int)$sb['product_id'] ?>)" aria-label="Item Details">
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                        <button type="button" class="btn-icon btn-icon-compact" title="Item Details" onclick="window.WTSStock.openItemDetails(<?= (int)$sb['product_id'] ?>)" aria-label="Item Details">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                                         </button>
                                     </div>
                                 </td>
@@ -507,58 +507,62 @@ $ledgerList = $initialLedger['rows'] ?? $initialLedger['data'] ?? [];
             <div style="font-size: 0.85rem; color: var(--text-muted);">Immutable audit trail with matching GL journal integration</div>
         </div>
 
-        <div class="table-container stock-table-responsive" style="overflow-x: auto;">
+        <div class="table-container stock-table-responsive">
             <table class="table stock-table" id="table-history">
                 <thead>
                     <tr>
-                        <th style="width: 100px;">Date</th>
-                        <th style="width: 130px;">Adjustment #</th>
-                        <th>Product & SKU</th>
-                        <th>Warehouse</th>
-                        <th style="text-align: center; width: 110px;">Type</th>
-                        <th style="text-align: right; width: 90px;" class="numeric-col">Quantity</th>
-                        <th style="text-align: right; width: 100px;" class="numeric-col">Unit Cost</th>
-                        <th style="text-align: right; width: 110px;" class="numeric-col">Total Impact</th>
-                        <th>Reason / Audit Notes</th>
-                        <th style="width: 120px;">Operator</th>
-                        <th style="text-align: center; width: 90px;">Status</th>
-                        <th style="text-align: right; width: 130px;" class="no-print">Actions</th>
+                        <th style="width: 8%; text-align: center;">Date</th>
+                        <th style="width: 9%;">Adjustment #</th>
+                        <th style="width: 17%;">Product & SKU</th>
+                        <th style="width: 10%;">Warehouse</th>
+                        <th style="text-align: center; width: 6%;">Type</th>
+                        <th style="text-align: right; width: 5%;" class="numeric-col">Qty</th>
+                        <th style="text-align: right; width: 7%;" class="numeric-col">Unit Cost</th>
+                        <th style="text-align: right; width: 8%;" class="numeric-col">Impact</th>
+                        <th style="width: 13%;">Reason / Notes</th>
+                        <th style="width: 6%;">Operator</th>
+                        <th style="text-align: center; width: 5%;">Status</th>
+                        <th style="text-align: center; width: 6%;" class="no-print">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="history-tbody">
                     <?php if (!empty($historyList)): ?>
                         <?php foreach ($historyList as $h): ?>
                             <tr>
-                                <td style="font-size: 0.825rem; color: var(--text-muted);"><?= e($h['date']) ?></td>
-                                <td><code style="color: #93c5fd;"><?= e($h['adjustment_number']) ?></code></td>
+                                <td style="font-size: 0.78rem; text-align: center; color: var(--text-muted); white-space: nowrap;"><?= e($h['date']) ?></td>
+                                <td><code style="color: #93c5fd; font-size: 0.74rem;"><?= e($h['adjustment_number']) ?></code></td>
                                 <td>
-                                    <strong><?= e($h['product_name']) ?></strong>
-                                    <div style="font-size: 0.75rem; color: #cbd5e1;">SKU: <?= e($h['sku']) ?></div>
+                                    <div style="font-weight: 600; font-size: 0.8rem; line-height: 1.25;"><?= e($h['product_name']) ?></div>
+                                    <div style="font-size: 0.7rem; color: #cbd5e1;">SKU: <?= e($h['sku']) ?></div>
                                 </td>
-                                <td><?= e($h['warehouse_name']) ?></td>
+                                <td style="font-size: 0.78rem; line-height: 1.25; white-space: normal;"><?= e($h['warehouse_name']) ?></td>
                                 <td style="text-align: center;">
                                     <?php 
                                         $tBadge = ($h['type'] === 'Increase' || $h['type'] === 'Opening Stock') ? 'badge-success' : 'badge-danger';
                                     ?>
-                                    <span class="badge <?= $tBadge ?>"><?= e($h['type']) ?></span>
+                                    <span class="badge <?= $tBadge ?>" style="font-size: 0.68rem; padding: 2px 5px;"><?= e($h['type']) ?></span>
                                 </td>
-                                <td class="numeric-col" style="font-weight: 700;">
+                                <td class="numeric-col" style="font-weight: 700; font-size: 0.8rem;">
                                     <?= ($h['direction'] === 'OUT' ? '-' : '+') . number_format((float)$h['quantity'], 0) ?>
                                 </td>
-                                <td class="numeric-col"><?= e($h['unit_cost_formatted']) ?></td>
-                                <td class="numeric-col" style="font-weight: 700; color: var(--color-primary);"><?= e($h['total_cost_formatted']) ?></td>
-                                <td style="font-size: 0.825rem; max-width: 200px;"><?= e($h['reason'] . ($h['notes'] ? " ({$h['notes']})" : '')) ?></td>
-                                <td style="font-size: 0.825rem; color: var(--text-secondary);"><?= e($h['user']) ?></td>
-                                <td style="text-align: center;"><span class="badge badge-success">POSTED</span></td>
-                                <td style="text-align: right;" class="no-print">
-                                    <div style="display: flex; gap: 4px; justify-content: flex-end;">
+                                <td class="numeric-col" style="font-size: 0.78rem;"><?= e($h['unit_cost_formatted']) ?></td>
+                                <td class="numeric-col" style="font-weight: 700; font-size: 0.8rem; color: var(--color-primary);"><?= e($h['total_cost_formatted']) ?></td>
+                                <td class="stock-reason-cell">
+                                    <div style="max-height: 38px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: 0.76rem; line-height: 1.25;" title="<?= e($h['reason'] . ($h['notes'] ? " ({$h['notes']})" : '')) ?>">
+                                        <?= e($h['reason'] . ($h['notes'] ? " ({$h['notes']})" : '')) ?>
+                                    </div>
+                                </td>
+                                <td style="font-size: 0.78rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="<?= e($h['user']) ?>"><?= e($h['user']) ?></td>
+                                <td style="text-align: center; white-space: nowrap;"><span class="badge badge-success" style="font-size: 0.68rem; padding: 2px 5px;">POSTED</span></td>
+                                <td style="text-align: center; white-space: nowrap;" class="no-print">
+                                    <div style="display: flex; gap: 3px; justify-content: center;">
                                         <?php if (\WTSBill\Auth\Gate::can('inventory.adjustment.edit')): ?>
-                                            <button type="button" class="btn btn-secondary btn-sm" style="padding: 2px 6px; font-size: 0.72rem;" onclick="window.editAdjustmentModal(<?= (int)$h['id'] ?>, '<?= e(addslashes($h['adjustment_number'])) ?>', '<?= e(addslashes($h['reason'] ?? '')) ?>', '<?= e(addslashes($h['notes'] ?? '')) ?>')">Edit</button>
+                                            <button type="button" class="btn btn-secondary btn-sm" style="padding: 1px 5px; font-size: 0.7rem;" onclick="window.editAdjustmentModal(<?= (int)$h['id'] ?>, '<?= e(addslashes($h['adjustment_number'])) ?>', '<?= e(addslashes($h['reason'] ?? '')) ?>', '<?= e(addslashes($h['notes'] ?? '')) ?>')">Edit</button>
                                         <?php endif; ?>
                                         <?php if (\WTSBill\Auth\Gate::can('inventory.adjustment.delete')): ?>
                                             <form method="POST" action="/inventory/stock/adjustments/<?= (int)$h['id'] ?>/delete" onsubmit="return confirm('Revert and delete stock adjustment <?= e(addslashes($h['adjustment_number'])) ?>? This will restore original inventory balances.');" style="margin: 0; display: inline;">
                                                 <input type="hidden" name="_csrf_token" value="<?= e(\WTSBill\Core\Session::csrfToken()) ?>">
-                                                <button type="submit" class="btn btn-danger btn-sm" style="padding: 2px 6px; font-size: 0.72rem;">Delete</button>
+                                                <button type="submit" class="btn btn-danger btn-sm" style="padding: 1px 5px; font-size: 0.7rem;">Delete</button>
                                             </form>
                                         <?php endif; ?>
                                     </div>
@@ -595,19 +599,19 @@ $ledgerList = $initialLedger['rows'] ?? $initialLedger['data'] ?? [];
             <div style="font-size: 0.85rem; color: var(--text-muted);">Complete In / Out movements with running balance calculation</div>
         </div>
 
-        <div class="table-container stock-table-responsive" style="overflow-x: auto;">
+        <div class="table-container stock-table-responsive">
             <table class="table stock-table" id="table-ledger">
                 <thead>
                     <tr>
-                        <th style="width: 130px;">Date & Time</th>
-                        <th>Product & SKU</th>
-                        <th>Warehouse</th>
-                        <th style="width: 140px;">Movement Type</th>
-                        <th style="text-align: center; width: 80px;">Direction</th>
-                        <th style="text-align: right; width: 90px;" class="numeric-col">Quantity</th>
-                        <th style="text-align: right; width: 100px;" class="numeric-col">Balance After</th>
-                        <th style="width: 130px;">Reference Doc</th>
-                        <th>Movement Notes</th>
+                        <th style="width: 9%; text-align: center;">Date & Time</th>
+                        <th style="width: 20%;">Product & SKU</th>
+                        <th style="width: 10%;">Warehouse</th>
+                        <th style="width: 10%;">Movement Type</th>
+                        <th style="text-align: center; width: 6%;">Direction</th>
+                        <th style="text-align: right; width: 6%;" class="numeric-col">Qty</th>
+                        <th style="text-align: right; width: 7%;" class="numeric-col">Balance</th>
+                        <th style="width: 10%;">Reference Doc</th>
+                        <th style="width: 22%;">Movement Notes</th>
                     </tr>
                 </thead>
                 <tbody id="ledger-tbody">
@@ -635,7 +639,11 @@ $ledgerList = $initialLedger['rows'] ?? $initialLedger['data'] ?? [];
                                 </td>
                                 <td class="numeric-col" style="font-weight: 700;"><?= number_format((float)$l['balance_after'], 0) ?></td>
                                 <td><code style="color: #f59e0b;"><?= e($l['reference_number']) ?></code></td>
-                                <td style="font-size: 0.825rem; color: var(--text-secondary);"><?= e($l['notes']) ?></td>
+                                <td class="stock-reason-cell">
+                                    <div style="max-height: 48px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;" title="<?= e($l['notes']) ?>">
+                                        <?= e($l['notes']) ?>
+                                    </div>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
@@ -963,6 +971,69 @@ $ledgerList = $initialLedger['rows'] ?? $initialLedger['data'] ?? [];
     border-bottom: 1px solid var(--border-color);
     font-size: 0.85rem;
     white-space: nowrap;
+}
+.stock-reason-cell {
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    line-height: 1.25 !important;
+    font-size: 0.76rem !important;
+}
+
+/* Full-width responsive table fitting to prevent horizontal scrollbars on desktop */
+#table-balances, #table-history, #table-ledger {
+    width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+}
+
+.stock-table-responsive {
+    overflow-x: hidden !important;
+    width: 100% !important;
+}
+
+#table-balances th, #table-balances td,
+#table-history th, #table-history td,
+#table-ledger th, #table-ledger td {
+    padding: 0.45rem 0.35rem !important;
+    vertical-align: middle !important;
+    box-sizing: border-box !important;
+}
+
+#table-balances th, #table-history th, #table-ledger th {
+    font-size: 0.70rem !important;
+    padding: 0.5rem 0.35rem !important;
+    letter-spacing: 0.02em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#table-balances td, #table-history td, #table-ledger td {
+    font-size: 0.78rem !important;
+    height: auto !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#table-balances td.pinned-column, #table-history td.pinned-column {
+    white-space: normal !important;
+}
+
+@media (max-width: 991px) {
+    .stock-table-responsive {
+        overflow-x: auto !important;
+    }
+    #table-balances, #table-history, #table-ledger {
+        min-width: 980px !important;
+    }
+}
+
+.btn-icon-compact {
+    width: 20px !important;
+    height: 20px !important;
+    padding: 1px !important;
+    border-radius: 3px !important;
 }
 .stock-table tbody tr {
     transition: background-color 0.12s ease;
@@ -1475,7 +1546,7 @@ $ledgerList = $initialLedger['rows'] ?? $initialLedger['data'] ?? [];
         showSkeleton: function(tbodyId) {
             const tbody = document.getElementById(tbodyId);
             if (!tbody) return;
-            const cols = tbodyId === 'balances-tbody' ? 14 : (tbodyId === 'history-tbody' ? 11 : 9);
+            const cols = tbodyId === 'balances-tbody' ? 14 : (tbodyId === 'history-tbody' ? 12 : 9);
             let html = '';
             for (let i = 0; i < 5; i++) {
                 html += '<tr class="skeleton-row">';
@@ -1545,66 +1616,66 @@ $ledgerList = $initialLedger['rows'] ?? $initialLedger['data'] ?? [];
                         <td style="text-align: center;" class="no-print">
                             <input type="checkbox" class="stock-row-check" value="${sb.id}" ${isChecked ? 'checked' : ''} onchange="window.WTSStock.onRowCheckChange()">
                         </td>
-                        <td style="color: var(--text-muted); font-size: 0.8rem;">${(this.state.page - 1) * this.state.per_page + i + 1}</td>
-                        <td class="pinned-column">
-                            <div style="font-weight: 600; color: var(--text-primary);">${this.escapeHtml(sb.product_name)}</div>
-                            <div style="font-size: 0.75rem; color: #cbd5e1; margin-top: 2px;">
-                                SKU: <code style="color: #93c5fd; background: rgba(59,130,246,0.15); padding: 1px 4px; border-radius: 3px;">${this.escapeHtml(sb.sku)}</code>
-                                ${sb.barcode ? `&bull; <span style="color: var(--text-muted);">Barcode: ${this.escapeHtml(sb.barcode)}</span>` : ''}
+                        <td style="color: var(--text-muted); font-size: 0.75rem; text-align: center;">${(this.state.page - 1) * this.state.per_page + i + 1}</td>
+                        <td class="pinned-column" style="white-space: normal; line-height: 1.25;">
+                            <div style="font-weight: 600; color: var(--text-primary); font-size: 0.78rem; line-height: 1.25;">${this.escapeHtml(sb.product_name)}</div>
+                            <div style="font-size: 0.68rem; color: #cbd5e1; margin-top: 2px; display: flex; flex-wrap: wrap; gap: 3px; align-items: center;">
+                                <code style="color: #93c5fd; background: rgba(59,130,246,0.15); padding: 1px 3px; border-radius: 3px;">${this.escapeHtml(sb.sku)}</code>
+                                ${sb.barcode ? `<span style="color: var(--text-muted); font-size: 0.65rem;" title="Barcode: ${this.escapeHtml(sb.barcode)}">&bull; ${this.escapeHtml(sb.barcode)}</span>` : ''}
                             </div>
                         </td>
-                        <td>
-                            <span class="badge" style="background: rgba(148,163,184,0.15); color: var(--text-secondary); font-size: 0.75rem;">
+                        <td style="text-align: center;">
+                            <span class="badge" style="background: rgba(148,163,184,0.15); color: var(--text-secondary); font-size: 0.68rem; padding: 2px 5px;">
                                 ${this.escapeHtml(sb.category_name || 'General')}
                             </span>
                         </td>
-                        <td>${this.escapeHtml(sb.warehouse_name || 'Central Hub')}</td>
+                        <td style="white-space: normal; line-height: 1.2; font-size: 0.74rem; max-width: 85px;">${this.escapeHtml(sb.warehouse_name || 'Central Hub')}</td>
                         
-                        <td class="numeric-col" style="font-weight: 700;">
-                            <div>${Number(sb.quantity).toLocaleString('en-IN')} <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 400;">${this.escapeHtml(sb.unit || 'Pcs')}</span></div>
-                            <div class="stock-mini-bar-bg" title="On Hand vs Reorder Threshold">
+                        <td class="numeric-col" style="font-weight: 700; font-size: 0.78rem;">
+                            <div>${Number(sb.quantity).toLocaleString('en-IN')} <span style="font-size: 0.68rem; color: var(--text-muted); font-weight: 400;">${this.escapeHtml(sb.unit || 'Pcs')}</span></div>
+                            <div class="stock-mini-bar-bg" style="height: 3px; margin-top: 2px;" title="On Hand vs Reorder Threshold">
                                 <div class="stock-mini-bar-fill ${isOos ? 'bar-danger' : (isLow ? 'bar-warning' : 'bar-success')}" 
                                      style="width: ${sb.stock_bar_percent || 50}%;"></div>
                             </div>
                         </td>
 
-                        <td class="numeric-col" style="color: ${parseFloat(sb.reserved_quantity) > 0 ? 'var(--color-warning)' : 'var(--text-muted)'};">
+                        <td class="numeric-col" style="font-size: 0.78rem; color: ${parseFloat(sb.reserved_quantity) > 0 ? 'var(--color-warning)' : 'var(--text-muted)'};">
                             ${Number(sb.reserved_quantity).toLocaleString('en-IN')}
                         </td>
 
-                        <td class="numeric-col" style="font-weight: 700; color: ${parseFloat(sb.available_quantity) > 0 ? 'var(--color-success)' : 'var(--color-danger)'};">
+                        <td class="numeric-col" style="font-weight: 700; font-size: 0.78rem; color: ${parseFloat(sb.available_quantity) > 0 ? 'var(--color-success)' : 'var(--color-danger)'};">
                             ${Number(sb.available_quantity).toLocaleString('en-IN')}
                         </td>
 
-                        <td class="numeric-col" style="color: var(--text-muted);">
+                        <td class="numeric-col" style="color: var(--text-muted); font-size: 0.78rem;">
                             ${Number(sb.reorder_level).toLocaleString('en-IN')}
                         </td>
 
-                        <td class="numeric-col">${sb.unit_price_formatted}</td>
+                        <td class="numeric-col" style="font-size: 0.76rem;">${sb.unit_price_formatted}</td>
 
-                        <td class="numeric-col" style="font-weight: 700; color: var(--color-primary);">${sb.stock_value_formatted}</td>
+                        <td class="numeric-col" style="font-weight: 700; font-size: 0.78rem; color: var(--color-primary);">${sb.stock_value_formatted}</td>
 
-                        <td style="text-align: center; font-size: 0.8rem; color: var(--text-muted);">${sb.last_movement || '—'}</td>
+                        <td style="text-align: center; font-size: 0.74rem; color: var(--text-muted); white-space: nowrap;">${sb.last_movement || '—'}</td>
 
-                        <td style="text-align: center;">
-                            <span class="badge ${statusBadgeClass}" style="font-size: 0.72rem; padding: 3px 8px; font-weight: 700;">
+                        <td style="text-align: center; white-space: nowrap;">
+                            <span class="badge ${statusBadgeClass}" style="font-size: 0.65rem; padding: 2px 4px; font-weight: 700;">
                                 ${sb.status}
                             </span>
                         </td>
 
-                        <td style="text-align: right;" class="no-print">
-                            <div style="display: flex; gap: 4px; justify-content: flex-end;">
-                                <button type="button" class="btn-icon" title="Adjust Stock" onclick="window.WTSStock.openAdjustmentModal(${sb.product_id}, ${sb.warehouse_id})" aria-label="Adjust Stock">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                        <td style="text-align: center; white-space: nowrap;" class="no-print">
+                            <div style="display: flex; gap: 2px; justify-content: center;">
+                                <button type="button" class="btn-icon btn-icon-compact" title="Adjust Stock" onclick="window.WTSStock.openAdjustmentModal(${sb.product_id}, ${sb.warehouse_id})" aria-label="Adjust Stock">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
                                 </button>
-                                <button type="button" class="btn-icon" title="View Ledger" onclick="window.WTSStock.viewItemLedger(${sb.product_id})" aria-label="View Ledger">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                                <button type="button" class="btn-icon btn-icon-compact" title="View Ledger" onclick="window.WTSStock.viewItemLedger(${sb.product_id})" aria-label="View Ledger">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
                                 </button>
-                                <button type="button" class="btn-icon" title="Warehouse Transfer" onclick="window.WTSStock.openTransferModal(${sb.product_id}, ${sb.warehouse_id}, ${sb.available_quantity})" aria-label="Warehouse Transfer">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+                                <button type="button" class="btn-icon btn-icon-compact" title="Warehouse Transfer" onclick="window.WTSStock.openTransferModal(${sb.product_id}, ${sb.warehouse_id}, ${sb.available_quantity})" aria-label="Warehouse Transfer">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
                                 </button>
-                                <button type="button" class="btn-icon" title="Item Details" onclick="window.WTSStock.openItemDetails(${sb.product_id})" aria-label="Item Details">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                <button type="button" class="btn-icon btn-icon-compact" title="Item Details" onclick="window.WTSStock.openItemDetails(${sb.product_id})" aria-label="Item Details">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                                 </button>
                             </div>
                         </td>
@@ -1622,33 +1693,48 @@ $ledgerList = $initialLedger['rows'] ?? $initialLedger['data'] ?? [];
             if (tabBadge) tabBadge.textContent = rows.length;
 
             if (rows.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">No physical adjustment history found matching your filters.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="12" style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">No physical adjustment history found matching your filters.</td></tr>';
                 return;
             }
 
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
             let html = '';
             rows.forEach(h => {
                 const isInc = h.type === 'Increase' || h.type === 'Opening Stock';
+                const reasonFull = (h.reason || '') + (h.notes ? ' (' + h.notes + ')' : '');
                 html += `
                     <tr>
-                        <td style="font-size: 0.825rem; color: var(--text-muted);">${h.date}</td>
-                        <td><code style="color: #93c5fd;">${this.escapeHtml(h.adjustment_number)}</code></td>
+                        <td style="font-size: 0.78rem; text-align: center; color: var(--text-muted); white-space: nowrap;">${h.date}</td>
+                        <td><code style="color: #93c5fd; font-size: 0.74rem;">${this.escapeHtml(h.adjustment_number)}</code></td>
                         <td>
-                            <strong>${this.escapeHtml(h.product_name)}</strong>
-                            <div style="font-size: 0.75rem; color: #cbd5e1;">SKU: ${this.escapeHtml(h.sku)}</div>
+                            <div style="font-weight: 600; font-size: 0.8rem; line-height: 1.25;">${this.escapeHtml(h.product_name)}</div>
+                            <div style="font-size: 0.7rem; color: #cbd5e1;">SKU: ${this.escapeHtml(h.sku)}</div>
                         </td>
-                        <td>${this.escapeHtml(h.warehouse_name)}</td>
+                        <td style="font-size: 0.78rem; line-height: 1.25; white-space: normal;">${this.escapeHtml(h.warehouse_name)}</td>
                         <td style="text-align: center;">
-                            <span class="badge ${isInc ? 'badge-success' : 'badge-danger'}">${h.type}</span>
+                            <span class="badge ${isInc ? 'badge-success' : 'badge-danger'}" style="font-size: 0.68rem; padding: 2px 5px;">${h.type}</span>
                         </td>
-                        <td class="numeric-col" style="font-weight: 700;">
+                        <td class="numeric-col" style="font-weight: 700; font-size: 0.8rem;">
                             ${(h.direction === 'OUT' ? '-' : '+') + Number(h.quantity).toLocaleString('en-IN')}
                         </td>
-                        <td class="numeric-col">${h.unit_cost_formatted}</td>
-                        <td class="numeric-col" style="font-weight: 700; color: var(--color-primary);">${h.total_cost_formatted}</td>
-                        <td style="font-size: 0.825rem; max-width: 200px;">${this.escapeHtml(h.reason + (h.notes ? ' (' + h.notes + ')' : ''))}</td>
-                        <td style="font-size: 0.825rem; color: var(--text-secondary);">${this.escapeHtml(h.user)}</td>
-                        <td style="text-align: center;"><span class="badge badge-success">POSTED</span></td>
+                        <td class="numeric-col" style="font-size: 0.78rem;">${h.unit_cost_formatted}</td>
+                        <td class="numeric-col" style="font-weight: 700; font-size: 0.8rem; color: var(--color-primary);">${h.total_cost_formatted}</td>
+                        <td class="stock-reason-cell">
+                            <div style="max-height: 38px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: 0.76rem; line-height: 1.25;" title="${this.escapeHtml(reasonFull)}">
+                                ${this.escapeHtml(reasonFull)}
+                            </div>
+                        </td>
+                        <td style="font-size: 0.78rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${this.escapeHtml(h.user)}">${this.escapeHtml(h.user)}</td>
+                        <td style="text-align: center; white-space: nowrap;"><span class="badge badge-success" style="font-size: 0.68rem; padding: 2px 5px;">POSTED</span></td>
+                        <td style="text-align: center; white-space: nowrap;" class="no-print">
+                            <div style="display: flex; gap: 3px; justify-content: center;">
+                                <button type="button" class="btn btn-secondary btn-sm" style="padding: 1px 5px; font-size: 0.7rem;" onclick="window.editAdjustmentModal(${h.id}, '${this.escapeHtml(h.adjustment_number)}', '${this.escapeHtml(h.reason || '')}', '${this.escapeHtml(h.notes || '')}')">Edit</button>
+                                <form method="POST" action="/inventory/stock/adjustments/${h.id}/delete" onsubmit="return confirm('Revert and delete stock adjustment ${this.escapeHtml(h.adjustment_number)}? This will restore original inventory balances.');" style="margin: 0; display: inline;">
+                                    <input type="hidden" name="_csrf_token" value="${csrfToken}">
+                                    <button type="submit" class="btn btn-danger btn-sm" style="padding: 1px 5px; font-size: 0.7rem;">Delete</button>
+                                </form>
+                            </div>
+                        </td>
                     </tr>
                 `;
             });
@@ -1692,7 +1778,11 @@ $ledgerList = $initialLedger['rows'] ?? $initialLedger['data'] ?? [];
                         </td>
                         <td class="numeric-col" style="font-weight: 700;">${Number(l.balance_after).toLocaleString('en-IN')}</td>
                         <td><code style="color: #f59e0b;">${this.escapeHtml(l.reference_number)}</code></td>
-                        <td style="font-size: 0.825rem; color: var(--text-secondary);">${this.escapeHtml(l.notes)}</td>
+                        <td class="stock-reason-cell">
+                            <div style="max-height: 48px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;" title="${this.escapeHtml(l.notes || '')}">
+                                ${this.escapeHtml(l.notes || '')}
+                            </div>
+                        </td>
                     </tr>
                 `;
             });

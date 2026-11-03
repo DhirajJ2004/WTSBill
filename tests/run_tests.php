@@ -47,6 +47,14 @@ require_once ROOT_PATH . '/tests/Feature/AuditLogSettingsTest.php';
 require_once ROOT_PATH . '/tests/Feature/DashboardInvoiceViewTest.php';
 require_once ROOT_PATH . '/tests/Feature/QuotationPrintTest.php';
 require_once ROOT_PATH . '/tests/Security/RbacRoleIsolationTest.php';
+require_once ROOT_PATH . '/tests/Feature/InvoiceCategoryFilterTest.php';
+require_once ROOT_PATH . '/tests/Feature/CategoryManagementTest.php';
+require_once ROOT_PATH . '/tests/Feature/PartialPaymentTest.php';
+require_once ROOT_PATH . '/tests/Feature/QuotationManagementTest.php';
+require_once ROOT_PATH . '/tests/Feature/SupplierDeleteTest.php';
+require_once ROOT_PATH . '/tests/Feature/AccountManagementTest.php';
+require_once ROOT_PATH . '/tests/Feature/DynamicUpiQrPaymentTest.php';
+
 
 
 $totalTests = 0;
@@ -178,6 +186,29 @@ echo "\n--- SECTION 36: FEATURE TESTS — QUOTATIONS PRINT OPTION & DOCUMENT TEM
 
 echo "\n--- SECTION 37: SECURITY TESTS — RBAC ROLE ISOLATION & SERVER-SIDE GATING ---\n";
 \Tests\Security\RbacRoleIsolationTest::run($assert);
+
+echo "\n--- SECTION 38: FEATURE TESTS — DYNAMIC PRODUCT CATEGORY FILTER IN INVOICE ITEMS ---\n";
+\Tests\Feature\InvoiceCategoryFilterTest::run($assert);
+
+echo "\n--- SECTION 39: FEATURE TESTS — CATEGORY MANAGEMENT (EDIT, DELETE, MANAGE) ---\n";
+\Tests\Feature\CategoryManagementTest::run($assert);
+
+echo "\n--- SECTION 40: FEATURE TESTS — PARTIAL PAYMENT MANAGEMENT & INSTALLMENTS ---\n";
+\Tests\Feature\PartialPaymentTest::run($assert);
+
+echo "\n--- SECTION 41: FEATURE TESTS — DEDICATED QUOTATION MANAGEMENT & CONVERSION ---\n";
+\Tests\Feature\QuotationManagementTest::run($assert);
+
+echo "\n--- SECTION 42: FEATURE TESTS — SUPPLIER DELETION & VENDOR DIRECTORY MANAGEMENT ---\n";
+\Tests\Feature\SupplierDeleteTest::run($assert);
+
+echo "\n--- SECTION 43: FEATURE TESTS — CHART OF ACCOUNTS (EDIT & DELETE OPTIONS) ---\n";
+\Tests\Feature\AccountManagementTest::run($assert);
+
+echo "\n--- SECTION 44: FEATURE TESTS — DYNAMIC REMAINING BALANCE UPI QR CODE ---\n";
+\Tests\Feature\DynamicUpiQrPaymentTest::run($assert);
+
+
 
 
 echo "\n==================================================================================\n";

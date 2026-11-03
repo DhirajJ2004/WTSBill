@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace WTSBill\Controllers;
 
+use WTSBill\Auth\Gate;
+use WTSBill\Core\Database;
 use WTSBill\Core\Exceptions\ValidationException;
 use WTSBill\Core\Request;
 use WTSBill\Core\Response;
 use WTSBill\Core\Session;
 use WTSBill\Core\View;
+use WTSBill\Services\AuditLogger;
 use WTSBill\Services\SupplierService;
 
 /**
@@ -142,6 +145,95 @@ class SupplierController
             }
 
             Session::flash('error', 'Failed to update supplier: ' . $e->getMessage());
+            return Response::redirect('/suppliers');
+        }
+    }
+
+    /**
+     * Delete supplier record.
+     * Routes: POST /suppliers/{id}/delete, DELETE /suppliers/{id}
+     */
+    public function delete(Request $req, mixed $id = null): Response
+    {
+        Gate::authorize('suppliers.delete', $req);
+
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $supplierId = (int)(is_array($id) ? ($id['id'] ?? 0) : ($id ?: ($req->post('id') ?? $req->param('id') ?? $req->query('id') ?? 0)));
+
+        $existing = Database::selectOne(
+            "SELECT * FROM suppliers WHERE id = ? AND company_id = ? AND deleted_at IS NULL",
+            [$supplierId, $companyId]
+        );
+
+        if (!$existing) {
+            if ($this->expectsJson($req)) {
+                return Response::json(['success' => false, 'message' => 'Supplier not found.'], 404);
+            }
+            Session::flash('error', 'Supplier not found.');
+            return Response::redirect('/suppliers');
+        }
+
+        try {
+            // Check if supplier has linked purchase bills
+            $purchasesCountRow = Database::selectOne(
+                "SELECT COUNT(*) as cnt FROM purchases WHERE supplier_id = ? AND company_id = ?",
+                [$supplierId, $companyId]
+            );
+            $hasPurchases = (int)($purchasesCountRow['cnt'] ?? 0) > 0;
+
+            if ($hasPurchases) {
+                // Soft-delete to preserve purchase history and ledger integrity
+                Database::update(
+                    'suppliers',
+                    [
+                        'is_active' => 0,
+                        'status' => 'INACTIVE',
+                        'deleted_at' => date('Y-m-d H:i:s'),
+                        'updated_at' => date('Y-m-d H:i:s'),
+                    ],
+                    'id = ? AND company_id = ?',
+                    [$supplierId, $companyId]
+                );
+                $msg = "Supplier '{$existing['name']}' has historical purchase records and was archived.";
+            } else {
+                // Permanent deletion if never referenced
+                Database::execute("DELETE FROM suppliers WHERE id = ? AND company_id = ?", [$supplierId, $companyId]);
+                $msg = "Supplier '{$existing['name']}' deleted successfully.";
+            }
+
+            AuditLogger::log(
+                action: 'delete',
+                module: 'purchases',
+                entityType: 'SUPPLIER',
+                entityId: $supplierId,
+                entityLabel: $existing['name'],
+                oldValues: [
+                    'name' => $existing['name'],
+                    'gstin' => $existing['gstin'] ?? '',
+                ],
+                status: 'success',
+                notes: $msg
+            );
+
+            if ($this->expectsJson($req)) {
+                return Response::json([
+                    'success' => true,
+                    'message' => $msg,
+                    'supplier_id' => $supplierId,
+                ]);
+            }
+
+            Session::flash('success', $msg);
+            return Response::redirect('/suppliers');
+        } catch (\Throwable $e) {
+            if ($this->expectsJson($req)) {
+                return Response::json([
+                    'success' => false,
+                    'message' => 'Failed to delete supplier: ' . $e->getMessage(),
+                ], 500);
+            }
+
+            Session::flash('error', 'Failed to delete supplier: ' . $e->getMessage());
             return Response::redirect('/suppliers');
         }
     }
