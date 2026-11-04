@@ -96,6 +96,12 @@
             <p class="subtitle">Enter your credentials to access your account</p>
         </div>
 
+        <?php if (isset($_GET['session_expired'])): ?>
+            <div class="alert" style="background: rgba(234, 88, 12, 0.2); border: 1px solid #ea580c; color: #fdba74;">
+                Your session expired due to 15 minutes of inactivity. Any unfinished form data was saved as a draft.
+            </div>
+        <?php endif; ?>
+
         <?php if (!empty($error)): ?>
             <div class="alert alert-error">
                 <?= e($error) ?>

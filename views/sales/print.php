@@ -611,6 +611,7 @@ $formatDateOrBlank = function (?string $date): string {
         @media print {
             body {
                 background: #ffffff !important;
+                color: #000000 !important;
             }
             .no-print {
                 display: none !important;

@@ -16,7 +16,10 @@
 | `app/Controllers/SalesController.php` | `WTSBill\Controllers` | Tax invoice generation, multi-line items, category product filter API (`/api/categories/{id}/products`), invoice installment payments (`POST /sales/invoices/{id}/payments`), print templates |
 | `app/Controllers/QuotationController.php` | `WTSBill\Controllers` | Dedicated commercial quotations workflow (`/sales/quotations`), line item categories, draft/save, duplicate, print, and one-click conversion to Tax Invoice (`POST /sales/quotations/{id}/convert`) |
 | `app/Controllers/PaymentController.php` | `WTSBill\Controllers` | Payments & Collections workspace, dual-tab UI (Vouchers & Partial Payments/Invoice Balances), payment recording, and receipts |
-| `app/Controllers/SettingsController.php` | `WTSBill\Controllers` | General company profile, branch settings, document numbering |
+| `app/Controllers/SettingsController.php` | `WTSBill\Controllers` | General company profile, branch settings, document numbering, Communication & Sharing tab, Backup & Disaster Recovery tab |
+| `app/Controllers/CommunicationController.php` | `WTSBill\Controllers` | WhatsApp Cloud API / wa.me fallback, SMTP email dispatch with attached PDF-1.4, test connections, and document dispatch audit logging |
+| `app/Controllers/BackupController.php` | `WTSBill\Controllers` | Disaster recovery workspace: manual & weekly backup creation, ZIP download, automated safety snapshots, database restoration, and audit log retention cleanup |
+| `app/Controllers/DraftController.php` | `WTSBill\Controllers` | Inactivity session auto-save, draft status checking, background touch, and draft discard API |
 
 ---
 
@@ -28,6 +31,11 @@
 | `app/Services/BranchService.php` | `WTSBill\Services` | Branch switching authorization, branch creation with contact person & validation, session context |
 | `app/Services/PaymentService.php` | `WTSBill\Services` | Partial invoice payment calculations, multiple installments, status transitions (UNPAID/PARTIAL/PAID), customer ledger decrements, and double-entry GL journal posting |
 | `app/Services/ProductService.php` | `WTSBill\Services` | Product business rules, SKU uniqueness, GST rates, stock adjustments |
+| `app/Services/CommunicationService.php` | `WTSBill\Services` | Document sharing engine: E.164 phone normalization, professional templated messages, WhatsApp Business Cloud API & wa.me fallback, socket SMTP delivery with PDF-1.4 attachment, dispatch audit tracking |
+| `app/Services/BackupService.php` | `WTSBill\Services` | Pure PHP PDO database dumper (excluding DR meta tables), archive compression (`database.sql`, `audit_logs_archive.json`, `config_summary.json`, uploads), SHA-256 verification, safe restore with pre-restore safety snapshots |
+| `app/Services/AuditCleanupService.php` | `WTSBill\Services` | Post-backup atomic audit cleaner: validates backup integrity and purges non-security logs older than retention period (default 7 days) |
+| `app/Services/DraftService.php` | `WTSBill\Services` | Form draft persistence: stores in-flight drafts in `user_drafts` with zero GL/ledger side-effects, recovery queries, and discard handling |
+| `app/Services/PdfGenerator.php` | `WTSBill\Services` | Standalone pure PHP binary `%PDF-1.4` stream generator for Invoices and Quotations with xref tables and EOF trailers |
 
 ---
 
@@ -81,6 +89,7 @@
 | `views/partials/header.php` | Header with branch selector dropdown, + Add Branch modal with validation & dynamic refresh, theme toggle, user profile |
 | `views/partials/sidebar.php` | Collapsible sidebar navigation for all ERP modules |
 | `views/partials/modal.php` | Accessible modal dialog container |
+| `views/partials/share_modal.php` | Reusable document sharing modal (Email & WhatsApp, pre-filled contacts, custom message, live history) |
 | `views/partials/toast.php` | Toast notification alert container |
 | `views/dashboard/index.php` | Enterprise dashboard with metrics and recent invoices |
 | `views/inventory/products.php` | Product catalog with working modal registration and CRUD actions |
@@ -105,11 +114,27 @@
 | `views/reports/balance-sheet.php` | Balance Sheet financial report |
 | `views/reports/gst.php` | GSTR-1 compliance tax report |
 | `views/users/index.php` | User administration view |
-| `views/settings/index.php` | Company & branch settings view |
+| `views/settings/index.php` | Company & branch settings view (General, Branches, Prefix, Communication, Backup & DR, Audit Logs) |
 
 ---
 
-## 7. Automated Test Suites (`tests/`)
+## 7. CLI Scripts & Background Daemons (`bin/`)
+
+| File Path | Role & Capabilities |
+| :--- | :--- |
+| `bin/scheduler.php` | Background CLI scheduler runner for automated weekly backups (`backup --weekly`), audit cleanup (`cleanup-audit`), and combined runs (`run-all`) |
+
+---
+
+## 8. Client Assets (`public/assets/js/`)
+
+| File Path | Role & Capabilities |
+| :--- | :--- |
+| `public/assets/js/session-idle.js` | 15-minute inactivity session idle watchdog: multi-tab sync via `localStorage`, 60s countdown warning at 14m, background draft auto-saving, redirection to `/login?session_expired=1`, and form recovery prompt |
+
+---
+
+## 9. Automated Test Suites (`tests/`)
 
 | File Path | Test Type | Coverage Focus |
 | :--- | :--- | :--- |
@@ -145,4 +170,8 @@
 | `tests/Feature/SupplierDeleteTest.php` | Feature | 7 assertions: Supplier directory deletion button, modal confirmation, deletion execution, directory exclusion |
 | `tests/Feature/AccountManagementTest.php` | Feature | 10 assertions: Chart of accounts edit/delete, GL modal binding, system account deletion protection (HTTP 422), soft/hard delete |
 | `tests/Feature/DynamicUpiQrPaymentTest.php` | Feature | 10 assertions: Dynamic remaining balance UPI QR, real-time recalculation, QR hiding on full settlement, UPI config fallback, unverified payment protection, duplicate reference rejection |
-| `tests/run_tests.php` | Master Runner | Executes all 44 test suites (610 assertions, 100% pass) |
+| `tests/Feature/CommunicationSharingTest.php` | Feature | 11 assertions: E.164 normalization, channel defaults, WhatsApp Cloud API & wa.me fallback, PDF generation, dispatch history |
+| `tests/Feature/ThemePersistenceTest.php` | Feature | 6 assertions: Light & dark theme switching, users table & session persistence, HTML data-theme binding, print white background isolation |
+| `tests/Feature/BackupAndCleanupTest.php` | Feature | 11 assertions: Pure PHP backup creation, SHA-256 verification, secure download, safety snapshots, DR restore, atomic audit log retention cleanup |
+| `tests/Feature/SessionIdleDraftTest.php` | Feature | 11 assertions: 15-minute inactivity session expiration, background request bypass, user_drafts persistence, multi-tab sync, form recovery |
+| `tests/run_tests.php` | Master Runner | Executes all 48 test suites (649 assertions, 100% pass) |

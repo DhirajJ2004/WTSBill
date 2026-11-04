@@ -7,8 +7,11 @@ use WTSBill\Core\View;
 $pageTitle = isset($title) && $title !== '' ? $title . ' — ' . Config::get('app.name', 'WTSBill ERP') : Config::get('app.name', 'WTSBill ERP');
 $csrfToken = Session::csrfToken();
 ?>
+<?php
+$userTheme = \WTSBill\Core\Session::get('theme') ?? 'dark';
+?>
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="<?= e($userTheme) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -61,5 +64,6 @@ $csrfToken = Session::csrfToken();
 
     <!-- Native Client Script -->
     <script src="/assets/js/app.js"></script>
+    <script src="/assets/js/session-idle.js"></script>
 </body>
 </html>

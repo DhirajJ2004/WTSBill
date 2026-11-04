@@ -1,7 +1,7 @@
 # WTSBill ERP — Regression Test Results Log
 
-**Document Version:** 4.4.0  
-**Last Verified:** 2026-11-02  
+**Document Version:** 4.5.0  
+**Last Verified:** 2026-11-04  
 **Test Runner:** `tests/run_tests.php`  
 **Execution Environment:** Native PHP 8.0 CLI + MariaDB 10.4.32 (`wtsbill_db`)
 
@@ -13,8 +13,8 @@
 ==================================================================================
                          TEST VERIFICATION SUMMARY                                
 ==================================================================================
-Total Assertions: 610
-Passed:           610
+Total Assertions: 649
+Passed:           649
 Failed:           0
 Pass Percentage:  100%
 
@@ -66,6 +66,15 @@ STATUS: ALL TEST SUITES PASSED (100%)
 | **37** | RBAC Role Isolation | 30 | **PASS** | Role boundary enforcement, default deny, audit logging |
 | **38** | Dynamic Category Filter in Invoices | 15 | **PASS** | Hardware, Electrical, Plumbing category-filtered API, multi-line independent filtering, DB persistence, edit, validation 422 |
 | **39** | Category Management (Manage, Edit, Delete) | 10 | **PASS** | Manage modal, Edit update, status toggles, deletion safeguard, 404 |
+| **40** | Partial Payment Management & Multi-Installments | 13 | **PASS** | Status transitions, installment tracking, GL balance, overpayment blocks |
+| **41** | Dedicated Quotation Management & Conversion | 11 | **PASS** | Quotation numbering, categories, quick customer modal, convert to invoice |
+| **42** | Supplier Directory Deletion & Soft Guards | 7 | **PASS** | Modal confirmation, active listing exclusion, 404 boundary guards |
+| **43** | Chart of Accounts (Edit & Delete Safeguards) | 10 | **PASS** | Core system account protection, update ledger, soft/hard removal |
+| **44** | Dynamic Remaining Balance UPI QR Code | 10 | **PASS** | Vector SVG QR, exact remaining balance, verification status, settlement |
+| **45** | WhatsApp & Email Document Sharing | 11 | **PASS** | Channel defaults, Cloud API + wa.me fallback, pure PHP PDF-1.4, history |
+| **46** | Light & Dark Theme Switcher & Persistence | 6 | **PASS** | Header switch, users table & session storage, anti-FOUC, print isolation |
+| **47** | Automatic Weekly Backup & Disaster Recovery | 11 | **PASS** | 7-day schedule, CLI runner, ZIP dumper, SHA-256 integrity, safety snapshots |
+| **48** | 15-Minute Inactivity Timeout & Draft Saving | 11 | **PASS** | Inactivity timeout, background request bypass, user_drafts, multi-tab sync |
 
 
 ---
@@ -236,6 +245,66 @@ STATUS: ALL TEST SUITES PASSED (100%)
 - `UPIQR-08`: Final payment clears outstanding balance to ₹0.00, invoice status becomes PAID, and UPI QR is hidden. **PASSED**
 - `UPIQR-09`: When no merchant UPI is configured, system suppresses QR code and renders helpful configuration message. **PASSED**
 - `UPIQR-10`: Printable invoice renders exact remaining balance (₹30,000), payment received (₹20,000), and scannable vector SVG QR. **PASSED**
+
+---
+
+## 12. WhatsApp & Email Document Sharing (Section 45)
+
+- `COMM-01`: Administrator authenticates and establishes communication context. **PASSED**
+- `COMM-02`: Phone numbers accurately normalized to E.164 digit strings (+91 Indian mobile standards). **PASSED**
+- `COMM-03`: POST /settings/communication persists channel defaults and provider configurations. **PASSED**
+- `COMM-04`: buildInvoiceMessage produces professional message with totals and remaining balance. **PASSED**
+- `COMM-05`: getClickToChatUrl generates valid wa.me link with URL-encoded message. **PASSED**
+- `COMM-06`: PdfGenerator generates valid PDF-1.4 binary stream with xref and EOF trailer. **PASSED**
+- `COMM-07`: POST /sales/invoices/{id}/share initiates multi-channel dispatch. **PASSED**
+- `COMM-08`: GET /sales/invoices/{id}/communication-history returns logged dispatch records. **PASSED**
+- `COMM-09`: POST /sales/quotations/{id}/share initiates quotation WhatsApp dispatch. **PASSED**
+- `COMM-10`: Invalid recipient email or missing phone is safely rejected with error feedback. **PASSED**
+- `COMM-11`: WhatsApp click-to-chat fallback is strictly logged as CLICK_TO_CHAT_GENERATED, never DELIVERED. **PASSED**
+
+---
+
+## 13. Light & Dark Theme Switcher & Persistence (Section 46)
+
+- `THEME-01`: User authenticates and establishes session context for theme management. **PASSED**
+- `THEME-02`: POST /api/user/theme persists dark theme preference to users table & session. **PASSED**
+- `THEME-03`: app.php layout renders data-theme="dark" when session theme is dark. **PASSED**
+- `THEME-04`: POST /user/theme persists light theme preference to users table & session. **PASSED**
+- `THEME-05`: app.php layout renders data-theme="light" when session theme is light. **PASSED**
+- `THEME-06`: Print templates strictly enforce pure white backgrounds and dark text regardless of user theme. **PASSED**
+
+---
+
+## 14. Automatic Weekly Backup & Disaster Recovery (Section 47)
+
+- `BACKUP-01`: Administrator authenticates and establishes backup authorization context. **PASSED**
+- `BACKUP-02`: BackupService creates ZIP archive outside public web root with status SUCCESS. **PASSED**
+- `BACKUP-03`: ZIP archive contains verified database.sql, audit archive, sanitized config, and manifest. **PASSED**
+- `BACKUP-04`: SHA-256 checksum in backup_records matches calculated file hash. **PASSED**
+- `BACKUP-05`: GET /settings/backups/{id}/download serves application/zip stream with filename header. **PASSED**
+- `BACKUP-06`: getNextScheduled calculates 7-day automatic weekly backup interval. **PASSED**
+- `BACKUP-07`: restoreBackup creates an automatic safety snapshot before restoring database tables. **PASSED**
+- `BACKUP-08`: Restore operation is recorded in restore_logs with status SUCCESS and checksum verification. **PASSED**
+- `BACKUP-09`: Atomic weekly cleanup archives logs first and purges records older than retention period. **PASSED**
+- `BACKUP-10`: Critical security events and recent logs within retention window are preserved. **PASSED**
+- `BACKUP-11`: Audit cleanup summary is persisted in audit_cleanup_logs with backup reference. **PASSED**
+
+---
+
+## 15. 15-Minute Inactivity Timeout & Draft Saving (Section 48)
+
+- `DRAFT-01`: User authenticates and session inactivity lifetime is configured to 900 seconds (15 minutes). **PASSED**
+- `DRAFT-02`: Qualifying user request refreshes last_activity_at timestamp. **PASSED**
+- `DRAFT-03`: Background request with X-Session-KeepAlive: 0 strictly preserves inactivity timer. **PASSED**
+- `DRAFT-04`: Inactivity exceeding 15 minutes (900 seconds) terminates session on server-side. **PASSED**
+- `DRAFT-05`: DraftService::saveDraft persists form data to user_drafts table with status DRAFT. **PASSED**
+- `DRAFT-06`: Unsaved form drafts are strictly isolated and never appear in invoices or accounting journals. **PASSED**
+- `DRAFT-07`: DraftService::getDraft cleanly recovers structured form data and items. **PASSED**
+- `DRAFT-08`: POST /api/drafts/auto-save accepts background auto-save payload with HTTP 200. **PASSED**
+- `DRAFT-09`: GET /api/drafts/check verifies active draft availability for client banner prompt. **PASSED**
+- `DRAFT-10`: DraftService::discardDraft cleanly purges restored draft after form submission or user discard. **PASSED**
+- `DRAFT-11`: session-idle.js exists and is linked in app.php layout for multi-tab activity monitoring. **PASSED**
+
 
 
 

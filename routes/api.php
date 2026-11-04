@@ -52,6 +52,10 @@ $router->get('/api/v1/auth/me', function (Request $req) {
     return Response::success(['user' => $user], 'Profile retrieved.');
 }, [$authMiddleware]);
 
+$userController = new \WTSBill\Controllers\UserController();
+$router->post('/api/user/theme', [$userController, 'updateTheme'], [$authMiddleware]);
+$router->post('/api/v1/user/theme', [$userController, 'updateTheme'], [$authMiddleware]);
+
 // 3. Products Catalog API
 $productController = new \WTSBill\Controllers\ProductController();
 $can = fn(string|array $perm) => new \WTSBill\Middleware\AuthorizationMiddleware($perm);
@@ -85,6 +89,31 @@ $paymentController = new \WTSBill\Controllers\PaymentController();
 $router->post('/api/v1/payments/{id}/verify', [$paymentController, 'verifyPayment'], [$authMiddleware, $can('payments.create')]);
 $router->post('/api/v1/invoices/{id}/payments', [$salesController, 'recordPayment'], [$authMiddleware, $can('payments.create')]);
 $router->post('/api/v1/invoices/{id}/verify-payment', [$salesController, 'verifyPayment'], [$authMiddleware, $can('payments.create')]);
+
+// 7. Communication & Sharing API
+$commController = new \WTSBill\Controllers\CommunicationController();
+$router->post('/api/v1/invoices/{id}/share', [$commController, 'shareInvoice'], [$authMiddleware, $can('invoices.view')]);
+$router->get('/api/v1/invoices/{id}/communication-history', [$commController, 'invoiceHistory'], [$authMiddleware, $can('invoices.view')]);
+$router->post('/api/v1/quotations/{id}/share', [$commController, 'shareQuotation'], [$authMiddleware, $can('quotations.view')]);
+$router->get('/api/v1/quotations/{id}/communication-history', [$commController, 'quotationHistory'], [$authMiddleware, $can('quotations.view')]);
+$router->post('/api/v1/settings/communication', [$commController, 'saveSettings'], [$authMiddleware, $can('settings.edit')]);
+$router->post('/api/v1/settings/communication/test-email', [$commController, 'testEmail'], [$authMiddleware, $can('settings.edit')]);
+// 8. Backup Management & Disaster Recovery API
+$backupController = new \WTSBill\Controllers\BackupController();
+$router->post('/api/v1/settings/backups/create', [$backupController, 'create'], [$authMiddleware, $can('settings.edit')]);
+$router->get('/api/v1/settings/backups', [$backupController, 'listBackups'], [$authMiddleware, $can('settings.view')]);
+$router->post('/api/v1/settings/backups/{id}/restore', [$backupController, 'restore'], [$authMiddleware, $can('settings.edit')]);
+$router->post('/api/v1/settings/audit-logs/cleanup', [$backupController, 'cleanupAudit'], [$authMiddleware, $can('settings.edit')]);
+
+// 9. Auto-Save In-Flight Form Drafts API
+$draftController = new \WTSBill\Controllers\DraftController();
+$router->post('/api/v1/drafts/auto-save', [$draftController, 'autoSave'], [$authMiddleware]);
+$router->get('/api/v1/drafts/check', [$draftController, 'check'], [$authMiddleware]);
+$router->post('/api/v1/drafts/discard', [$draftController, 'discard'], [$authMiddleware]);
+$router->get('/api/v1/session/status', [$draftController, 'sessionStatus'], [$authMiddleware]);
+$router->post('/api/v1/session/touch', [$draftController, 'touch'], [$authMiddleware]);
+
+
 
 
 

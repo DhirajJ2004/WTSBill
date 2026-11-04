@@ -164,6 +164,12 @@ $search = $search ?? '';
                                         </a>
                                     <?php endif; ?>
                                     <?php if (Gate::can('quotations.view')): ?>
+                                        <button type="button" class="btn btn-sm btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 3px;" onclick="window.openShareModal('QUOTATION', <?= (int)$q['id'] ?>, '<?= e(addslashes($q['quotation_number'])) ?>', '<?= e(addslashes($q['customer_name'] ?: 'Customer #' . $q['customer_id'])) ?>', '<?= e(addslashes($q['customer_phone'] ?? '')) ?>', '<?= e(addslashes($q['customer_email'] ?? '')) ?>')">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                                            Share
+                                        </button>
+                                    <?php endif; ?>
+                                    <?php if (Gate::can('quotations.view')): ?>
                                         <button type="button" class="btn btn-sm btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" onclick="window.viewQuotation(<?= (int)$q['id'] ?>)">
                                             View
                                         </button>
@@ -485,3 +491,5 @@ $search = $search ?? '';
         }
     };
 </script>
+
+<?php include \WTSBill\Core\View::resolvePath('partials/share_modal'); ?>

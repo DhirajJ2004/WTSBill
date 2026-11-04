@@ -36,8 +36,13 @@ class SettingsController
         $userRole = strtoupper((string)(Session::get('user_role') ?? (Session::get('role') ?? (Session::getUser()['role'] ?? (Session::get('auth_user')['role'] ?? 'STAFF')))));
         $isAdmin = in_array($userRole, ['ADMIN', 'SUPERADMIN', 'OWNER'], true);
 
-        if ($req->query('tab') === 'audit' || str_ends_with($req->getPath(), '/audit-logs')) {
+        $queryTab = $req->query('tab');
+        if ($queryTab === 'audit' || str_ends_with($req->getPath(), '/audit-logs')) {
             $activeTab = 'audit';
+        } elseif ($queryTab === 'communication') {
+            $activeTab = 'communication';
+        } elseif ($queryTab === 'backups') {
+            $activeTab = 'backups';
         }
 
         $company = Database::selectOne(
@@ -75,8 +80,14 @@ class SettingsController
             $auditSummary['deletes'] = (int)($deletesRow['c'] ?? 0);
         }
 
+        $commSettings = \WTSBill\Services\CommunicationService::getSettings($companyId);
+        $backups = $isAdmin ? \WTSBill\Services\BackupService::getHistory($companyId) : [];
+        $lastBackup = $isAdmin ? \WTSBill\Services\BackupService::getLastSuccessful($companyId) : null;
+        $nextBackup = $isAdmin ? \WTSBill\Services\BackupService::getNextScheduled($companyId) : [];
+        $cleanupLogs = $isAdmin ? \WTSBill\Services\AuditCleanupService::getCleanupHistory($companyId) : [];
+
         $html = View::renderWithLayout('settings/index', [
-            'title' => $activeTab === 'audit' ? 'Security Audit Trail' : 'System Settings',
+            'title' => $activeTab === 'audit' ? 'Security Audit Trail' : ($activeTab === 'communication' ? 'Communication Settings' : ($activeTab === 'backups' ? 'Backup & Disaster Recovery' : 'System Settings')),
             'currentUri' => $activeTab === 'audit' ? '/settings/audit-logs' : '/settings',
             'company' => $company,
             'branches' => $branches,
@@ -86,6 +97,11 @@ class SettingsController
             'activeTab' => $activeTab,
             'auditLogs' => $auditLogs,
             'auditSummary' => $auditSummary,
+            'commSettings' => $commSettings,
+            'backups' => $backups,
+            'lastBackup' => $lastBackup,
+            'nextBackup' => $nextBackup,
+            'cleanupLogs' => $cleanupLogs,
         ], 'layouts/app');
 
         return Response::html($html);

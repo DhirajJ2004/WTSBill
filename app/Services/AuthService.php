@@ -78,6 +78,7 @@ class AuthService
         Session::set('user_name', $user['name']);
         Session::set('user_email', $user['email']);
         Session::set('user_role', strtoupper($user['role']));
+        Session::set('theme', $user['theme'] ?? 'light');
         Session::set('current_company_id', $companyId);
         Session::set('current_branch_id', $branchId);
         Session::set('current_branch_name', $branchName);
@@ -127,17 +128,31 @@ class AuthService
             return false;
         }
 
-        // Check session expiration
+        // Check session expiration (default 15 minutes = 900 seconds)
         $lastActivity = (int) Session::get('last_activity_at', 0);
-        $lifetime = (int) Config::get('session.lifetime', 7200);
+        $lifetime = (int) Config::get('session.lifetime', 900);
 
         if ($lastActivity > 0 && (time() - $lastActivity) > $lifetime) {
             $this->logout();
             return false;
         }
 
-        // Refresh activity timestamp
-        Session::set('last_activity_at', time());
+        // Do not let background polling or auto-save requests extend inactivity
+        $isBackground = false;
+        if (isset($_SERVER['HTTP_X_SESSION_KEEPALIVE']) && $_SERVER['HTTP_X_SESSION_KEEPALIVE'] === '0') {
+            $isBackground = true;
+        } elseif (isset($_SERVER['HTTP_X_BACKGROUND']) && $_SERVER['HTTP_X_BACKGROUND'] === '1') {
+            $isBackground = true;
+        } elseif (isset($_SERVER['REQUEST_URI'])) {
+            $uri = (string)$_SERVER['REQUEST_URI'];
+            if (str_contains($uri, '/api/drafts/') || str_contains($uri, '/api/session/') || str_contains($uri, '/api/health')) {
+                $isBackground = true;
+            }
+        }
+
+        if (!$isBackground) {
+            Session::set('last_activity_at', time());
+        }
 
         return true;
     }

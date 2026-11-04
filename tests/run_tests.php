@@ -54,6 +54,10 @@ require_once ROOT_PATH . '/tests/Feature/QuotationManagementTest.php';
 require_once ROOT_PATH . '/tests/Feature/SupplierDeleteTest.php';
 require_once ROOT_PATH . '/tests/Feature/AccountManagementTest.php';
 require_once ROOT_PATH . '/tests/Feature/DynamicUpiQrPaymentTest.php';
+require_once ROOT_PATH . '/tests/Feature/CommunicationSharingTest.php';
+require_once ROOT_PATH . '/tests/Feature/ThemePersistenceTest.php';
+require_once ROOT_PATH . '/tests/Feature/BackupAndCleanupTest.php';
+require_once ROOT_PATH . '/tests/Feature/SessionIdleDraftTest.php';
 
 
 
@@ -207,6 +211,18 @@ echo "\n--- SECTION 43: FEATURE TESTS — CHART OF ACCOUNTS (EDIT & DELETE OPTIO
 
 echo "\n--- SECTION 44: FEATURE TESTS — DYNAMIC REMAINING BALANCE UPI QR CODE ---\n";
 \Tests\Feature\DynamicUpiQrPaymentTest::run($assert);
+
+echo "\n--- SECTION 45: FEATURE TESTS — WHATSAPP & EMAIL DOCUMENT SHARING ---\n";
+\Tests\Feature\CommunicationSharingTest::run($assert);
+
+echo "\n--- SECTION 46: FEATURE TESTS — LIGHT & DARK THEME SWITCHER & PERSISTENCE ---\n";
+\Tests\Feature\ThemePersistenceTest::run($assert);
+
+echo "\n--- SECTION 47: FEATURE TESTS — AUTOMATIC WEEKLY BACKUP & DISASTER RECOVERY ---\n";
+\Tests\Feature\BackupAndCleanupTest::run($assert);
+
+echo "\n--- SECTION 48: FEATURE TESTS — 15-MINUTE INACTIVITY TIMEOUT & DRAFT SAVING ---\n";
+\Tests\Feature\SessionIdleDraftTest::run($assert);
 
 
 

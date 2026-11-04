@@ -770,6 +770,16 @@ window.toggleTheme = function(e) {
     html.setAttribute('data-theme', next);
     try {
         localStorage.setItem('wtsbill_theme', next);
+        var token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        fetch('/api/user/theme', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': token,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ theme: next })
+        }).catch(function() {});
     } catch(err) {}
 
     window.updateThemeUI(next);

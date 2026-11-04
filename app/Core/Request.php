@@ -171,6 +171,12 @@ class Request
         return $this->jsonParams[$key] ?? $default;
     }
 
+    public function isJson(): bool
+    {
+        $contentType = $this->getHeader('content-type') ?? '';
+        return str_contains($contentType, 'application/json') || !empty($this->jsonParams);
+    }
+
     public function getHeader(string $name, ?string $default = null): ?string
     {
         $normalized = strtolower($name);
@@ -196,6 +202,11 @@ class Request
         return $this->serverParams['HTTP_X_FORWARDED_FOR'] 
             ?? $this->serverParams['REMOTE_ADDR'] 
             ?? '127.0.0.1';
+    }
+
+    public function ip(): string
+    {
+        return $this->getIp();
     }
 
     public function expectsJson(): bool

@@ -346,6 +346,33 @@ class UserController
         return Response::redirect('/users');
     }
 
+    /**
+     * Persist user theme preference.
+     * Route: POST /api/user/theme or POST /user/theme
+     */
+    public function updateTheme(Request $req): Response
+    {
+        $userId = Session::get('user_id');
+        if (!$userId) {
+            return Response::json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        $input = $req->isJson() ? $req->json() : $req->all();
+        $theme = strtolower(trim((string)($input['theme'] ?? ($req->input('theme') ?? 'light'))));
+        if (!in_array($theme, ['light', 'dark'], true)) {
+            $theme = 'light';
+        }
+
+        Database::update('users', ['theme' => $theme], 'id = ?', [(int)$userId]);
+        Session::set('theme', $theme);
+
+        return Response::json([
+            'success' => true,
+            'theme' => $theme,
+            'message' => "Theme updated to {$theme} mode."
+        ]);
+    }
+
     protected function expectsJson(Request $req): bool
     {
         $accept = (string)($req->header('accept') ?? '');

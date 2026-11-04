@@ -34,6 +34,11 @@
 | **21** | Controlled Cutover Readiness | Completed | **VERIFIED** | Deployment runbook & rollback plan |
 | **22** | **Global Placeholder Popup Fix** | Completed | **COMPLETED & VERIFIED** | Zero alert() dialogs, 16 real modals/forms, 329/329 tests (100%) |
 | **23** | **Branch Switching & Management** | Completed | **COMPLETED & VERIFIED** | Header branch selector, session context, admin CRUD, 350/350 tests (100%) |
+| **24** | **WhatsApp & Email Sharing** | Completed | **COMPLETED & VERIFIED** | Delivery channel defaults, Cloud API + wa.me fallback, pure PHP PDF-1.4, dispatch history |
+| **25** | **Light/Dark Theme Persistence** | Completed | **COMPLETED & VERIFIED** | Header toggle, user table + session persistence, anti-FOUC, isolated print styles |
+| **26** | **Automatic Weekly Backup** | Completed | **COMPLETED & VERIFIED** | 7-day schedule, CLI scheduler, ZIP packaging, SHA-256 integrity, safety snapshots |
+| **27** | **Atomic Audit Log Cleanup** | Completed | **COMPLETED & VERIFIED** | Post-backup verified archiving, 7-day retention purge, security event preservation |
+| **28** | **15-Min Inactivity & Drafts** | Completed | **COMPLETED & VERIFIED** | 900s inactivity timeout, background request bypass, multi-tab sync, auto-draft recovery |
 
 ---
 
@@ -74,7 +79,11 @@
   - Created `tests/Feature/GlobalPopupFixTest.php` with 21 new end-to-end assertions (`POPUP-01` through `POPUP-21`).
   - Created `tests/Feature/PartialPaymentTest.php` with 13 assertions (`PARTPAY-01` through `PARTPAY-13`).
   - Created `tests/Feature/QuotationManagementTest.php` with 11 assertions (`QUOTE-01` through `QUOTE-11`).
-  - Total test suite assertions: **583 / 583 Passed (100% Pass Rate)**.
+  - Created `tests/Feature/CommunicationSharingTest.php` with 11 assertions (`COMM-01` through `COMM-11`).
+  - Created `tests/Feature/ThemePersistenceTest.php` with 6 assertions (`THEME-01` through `THEME-06`).
+  - Created `tests/Feature/BackupAndCleanupTest.php` with 11 assertions (`BACKUP-01` through `BACKUP-11`).
+  - Created `tests/Feature/SessionIdleDraftTest.php` with 11 assertions (`DRAFT-01` through `DRAFT-11`).
+  - Total test suite assertions: **649 / 649 Passed (100% Pass Rate)**.
 
 - [x] **Partial Payment Management (Feature A):**
   - Payment statuses dynamically maintained: `UNPAID`, `PARTIALLY_PAID` (`PARTIAL`), `PAID`, `OVERDUE`.

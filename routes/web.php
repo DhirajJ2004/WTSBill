@@ -121,6 +121,18 @@ $router->get('/sales/quotations/{id}/delete', [$quotationController, 'delete'], 
 $router->delete('/sales/quotations/{id}', [$quotationController, 'delete'], [$auth, $csrf, $can('quotations.delete')]);
 $router->get('/sales/quotations/{id}/print', [$quotationController, 'print'], [$auth, $can('quotations.print')]);
 
+// 8b. Document Sharing & Multi-Channel Communication
+$commController = new \WTSBill\Controllers\CommunicationController();
+$router->post('/sales/invoices/{id}/share', [$commController, 'shareInvoice'], [$auth, $csrf, $can('invoices.view')]);
+$router->get('/sales/invoices/{id}/communication-history', [$commController, 'invoiceHistory'], [$auth, $can('invoices.view')]);
+$router->get('/sales/invoices/{id}/pdf', [$commController, 'invoicePdf'], [$auth, $can('invoices.view')]);
+$router->post('/sales/quotations/{id}/share', [$commController, 'shareQuotation'], [$auth, $csrf, $can('quotations.view')]);
+$router->get('/sales/quotations/{id}/communication-history', [$commController, 'quotationHistory'], [$auth, $can('quotations.view')]);
+$router->get('/sales/quotations/{id}/pdf', [$commController, 'quotationPdf'], [$auth, $can('quotations.view')]);
+$router->post('/settings/communication', [$commController, 'saveSettings'], [$auth, $csrf, $can('settings.edit')]);
+$router->post('/api/settings/communication/test-email', [$commController, 'testEmail'], [$auth, $csrf, $can('settings.edit')]);
+$router->post('/api/settings/communication/test-whatsapp', [$commController, 'testWhatsApp'], [$auth, $csrf, $can('settings.edit')]);
+
 // 9. Delivery Challans (Admin / Sales)
 $router->get('/sales/challans', [$salesController, 'challansIndex'], [$auth, $can('challans.view')]);
 $router->post('/sales/challans', [$salesController, 'challanStore'], [$auth, $csrf, $can('challans.create')]);
@@ -222,6 +234,8 @@ $router->post('/users', [$userController, 'store'], [$auth, $csrf, $can('users.m
 $router->post('/users/update', [$userController, 'update'], [$auth, $csrf, $can('users.manage')]);
 $router->post('/users/toggle-status', [$userController, 'toggleStatus'], [$auth, $csrf, $can('users.manage')]);
 $router->post('/users/reset-password', [$userController, 'resetPassword'], [$auth, $csrf, $can('users.manage')]);
+$router->post('/api/user/theme', [$userController, 'updateTheme'], [$auth]);
+$router->post('/user/theme', [$userController, 'updateTheme'], [$auth]);
 
 // 17. Roles & Permissions Matrix Management (Administrator Only)
 $roleController = new RoleController();
@@ -240,6 +254,15 @@ $router->get('/settings/audit-logs', [$settingsController, 'auditLogs'], [$auth,
 $router->get('/api/settings/audit-logs', [$settingsController, 'auditLogs'], [$auth, $can('audit.view')]);
 $router->get('/settings/audit-logs/export', [$settingsController, 'exportAuditLogs'], [$auth, $can('audit.export')]);
 
+// 18b. Enterprise Backup Management & Disaster Recovery
+$backupController = new \WTSBill\Controllers\BackupController();
+$router->post('/settings/backups/create', [$backupController, 'create'], [$auth, $csrf, $can('settings.edit')]);
+$router->get('/settings/backups/{id}/download', [$backupController, 'download'], [$auth, $can('settings.edit')]);
+$router->post('/settings/backups/{id}/restore', [$backupController, 'restore'], [$auth, $csrf, $can('settings.edit')]);
+$router->post('/settings/backups/restore', [$backupController, 'restore'], [$auth, $csrf, $can('settings.edit')]);
+$router->post('/settings/audit-logs/cleanup', [$backupController, 'cleanupAudit'], [$auth, $csrf, $can('settings.edit')]);
+$router->get('/api/settings/backups', [$backupController, 'listBackups'], [$auth, $can('settings.view')]);
+
 // 19. Branch Management & Switching
 $branchController = new BranchController();
 $router->post('/branches/switch', [$branchController, 'switch'], [$auth, $csrf]);
@@ -252,3 +275,11 @@ $router->get('/branches/{id}', [$branchController, 'show'], [$auth, $can('settin
 $router->post('/branches/{id}/update', [$branchController, 'update'], [$auth, $csrf, $can('settings.edit')]);
 $router->post('/branches/{id}/toggle-status', [$branchController, 'toggleStatus'], [$auth, $csrf, $can('settings.edit')]);
 $router->post('/branches/{id}/assign-users', [$branchController, 'assignUsers'], [$auth, $csrf, $can('users.manage')]);
+
+// 20. Auto-Save In-Flight Form Drafts & Session Inactivity
+$draftController = new \WTSBill\Controllers\DraftController();
+$router->post('/api/drafts/auto-save', [$draftController, 'autoSave'], [$auth]);
+$router->get('/api/drafts/check', [$draftController, 'check'], [$auth]);
+$router->post('/api/drafts/discard', [$draftController, 'discard'], [$auth]);
+$router->get('/api/session/status', [$draftController, 'sessionStatus'], [$auth]);
+$router->post('/api/session/touch', [$draftController, 'touch'], [$auth]);

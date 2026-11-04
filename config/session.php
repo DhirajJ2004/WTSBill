@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 return [
     'driver' => env('SESSION_DRIVER', 'file'),
-    'lifetime' => (int) env('SESSION_LIFETIME', 7200), // 2 hours in seconds
+    'lifetime' => (int) env('SESSION_LIFETIME', 900), // Exactly 15 minutes of inactivity in seconds
     'expire_on_close' => (bool) env('SESSION_EXPIRE_ON_CLOSE', false),
     'cookie' => env('SESSION_COOKIE', 'wtsbill_session'),
     'path' => '/',

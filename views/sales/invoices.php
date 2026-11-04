@@ -59,6 +59,12 @@
                                     <a href="/sales/invoices/<?= (int)$inv['id'] ?>/print" target="_blank" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; text-decoration: none; margin-right: 3px;">Print</a>
                                 <?php endif; ?>
                                 <?php if (\WTSBill\Auth\Gate::can('invoices.view')): ?>
+                                    <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; margin-right: 3px; display: inline-flex; align-items: center; gap: 3px;" onclick="window.openShareModal('INVOICE', <?= (int)$inv['id'] ?>, '<?= e(addslashes($inv['invoice_number'])) ?>', '<?= e(addslashes($inv['customer_name'] ?: 'Customer #' . $inv['customer_id'])) ?>', '<?= e(addslashes($inv['customer_phone'] ?? '')) ?>', '<?= e(addslashes($inv['customer_email'] ?? '')) ?>')">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                                        Share
+                                    </button>
+                                <?php endif; ?>
+                                <?php if (\WTSBill\Auth\Gate::can('invoices.view')): ?>
                                     <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; margin-right: 3px;" onclick="window.viewInvoice(<?= (int)$inv['id'] ?>)">View</button>
                                 <?php endif; ?>
                                 <?php if (\WTSBill\Auth\Gate::can('invoices.edit')): ?>
@@ -689,3 +695,5 @@
         }
     };
 </script>
+
+<?php include \WTSBill\Core\View::resolvePath('partials/share_modal'); ?>
