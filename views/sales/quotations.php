@@ -164,6 +164,12 @@ $search = $search ?? '';
                                         </a>
                                     <?php endif; ?>
                                     <?php if (Gate::can('quotations.view')): ?>
+                                        <button type="button" class="btn btn-sm btn-success" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 3px; background: #25D366; border-color: #25D366; color: #fff;" onclick="window.sendDirectWhatsAppPdf('QUOTATION', <?= (int)$q['id'] ?>, '<?= e(addslashes($q['quotation_number'])) ?>', '<?= e(addslashes($q['customer_name'] ?: 'Customer #' . $q['customer_id'])) ?>', '<?= e(addslashes($q['customer_phone'] ?? '')) ?>')" title="Directly Send PDF Quotation on WhatsApp">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                                            WhatsApp PDF
+                                        </button>
+                                    <?php endif; ?>
+                                    <?php if (Gate::can('quotations.view')): ?>
                                         <button type="button" class="btn btn-sm btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 3px;" onclick="window.openShareModal('QUOTATION', <?= (int)$q['id'] ?>, '<?= e(addslashes($q['quotation_number'])) ?>', '<?= e(addslashes($q['customer_name'] ?: 'Customer #' . $q['customer_id'])) ?>', '<?= e(addslashes($q['customer_phone'] ?? '')) ?>', '<?= e(addslashes($q['customer_email'] ?? '')) ?>')">
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
                                             Share
@@ -269,7 +275,19 @@ $search = $search ?? '';
             </div>
         </div>
         <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                <button type="button" id="qvm-whatsapp-pdf-btn" class="btn btn-success" style="display: inline-flex; align-items: center; gap: 4px; background: #25D366; border-color: #25D366; color: #fff;" onclick="window.sendCurrentModalQuotationWhatsAppPdf()" title="Directly Send PDF Quotation on WhatsApp">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                    WhatsApp PDF
+                </button>
+                <a id="qvm-download-pdf-btn" href="#" target="_blank" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 4px; text-decoration: none;" download>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Download PDF
+                </a>
+                <button type="button" id="qvm-share-btn" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 4px;" onclick="window.openCurrentModalQuotationShare()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                    Share
+                </button>
                 <a id="qvm-print-btn" href="#" target="_blank" class="btn btn-secondary" style="text-decoration: none;">Print Quotation</a>
                 <a id="qvm-edit-btn" href="#" class="btn btn-primary" style="text-decoration: none;">Edit Quotation</a>
                 <button type="button" id="qvm-convert-btn" class="btn btn-success" onclick="window.convertCurrentModalQuotation()">Convert to Invoice &rarr;</button>
@@ -301,6 +319,9 @@ $search = $search ?? '';
                 currentModalQuoteNumber = q.quotation_number;
 
                 document.getElementById('qvm-print-btn').href = '/sales/quotations/' + id + '/print';
+                const dlQBtn = document.getElementById('qvm-download-pdf-btn');
+                if (dlQBtn) dlQBtn.href = '/sales/quotations/' + id + '/pdf?download=1';
+                window.currentModalQuoteFull = q;
                 const editBtn = document.getElementById('qvm-edit-btn');
                 const convertBtn = document.getElementById('qvm-convert-btn');
 
@@ -356,6 +377,18 @@ $search = $search ?? '';
             console.error('Quotation view error:', err);
             document.getElementById('qvm-loading').textContent = 'Network error while loading quotation.';
         }
+    };
+
+    window.sendCurrentModalQuotationWhatsAppPdf = function() {
+        if (!window.currentModalQuoteFull) return;
+        const q = window.currentModalQuoteFull;
+        window.sendDirectWhatsAppPdf('QUOTATION', q.id, q.quotation_number, q.customer_name || 'Customer', q.customer_phone || '');
+    };
+
+    window.openCurrentModalQuotationShare = function() {
+        if (!window.currentModalQuoteFull) return;
+        const q = window.currentModalQuoteFull;
+        window.openShareModal('QUOTATION', q.id, q.quotation_number, q.customer_name || 'Customer', q.customer_phone || '', q.customer_email || '');
     };
 
     window.closeQuotationViewModal = function() {

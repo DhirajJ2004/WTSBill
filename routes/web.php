@@ -133,6 +133,16 @@ $router->post('/settings/communication', [$commController, 'saveSettings'], [$au
 $router->post('/api/settings/communication/test-email', [$commController, 'testEmail'], [$auth, $csrf, $can('settings.edit')]);
 $router->post('/api/settings/communication/test-whatsapp', [$commController, 'testWhatsApp'], [$auth, $csrf, $can('settings.edit')]);
 
+// 8c. Public Document Access (Direct PDF & Web View via Verified HMAC Token - No Login Required)
+$router->get('/doc/invoices/{id}/pdf', [$commController, 'publicInvoicePdf']);
+$router->get('/doc/quotations/{id}/pdf', [$commController, 'publicQuotationPdf']);
+$router->get('/doc/invoices/{id}', [$commController, 'publicInvoiceView']);
+$router->get('/doc/quotations/{id}', [$commController, 'publicQuotationView']);
+$router->get('/public/invoices/{id}/pdf', [$commController, 'publicInvoicePdf']);
+$router->get('/public/quotations/{id}/pdf', [$commController, 'publicQuotationPdf']);
+$router->get('/public/invoices/{id}', [$commController, 'publicInvoiceView']);
+$router->get('/public/quotations/{id}', [$commController, 'publicQuotationView']);
+
 // 9. Delivery Challans (Admin / Sales)
 $router->get('/sales/challans', [$salesController, 'challansIndex'], [$auth, $can('challans.view')]);
 $router->post('/sales/challans', [$salesController, 'challanStore'], [$auth, $csrf, $can('challans.create')]);

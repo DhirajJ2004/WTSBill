@@ -259,5 +259,38 @@ class CommunicationSharingTest
             $lastLog['status'] === 'CLICK_TO_CHAT_GENERATED' &&
             $lastLog['status'] !== 'DELIVERED'
         );
+
+        // 11. Secure Public PDF Link & HMAC Token Verification
+        $invRecord = Database::selectOne("SELECT * FROM invoices WHERE id = ?", [$targetInvId]);
+        $validToken = CommunicationService::getDocumentPublicToken('INVOICE', $targetInvId, (string)$invRecord['created_at'], $companyId);
+        $publicPdfUrl = CommunicationService::getPublicPdfUrl('INVOICE', $invRecord);
+
+        $assert('COMM-12', 'CommunicationService produces secure public PDF URL containing verified HMAC token',
+            str_contains($publicPdfUrl, "/doc/invoices/{$targetInvId}/pdf?token=") &&
+            str_contains($publicPdfUrl, $validToken)
+        );
+
+        // 12. Public PDF Route Serves Valid PDF-1.4 Stream with Valid Token
+        $pubPdfReq = new Request(['token' => $validToken], [], [
+            'REQUEST_METHOD' => 'GET',
+            'REQUEST_URI' => "/doc/invoices/{$targetInvId}/pdf?token={$validToken}",
+        ]);
+        $pubPdfRes = $router->dispatch($pubPdfReq);
+
+        $assert('COMM-13', 'GET /doc/invoices/{id}/pdf with valid HMAC token serves binary PDF stream without authentication barrier',
+            $pubPdfRes->getStatusCode() === 200 &&
+            str_starts_with($pubPdfRes->getContent(), '%PDF-1.4')
+        );
+
+        // 13. Public PDF Route Rejects Forged or Missing Token with HTTP 403
+        $badPdfReq = new Request(['token' => 'forged_fake_token_123'], [], [
+            'REQUEST_METHOD' => 'GET',
+            'REQUEST_URI' => "/doc/invoices/{$targetInvId}/pdf?token=forged_fake_token_123",
+        ]);
+        $badPdfRes = $router->dispatch($badPdfReq);
+
+        $assert('COMM-14', 'GET /doc/invoices/{id}/pdf strictly rejects invalid or forged HMAC token with HTTP 403 Forbidden',
+            $badPdfRes->getStatusCode() === 403
+        );
     }
 }

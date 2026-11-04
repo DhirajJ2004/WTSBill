@@ -1,3 +1,9 @@
+<?php
+if (defined('SHARE_MODAL_INCLUDED')) {
+    return;
+}
+define('SHARE_MODAL_INCLUDED', true);
+?>
 <!-- WTSBill ERP — Document Sharing & Multi-Channel Communication Modal -->
 <div id="wtsbill-share-modal" class="modal-backdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.75); z-index: 99999; align-items: center; justify-content: center; backdrop-filter: blur(2px);">
     <div class="modal-dialog" style="max-width: 580px; width: 100%; margin: 1rem; background: var(--bg-card); border-radius: 12px; padding: 1.5rem; border: 1px solid var(--border-color); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto;">
@@ -53,17 +59,32 @@
                 </div>
             </div>
 
+            <!-- Direct PDF Guidance Notice -->
+            <div id="share-whatsapp-pdf-notice" style="background: rgba(37, 211, 102, 0.1); border: 1px solid #25D366; border-radius: 6px; padding: 0.65rem 0.85rem; margin-bottom: 1rem; font-size: 0.8rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.6rem;">
+                <span style="color: #25D366; font-size: 1.25rem;">📄</span>
+                <div>
+                    <strong>Direct PDF Invoice:</strong> The official PDF file is automatically downloaded and linked so you can easily send the direct PDF on WhatsApp.
+                </div>
+            </div>
+
             <div class="form-group" style="margin-bottom: 1rem;">
                 <label style="font-size: 0.8rem; font-weight: 600; margin-bottom: 0.35rem; display: block;">Optional Custom Note</label>
                 <input type="text" id="share-note-input" placeholder="e.g. Please find attached for your approval." class="form-control" style="width: 100%; padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); font-size: 0.85rem;">
             </div>
 
-            <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-bottom: 1.5rem;">
-                <button type="button" class="btn btn-secondary" onclick="closeShareModal()">Cancel</button>
-                <button type="submit" id="btn-submit-share" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1.25rem;">
-                    <span>Send & Share</span>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                </button>
+            <div style="display: flex; gap: 0.5rem; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                <div>
+                    <a id="share-modal-pdf-download-btn" href="#" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.45rem 0.75rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;" download>
+                        <span>📄 Download PDF</span>
+                    </a>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="closeShareModal()">Cancel</button>
+                    <button type="submit" id="btn-submit-share" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1.25rem;">
+                        <span>Send & Share</span>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    </button>
+                </div>
             </div>
         </form>
 
@@ -91,6 +112,13 @@ window.openShareModal = function(type, id, number, customerName, phone, email) {
     document.getElementById('share-email-input').value = email || '';
     document.getElementById('share-note-input').value = '';
 
+    var pdfUrl = '/sales/' + (type === 'INVOICE' ? 'invoices' : 'quotations') + '/' + id + '/pdf?download=1';
+    var pdfBtn = document.getElementById('share-modal-pdf-download-btn');
+    if (pdfBtn) {
+        pdfBtn.href = pdfUrl;
+        pdfBtn.download = (type === 'INVOICE' ? 'Invoice_' : 'Quotation_') + (number || id) + '.pdf';
+    }
+
     updateShareFieldsVisibility();
     document.getElementById('wtsbill-share-modal').style.display = 'flex';
     refreshShareHistory();
@@ -101,19 +129,24 @@ window.closeShareModal = function() {
 };
 
 window.updateShareFieldsVisibility = function() {
-    var channel = document.querySelector('input[name="share_channel"]:checked').value;
+    var checkedRadio = document.querySelector('input[name="share_channel"]:checked');
+    var channel = checkedRadio ? checkedRadio.value : 'BOTH';
     var phoneSec = document.getElementById('share-field-phone-sec');
     var emailSec = document.getElementById('share-field-email-sec');
+    var waNotice = document.getElementById('share-whatsapp-pdf-notice');
 
     if (channel === 'WHATSAPP') {
         phoneSec.style.display = 'block';
         emailSec.style.display = 'none';
+        if (waNotice) waNotice.style.display = 'flex';
     } else if (channel === 'EMAIL') {
         phoneSec.style.display = 'none';
         emailSec.style.display = 'block';
+        if (waNotice) waNotice.style.display = 'none';
     } else {
         phoneSec.style.display = 'block';
         emailSec.style.display = 'block';
+        if (waNotice) waNotice.style.display = 'flex';
     }
 };
 
@@ -168,6 +201,7 @@ window.executeShareDocument = function(e) {
     var phone = document.getElementById('share-phone-input').value.trim();
     var email = document.getElementById('share-email-input').value.trim();
     var note = document.getElementById('share-note-input').value.trim();
+    var docNumber = document.getElementById('share-doc-number').textContent.trim();
 
     var btn = document.getElementById('btn-submit-share');
     btn.disabled = true;
@@ -197,10 +231,24 @@ window.executeShareDocument = function(e) {
 
         if (res.success) {
             Toast.show(res.message || 'Document shared successfully.', 'success');
-            // If click to chat fallback was generated for WhatsApp, open in new tab
-            if (res.results && res.results.whatsapp && res.results.whatsapp.mode === 'CLICK_TO_CHAT' && res.results.whatsapp.url) {
-                window.open(res.results.whatsapp.url, '_blank');
-                Toast.show('WhatsApp opened in new tab. Click Send in WhatsApp to deliver.', 'info');
+            
+            // If WhatsApp was selected, automatically trigger direct PDF download & open chat
+            if (res.results && res.results.whatsapp) {
+                var wa = res.results.whatsapp;
+
+                // 1. Immediately trigger automatic download of the PDF file
+                var dlA = document.createElement('a');
+                dlA.href = '/sales/' + (type === 'INVOICE' ? 'invoices' : 'quotations') + '/' + id + '/pdf?download=1';
+                dlA.download = wa.filename || ((type === 'INVOICE' ? 'Invoice_' : 'Quotation_') + (docNumber || id) + '.pdf');
+                document.body.appendChild(dlA);
+                dlA.click();
+                document.body.removeChild(dlA);
+
+                // 2. Open WhatsApp chat in a new tab
+                if (wa.url) {
+                    window.open(wa.url, '_blank');
+                    Toast.show('📄 PDF downloaded! Drag it into WhatsApp to send the direct file.', 'success');
+                }
             }
             refreshShareHistory();
         } else {
@@ -213,5 +261,66 @@ window.executeShareDocument = function(e) {
         Toast.show('Error: ' + err.message, 'error');
     });
 };
-</script>
 
+/**
+ * Universal 1-Click Direct WhatsApp PDF Action
+ */
+window.sendDirectWhatsAppPdf = function(type, id, number, customerName, phone) {
+    if (!phone) {
+        window.openShareModal(type, id, number, customerName, '', '');
+        return;
+    }
+
+    var endpoint = (type === 'INVOICE')
+        ? '/sales/invoices/' + id + '/share'
+        : '/sales/quotations/' + id + '/share';
+
+    var csrf = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
+
+    if (window.Toast) {
+        window.Toast.show('Generating PDF and preparing WhatsApp...', 'info');
+    }
+
+    fetch(endpoint, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrf
+        },
+        body: JSON.stringify({
+            channel: 'WHATSAPP',
+            phone: phone
+        })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+        if (res.success && res.results && res.results.whatsapp) {
+            var wa = res.results.whatsapp;
+            var filename = wa.filename || ((type === 'INVOICE' ? 'Invoice_' : 'Quotation_') + (number || id) + '.pdf');
+
+            // 1. Immediately trigger instant download of the PDF
+            var dl = document.createElement('a');
+            dl.href = '/sales/' + (type === 'INVOICE' ? 'invoices' : 'quotations') + '/' + id + '/pdf?download=1';
+            dl.download = filename;
+            document.body.appendChild(dl);
+            dl.click();
+            document.body.removeChild(dl);
+
+            // 2. Open WhatsApp Web or App with the pre-filled message & direct PDF link
+            if (wa.url) {
+                window.open(wa.url, '_blank');
+            }
+
+            if (window.Toast) {
+                window.Toast.show('📄 PDF downloaded! Simply drag it into WhatsApp to send the direct file.', 'success');
+            }
+        } else {
+            if (window.Toast) {
+                window.Toast.show(res.message || 'Unable to open WhatsApp.', 'error');
+            }
+        }
+    }).catch(function(err) {
+        if (window.Toast) {
+            window.Toast.show('Error: ' + err.message, 'error');
+        }
+    });
+};
+</script>

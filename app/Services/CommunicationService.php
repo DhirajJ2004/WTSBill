@@ -159,7 +159,7 @@ class CommunicationService
         $msg .= "• Outstanding Balance: INR {$balance}\n";
 
         if (!empty($documentUrl)) {
-            $msg .= "\nView & Download Invoice: {$documentUrl}\n";
+            $msg .= "\n📄 Download / View PDF Invoice: {$documentUrl}\n";
         }
 
         $msg .= "\nThank you for doing business with us.\n{$companyName}";
@@ -186,7 +186,7 @@ class CommunicationService
         $msg .= "• Quotation Amount: INR {$grandTotal}\n";
 
         if (!empty($documentUrl)) {
-            $msg .= "\nReview Quotation: {$documentUrl}\n";
+            $msg .= "\n📄 Download / View PDF Quotation: {$documentUrl}\n";
         }
 
         $msg .= "\nPlease let us know if you have any questions or require revisions.\n{$companyName}";
@@ -203,6 +203,57 @@ class CommunicationService
     }
 
     /**
+     * Generate secure HMAC token for public document access without authentication.
+     */
+    public static function getDocumentPublicToken(string $type, int $id, string $createdAt, int $companyId): string
+    {
+        $key = \WTSBill\Core\Config::get('app.key') ?: 'wtsbill_secret_token_2026';
+        return substr(hash_hmac('sha256', "{$type}:{$id}:{$createdAt}:{$companyId}", $key), 0, 32);
+    }
+
+    /**
+     * Get base URL of the application.
+     */
+    public static function getBaseUrl(): string
+    {
+        if (!empty($_SERVER['HTTP_HOST'])) {
+            $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+            return "{$scheme}://{$_SERVER['HTTP_HOST']}";
+        }
+        return \WTSBill\Core\Config::get('app.url', 'http://localhost');
+    }
+
+    /**
+     * Get direct public PDF URL for an Invoice or Quotation.
+     */
+    public static function getPublicPdfUrl(string $type, array $entity): string
+    {
+        $id = (int)($entity['id'] ?? 0);
+        $createdAt = (string)($entity['created_at'] ?? date('Y-m-d'));
+        $companyId = (int)($entity['company_id'] ?? 1);
+        $token = self::getDocumentPublicToken($type, $id, $createdAt, $companyId);
+        
+        $baseUrl = self::getBaseUrl();
+        $segment = strtolower($type) === 'quotation' ? 'quotations' : 'invoices';
+        return "{$baseUrl}/doc/{$segment}/{$id}/pdf?token={$token}";
+    }
+
+    /**
+     * Get direct public web view URL for an Invoice or Quotation.
+     */
+    public static function getPublicDocumentUrl(string $type, array $entity): string
+    {
+        $id = (int)($entity['id'] ?? 0);
+        $createdAt = (string)($entity['created_at'] ?? date('Y-m-d'));
+        $companyId = (int)($entity['company_id'] ?? 1);
+        $token = self::getDocumentPublicToken($type, $id, $createdAt, $companyId);
+        
+        $baseUrl = self::getBaseUrl();
+        $segment = strtolower($type) === 'quotation' ? 'quotations' : 'invoices';
+        return "{$baseUrl}/doc/{$segment}/{$id}?token={$token}";
+    }
+
+    /**
      * Send WhatsApp document notification.
      * Uses Cloud API when credentials are present; otherwise generates click-to-chat fallback.
      */
@@ -214,7 +265,8 @@ class CommunicationService
         ?string $documentUrl = null,
         ?string $entityType = null,
         ?int $entityId = null,
-        ?int $userId = null
+        ?int $userId = null,
+        ?string $filename = null
     ): array {
         $settings = self::getSettings($companyId);
         $normalized = self::normalizePhone($phone);
@@ -235,7 +287,9 @@ class CommunicationService
                 $settings['whatsapp_access_token'],
                 $settings['whatsapp_api_version'] ?: 'v19.0',
                 $normalized,
-                $message
+                $message,
+                $documentUrl,
+                $filename
             );
 
             self::logMessage([
@@ -281,6 +335,8 @@ class CommunicationService
             'status' => 'CLICK_TO_CHAT_GENERATED',
             'url' => $clickToChatUrl,
             'phone' => $normalized,
+            'document_url' => $documentUrl,
+            'filename' => $filename,
             'message' => 'WhatsApp click-to-chat link created. Note: Please click Send in WhatsApp to deliver the message.',
         ];
     }
@@ -293,19 +349,37 @@ class CommunicationService
         string $accessToken,
         string $version,
         string $toPhone,
-        string $text
+        string $text,
+        ?string $documentUrl = null,
+        ?string $filename = null
     ): array {
         $endpoint = "https://graph.facebook.com/{$version}/{$phoneNumberId}/messages";
-        $payload = [
-            'messaging_product' => 'whatsapp',
-            'recipient_type' => 'individual',
-            'to' => $toPhone,
-            'type' => 'text',
-            'text' => [
-                'preview_url' => true,
-                'body' => $text,
-            ],
-        ];
+        
+        // If public document URL is available, send as a native WhatsApp document attachment with caption
+        if (!empty($documentUrl) && (str_starts_with($documentUrl, 'http://') || str_starts_with($documentUrl, 'https://'))) {
+            $payload = [
+                'messaging_product' => 'whatsapp',
+                'recipient_type' => 'individual',
+                'to' => $toPhone,
+                'type' => 'document',
+                'document' => [
+                    'link' => $documentUrl,
+                    'caption' => $text,
+                    'filename' => $filename ?: 'Invoice.pdf',
+                ],
+            ];
+        } else {
+            $payload = [
+                'messaging_product' => 'whatsapp',
+                'recipient_type' => 'individual',
+                'to' => $toPhone,
+                'type' => 'text',
+                'text' => [
+                    'preview_url' => true,
+                    'body' => $text,
+                ],
+            ];
+        }
 
         $ch = curl_init($endpoint);
         if (!$ch) {

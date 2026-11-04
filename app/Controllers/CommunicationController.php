@@ -143,7 +143,7 @@ class CommunicationController
         // Generate Invoice PDF
         $pdfData = PdfGenerator::generateInvoicePdf($invoice, $company, $items);
         $filename = 'Invoice_' . ($invoice['invoice_number'] ?? $id) . '.pdf';
-        $publicDocUrl = (isset($_SERVER['HTTP_HOST']) ? 'http://' . $_SERVER['HTTP_HOST'] : 'http://localhost') . '/sales/invoices/' . $id . '/print';
+        $publicPdfUrl = CommunicationService::getPublicPdfUrl('INVOICE', $invoice);
 
         $results = [];
 
@@ -156,7 +156,7 @@ class CommunicationController
                     'error' => 'Customer mobile phone number is not available for WhatsApp sharing.',
                 ];
             } else {
-                $waMessage = CommunicationService::buildInvoiceMessage($invoice, $company, $publicDocUrl);
+                $waMessage = CommunicationService::buildInvoiceMessage($invoice, $company, $publicPdfUrl);
                 if ($customNote !== '') {
                     $waMessage .= "\n\nNote: " . $customNote;
                 }
@@ -166,11 +166,15 @@ class CommunicationController
                     $branchId,
                     $recipientPhone,
                     $waMessage,
-                    $publicDocUrl,
+                    $publicPdfUrl,
                     'INVOICE',
                     $id,
-                    $userId
+                    $userId,
+                    $filename
                 );
+                $results['whatsapp']['pdf_url'] = "/sales/invoices/{$id}/pdf";
+                $results['whatsapp']['public_pdf_url'] = $publicPdfUrl;
+                $results['whatsapp']['filename'] = $filename;
             }
         }
 
@@ -253,7 +257,7 @@ class CommunicationController
         // Generate Quotation PDF
         $pdfData = PdfGenerator::generateQuotationPdf($quotation, $company, $items);
         $filename = 'Quotation_' . ($quotation['quotation_number'] ?? $id) . '.pdf';
-        $publicDocUrl = (isset($_SERVER['HTTP_HOST']) ? 'http://' . $_SERVER['HTTP_HOST'] : 'http://localhost') . '/sales/quotations/' . $id . '/print';
+        $publicPdfUrl = CommunicationService::getPublicPdfUrl('QUOTATION', $quotation);
 
         $results = [];
 
@@ -266,7 +270,7 @@ class CommunicationController
                     'error' => 'Customer mobile phone number is not available for WhatsApp sharing.',
                 ];
             } else {
-                $waMessage = CommunicationService::buildQuotationMessage($quotation, $company, $publicDocUrl);
+                $waMessage = CommunicationService::buildQuotationMessage($quotation, $company, $publicPdfUrl);
                 if ($customNote !== '') {
                     $waMessage .= "\n\nNote: " . $customNote;
                 }
@@ -276,11 +280,15 @@ class CommunicationController
                     $branchId,
                     $recipientPhone,
                     $waMessage,
-                    $publicDocUrl,
+                    $publicPdfUrl,
                     'QUOTATION',
                     $id,
-                    $userId
+                    $userId,
+                    $filename
                 );
+                $results['whatsapp']['pdf_url'] = "/sales/quotations/{$id}/pdf";
+                $results['whatsapp']['public_pdf_url'] = $publicPdfUrl;
+                $results['whatsapp']['filename'] = $filename;
             }
         }
 
@@ -372,10 +380,11 @@ class CommunicationController
 
         $pdf = PdfGenerator::generateInvoicePdf($invoice, $company, $items);
         $filename = 'Invoice_' . ($invoice['invoice_number'] ?? $id) . '.pdf';
+        $disposition = ($req->query('download') === '1') ? 'attachment' : 'inline';
 
         return new Response($pdf, 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+            'Content-Disposition' => "{$disposition}; filename=\"{$filename}\"",
         ]);
     }
 
@@ -405,11 +414,134 @@ class CommunicationController
 
         $pdf = PdfGenerator::generateQuotationPdf($quotation, $company, $items);
         $filename = 'Quotation_' . ($quotation['quotation_number'] ?? $id) . '.pdf';
+        $disposition = ($req->query('download') === '1') ? 'attachment' : 'inline';
 
         return new Response($pdf, 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+            'Content-Disposition' => "{$disposition}; filename=\"{$filename}\"",
         ]);
+    }
+
+    /**
+     * Public direct PDF download/stream via verified HMAC token (zero login required).
+     * Route: GET /public/invoices/{id}/pdf
+     */
+    public function publicInvoicePdf(Request $req, int $id): Response
+    {
+        $invoice = Database::selectOne(
+            "SELECT i.*, c.name as customer_name, c.email as customer_email, c.phone as customer_phone, c.gstin as customer_gstin 
+             FROM invoices i 
+             LEFT JOIN customers c ON i.customer_id = c.id 
+             WHERE i.id = ?",
+            [$id]
+        );
+        if (!$invoice) {
+            return new Response('Document not found.', 404);
+        }
+
+        $expectedToken = CommunicationService::getDocumentPublicToken('INVOICE', (int)$id, (string)$invoice['created_at'], (int)$invoice['company_id']);
+        $providedToken = (string)($req->query('token') ?? '');
+
+        if (empty($providedToken) || !hash_equals($expectedToken, $providedToken)) {
+            return new Response('Unauthorized or invalid document access link.', 403);
+        }
+
+        $items = Database::select(
+            "SELECT ii.*, p.name as product_name FROM invoice_items ii LEFT JOIN products p ON ii.product_id = p.id WHERE ii.invoice_id = ?",
+            [$id]
+        );
+        $company = Database::selectOne("SELECT * FROM companies WHERE id = ?", [(int)$invoice['company_id']]) ?? ['name' => 'WTSBill Enterprise'];
+
+        $pdf = PdfGenerator::generateInvoicePdf($invoice, $company, $items);
+        $filename = 'Invoice_' . ($invoice['invoice_number'] ?? $id) . '.pdf';
+        $disposition = ($req->query('download') === '1') ? 'attachment' : 'inline';
+
+        return new Response($pdf, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => "{$disposition}; filename=\"{$filename}\"",
+            'Cache-Control' => 'public, max-age=86400',
+        ]);
+    }
+
+    /**
+     * Public direct Quotation PDF via verified HMAC token (zero login required).
+     * Route: GET /public/quotations/{id}/pdf
+     */
+    public function publicQuotationPdf(Request $req, int $id): Response
+    {
+        $quotation = Database::selectOne(
+            "SELECT q.*, c.name as customer_name, c.email as customer_email, c.phone as customer_phone, c.gstin as customer_gstin 
+             FROM quotations q 
+             LEFT JOIN customers c ON q.customer_id = c.id 
+             WHERE q.id = ?",
+            [$id]
+        );
+        if (!$quotation) {
+            return new Response('Document not found.', 404);
+        }
+
+        $expectedToken = CommunicationService::getDocumentPublicToken('QUOTATION', (int)$id, (string)$quotation['created_at'], (int)$quotation['company_id']);
+        $providedToken = (string)($req->query('token') ?? '');
+
+        if (empty($providedToken) || !hash_equals($expectedToken, $providedToken)) {
+            return new Response('Unauthorized or invalid document access link.', 403);
+        }
+
+        $items = Database::select(
+            "SELECT qi.*, p.name as product_name FROM quotation_items qi LEFT JOIN products p ON qi.product_id = p.id WHERE qi.quotation_id = ?",
+            [$id]
+        );
+        $company = Database::selectOne("SELECT * FROM companies WHERE id = ?", [(int)$quotation['company_id']]) ?? ['name' => 'WTSBill Enterprise'];
+
+        $pdf = PdfGenerator::generateQuotationPdf($quotation, $company, $items);
+        $filename = 'Quotation_' . ($quotation['quotation_number'] ?? $id) . '.pdf';
+        $disposition = ($req->query('download') === '1') ? 'attachment' : 'inline';
+
+        return new Response($pdf, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => "{$disposition}; filename=\"{$filename}\"",
+            'Cache-Control' => 'public, max-age=86400',
+        ]);
+    }
+
+    /**
+     * Public printable view of invoice via verified HMAC token.
+     * Route: GET /public/invoices/{id}
+     */
+    public function publicInvoiceView(Request $req, int $id): Response
+    {
+        $invoice = Database::selectOne("SELECT * FROM invoices WHERE id = ?", [$id]);
+        if (!$invoice) {
+            return new Response('Document not found.', 404);
+        }
+        $expectedToken = CommunicationService::getDocumentPublicToken('INVOICE', (int)$id, (string)$invoice['created_at'], (int)$invoice['company_id']);
+        $providedToken = (string)($req->query('token') ?? '');
+        if (empty($providedToken) || !hash_equals($expectedToken, $providedToken)) {
+            return new Response('Unauthorized or invalid document access link.', 403);
+        }
+
+        $salesController = new \WTSBill\Controllers\SalesController();
+        return $salesController->print($req, $id);
+    }
+
+    /**
+     * Public printable view of quotation via verified HMAC token.
+     * Route: GET /public/quotations/{id}
+     */
+    public function publicQuotationView(Request $req, int $id): Response
+    {
+        $quotation = Database::selectOne("SELECT * FROM quotations WHERE id = ?", [$id]);
+        if (!$quotation) {
+            return new Response('Document not found.', 404);
+        }
+        $expectedToken = CommunicationService::getDocumentPublicToken('QUOTATION', (int)$id, (string)$quotation['created_at'], (int)$quotation['company_id']);
+        $providedToken = (string)($req->query('token') ?? '');
+        if (empty($providedToken) || !hash_equals($expectedToken, $providedToken)) {
+            return new Response('Unauthorized or invalid document access link.', 403);
+        }
+
+        $quotationController = new \WTSBill\Controllers\QuotationController();
+        return $quotationController->print($req, $id);
     }
 
     private function ensureAdmin(): void

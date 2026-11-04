@@ -59,6 +59,10 @@
                                     <a href="/sales/invoices/<?= (int)$inv['id'] ?>/print" target="_blank" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; text-decoration: none; margin-right: 3px;">Print</a>
                                 <?php endif; ?>
                                 <?php if (\WTSBill\Auth\Gate::can('invoices.view')): ?>
+                                    <button type="button" class="btn btn-success" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; margin-right: 3px; display: inline-flex; align-items: center; gap: 3px; background: #25D366; border-color: #25D366; color: #fff;" onclick="window.sendDirectWhatsAppPdf('INVOICE', <?= (int)$inv['id'] ?>, '<?= e(addslashes($inv['invoice_number'])) ?>', '<?= e(addslashes($inv['customer_name'] ?: 'Customer #' . $inv['customer_id'])) ?>', '<?= e(addslashes($inv['customer_phone'] ?? '')) ?>')" title="Direct WhatsApp PDF">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                                        WhatsApp PDF
+                                    </button>
                                     <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; margin-right: 3px; display: inline-flex; align-items: center; gap: 3px;" onclick="window.openShareModal('INVOICE', <?= (int)$inv['id'] ?>, '<?= e(addslashes($inv['invoice_number'])) ?>', '<?= e(addslashes($inv['customer_name'] ?: 'Customer #' . $inv['customer_id'])) ?>', '<?= e(addslashes($inv['customer_phone'] ?? '')) ?>', '<?= e(addslashes($inv['customer_email'] ?? '')) ?>')">
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
                                         Share
@@ -232,12 +236,24 @@
             </div>
         </div>
         <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                 <?php if (\WTSBill\Auth\Gate::can('payments.create')): ?>
                     <button type="button" id="inv-modal-record-pay-btn" class="btn btn-success" style="display: none;" onclick="window.openPaymentFromViewModal()">+ Record Payment</button>
                 <?php endif; ?>
+                <button type="button" id="inv-modal-whatsapp-pdf-btn" class="btn btn-success" style="display: inline-flex; align-items: center; gap: 4px; background: #25D366; border-color: #25D366; color: #fff;" onclick="window.sendCurrentModalWhatsAppPdf()" title="Directly Send PDF Invoice on WhatsApp">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                    WhatsApp PDF
+                </button>
+                <a id="inv-modal-download-pdf-btn" href="#" target="_blank" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 4px; text-decoration: none;" download>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Download PDF
+                </a>
+                <button type="button" id="inv-modal-share-btn" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 4px;" onclick="window.openCurrentModalShare()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                    Share
+                </button>
                 <?php if (\WTSBill\Auth\Gate::can('invoices.print')): ?>
-                    <a id="inv-modal-print-btn" href="#" target="_blank" class="btn btn-secondary" style="text-decoration: none;"><i class="icon">🖨️</i> Print Tax Invoice</a>
+                    <a id="inv-modal-print-btn" href="#" target="_blank" class="btn btn-secondary" style="text-decoration: none;"><i class="icon">🖨️</i> Print</a>
                 <?php endif; ?>
                 <?php if (\WTSBill\Auth\Gate::can('invoices.edit')): ?>
                     <a id="inv-modal-edit-btn" href="#" class="btn btn-primary" style="text-decoration: none;">Edit Invoice</a>
@@ -383,6 +399,11 @@
                 const printBtn = document.getElementById('inv-modal-print-btn');
                 if (printBtn) printBtn.href = '/sales/invoices/' + id + '/print';
 
+                const dlBtn = document.getElementById('inv-modal-download-pdf-btn');
+                if (dlBtn) dlBtn.href = '/sales/invoices/' + id + '/pdf?download=1';
+
+                window.currentModalInvoiceFull = inv;
+
                 const editBtn = document.getElementById('inv-modal-edit-btn');
                 if (editBtn) editBtn.href = '/sales/invoices/' + id + '/edit';
 
@@ -527,6 +548,18 @@
             console.error('Invoice view error:', err);
             document.getElementById('inv-loading').textContent = 'Network or server error while loading invoice.';
         }
+    };
+
+    window.sendCurrentModalWhatsAppPdf = function() {
+        if (!window.currentModalInvoiceFull) return;
+        const inv = window.currentModalInvoiceFull;
+        window.sendDirectWhatsAppPdf('INVOICE', inv.id, inv.invoice_number, inv.customer_name || 'Customer', inv.customer_phone || '');
+    };
+
+    window.openCurrentModalShare = function() {
+        if (!window.currentModalInvoiceFull) return;
+        const inv = window.currentModalInvoiceFull;
+        window.openShareModal('INVOICE', inv.id, inv.invoice_number, inv.customer_name || 'Customer', inv.customer_phone || '', inv.customer_email || '');
     };
 
     window.closeInvoiceModal = function() {
