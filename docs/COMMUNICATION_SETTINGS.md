@@ -90,3 +90,4 @@ Configurable in **Settings > Communication Settings**:
 2. **Channel Selection:** Seamless radio/tab toggling between WhatsApp, Email, or Both.
 3. **Editable Message:** Professional template pre-populated with document particulars, balance due, and payment links, editable by the user prior to sending.
 4. **Communication History:** Real-time table displaying past dispatch attempts, dates, delivery channels, recipients, and statuses (`SENT`, `FAILED`, `CLICK_TO_CHAT_GENERATED`).
+

@@ -60,3 +60,4 @@ CREATE TABLE IF NOT EXISTS `audit_cleanup_logs` (
     INDEX `idx_cleanup_backup` (`backup_record_id`),
     INDEX `idx_cleanup_company_created` (`company_id`, `created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

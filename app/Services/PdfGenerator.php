@@ -163,3 +163,4 @@ class PdfGenerator
         return preg_replace('/[^\x20-\x7E]/', '', $text);
     }
 }
+

@@ -136,3 +136,4 @@ class DraftController
         return Response::json(['authenticated' => true, 'remaining_seconds' => (int)Config::get('session.lifetime', 900)]);
     }
 }
+

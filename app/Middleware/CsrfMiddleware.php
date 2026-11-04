@@ -49,6 +49,13 @@ class CsrfMiddleware
                 return Response::error('CSRF token mismatch. Please reload the page.', 419);
             }
 
+            // Graceful handling for login form submission with an expired session
+            $path = $request->getPath();
+            if ($path === '/login' || $path === '/login.php') {
+                Session::start();
+                return Response::redirect('/login?session_expired=1');
+            }
+
             return Response::html(
                 '<!DOCTYPE html><html><head><title>419 Page Expired</title>' .
                 '<style>body{font-family:system-ui,-apple-system,sans-serif;background:#0f172a;color:#f8fafc;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;}' .

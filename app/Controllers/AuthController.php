@@ -33,6 +33,11 @@ class AuthController
             return Response::redirect('/');
         }
 
+        // Ensure clean session is active so guest CSRF token is properly bound
+        if (!Session::isStarted()) {
+            Session::start();
+        }
+
         $html = View::render('auth/login', [
             'csrf_token' => Session::csrfToken(),
             'error' => Session::getFlash('error'),

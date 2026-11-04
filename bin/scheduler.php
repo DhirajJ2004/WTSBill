@@ -93,3 +93,4 @@ switch ($command) {
         echo "  run-all / weekly               Execute full weekly backup & audit purge\n";
         exit(0);
 }
+

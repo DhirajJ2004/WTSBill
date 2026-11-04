@@ -126,3 +126,4 @@ To maintain database indexing efficiency and storage performance without violati
 3. **Retention Threshold:** Default retention window is **7 days**. Logs newer than 7 days are never purged.
 4. **Security Exemption:** High-severity security events (`AUTH_FAILURE`, `PERMISSION_VIOLATION`, `UNAUTHORIZED_ACCESS`, `RESTORE_EXECUTION`) are permanently retained in `audit_logs`.
 5. **Cleanup Trail:** Every purge action records an audit record in `audit_cleanup_logs` specifying `records_purged`, `oldest_log_date`, `cutoff_timestamp`, and `backup_id`.
+

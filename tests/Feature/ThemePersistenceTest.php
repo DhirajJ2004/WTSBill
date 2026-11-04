@@ -111,3 +111,4 @@ class ThemePersistenceTest
         Database::update('users', ['theme' => 'dark'], 'id = ?', [$userId]);
     }
 }
+

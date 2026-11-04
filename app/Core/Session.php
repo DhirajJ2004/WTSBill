@@ -17,7 +17,7 @@ class Session
      */
     public static function start(?array $options = null): void
     {
-        if (self::$started || session_status() === PHP_SESSION_ACTIVE) {
+        if (session_status() === PHP_SESSION_ACTIVE) {
             self::$started = true;
             if (!isset($_SESSION)) {
                 $_SESSION = [];
@@ -73,7 +73,7 @@ class Session
 
     public static function isStarted(): bool
     {
-        return self::$started || session_status() === PHP_SESSION_ACTIVE || isset($_SESSION);
+        return session_status() === PHP_SESSION_ACTIVE || self::$started;
     }
 
     public static function get(string $key, mixed $default = null): mixed

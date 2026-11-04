@@ -431,3 +431,4 @@ class CommunicationController
                strtolower($xRequestedWith) === 'xmlhttprequest';
     }
 }
+

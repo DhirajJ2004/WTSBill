@@ -81,3 +81,4 @@ Form drafts are stored exclusively in the isolated `user_drafts` database table.
    > `[Restore Form Data]` `[Discard Draft]`
 3. Clicking **Restore** populates all form controls and line item rows.
 4. Clicking **Discard** or successfully submitting the completed form calls `POST /api/drafts/discard` to purge the temporary draft.
+
