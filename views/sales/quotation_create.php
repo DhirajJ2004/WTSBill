@@ -45,8 +45,12 @@ $errorMsg = \WTSBill\Core\Session::getFlash('error');
                     </div>
                     <select id="quote-customer" name="customer_id" class="form-control" required autofocus onchange="window.onCustomerChange()">
                         <option value="">-- Select Customer --</option>
+                        <?php 
+                            $preselectedCustId = (int)($_GET['customer_id'] ?? 0);
+                        ?>
                         <?php foreach ($customers ?? [] as $c): ?>
                             <option value="<?= e((string)$c['id']) ?>" 
+                                    <?= ($preselectedCustId === (int)$c['id']) ? 'selected' : '' ?>
                                     data-gstin="<?= e($c['gstin'] ?? '') ?>" 
                                     data-state="<?= e($c['state_code'] ?? '27') ?>"
                                     data-address="<?= e($c['address_line1'] ?? '') ?>"
@@ -756,5 +760,8 @@ $errorMsg = \WTSBill\Core\Session::getFlash('error');
     // Initialize first row
     document.addEventListener('DOMContentLoaded', function() {
         window.addLineItem();
+        if (document.getElementById('quote-customer') && document.getElementById('quote-customer').value) {
+            window.onCustomerChange();
+        }
     });
 </script>

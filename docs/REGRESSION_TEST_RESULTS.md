@@ -305,6 +305,59 @@ STATUS: ALL TEST SUITES PASSED (100%)
 - `DRAFT-10`: DraftService::discardDraft cleanly purges restored draft after form submission or user discard. **PASSED**
 - `DRAFT-11`: session-idle.js exists and is linked in app.php layout for multi-tab activity monitoring. **PASSED**
 
+---
+
+## 16. General Ledger & Transaction Visibility (Section 49)
+
+- `LEDGER-01`: GET /accounting/ledger returns HTTP 200 OK with non-empty HTML layout. **PASSED**
+- `LEDGER-02`: Ledger view renders KPI summary cards for Opening Balance, Debits, Credits, and Closing Balance. **PASSED**
+- `LEDGER-03`: Ledger view renders account selector, date range, branch, voucher number, and transaction type filters. **PASSED**
+- `LEDGER-04`: Ledger view renders Export CSV and Print buttons. **PASSED**
+- `LEDGER-05`: GET /api/accounting/ledger returns HTTP 200 with JSON payload. **PASSED**
+- `LEDGER-06`: API payload returns accurate account metadata, opening balance, debit/credit totals, and closing balance. **PASSED**
+- `LEDGER-07`: Running balance is strictly chronological and mathematically sound across all transactions. **PASSED**
+- `LEDGER-08`: Ledger correctly isolates branch transactions when branch_id is specified. **PASSED**
+- `LEDGER-09`: GET /accounting/ledger/export returns text/csv stream with voucher numbers and running balances. **PASSED**
+
+---
+
+## 17. Complete 360-Degree Customer Profile & History (Section 50)
+
+- `CUSTPROF-01`: GET /customers/1 returns HTTP 200 OK with Customer Profile HTML layout. **PASSED**
+- `CUSTPROF-02`: Profile renders customer information header, code (`CUST-0001`), GSTIN, and compliance details. **PASSED**
+- `CUSTPROF-03`: Profile renders all 8 Financial Summary KPI dashboard cards (Total Invoiced, Total Paid, Outstanding Balance, Overdue, Quotations, Credit Notes). **PASSED**
+- `CUSTPROF-04`: Profile renders all 7 history tabs (Overview, Invoices, Payments, Quotations, Credit Notes, Ledger, Activities). **PASSED**
+- `CUSTPROF-05`: Profile renders Outstanding Invoices section with Days Overdue and +Pay action modal trigger. **PASSED**
+- `CUSTPROF-06`: Profile action buttons link to Create Invoice & Quotation with pre-selected customer_id. **PASSED**
+- `CUSTPROF-07`: GET /customers/1 with Accept: application/json returns backward-compatible customer JSON payload. **PASSED**
+- `CUSTPROF-08`: CustomerService::getCustomerProfileData computes correct financial summary metrics from live DB. **PASSED**
+- `CUSTPROF-09`: GET /customers/1/statement/csv returns text/csv stream with customer details and running ledger balance. **PASSED**
+
+---
+
+## 18. Comprehensive Invoice & Quotation List Filters (Section 51)
+
+- `DOCFILTER-01`: GET /sales/invoices returns HTTP 200 with Status Pills bar and Multi-field Filter form. **PASSED**
+- `DOCFILTER-02`: GET /sales/invoices?status=UNPAID returns only UNPAID status invoices and accurate status counts. **PASSED**
+- `DOCFILTER-03`: GET /sales/invoices?status=PARTIAL returns strictly PARTIAL invoices with partial payment counts. **PASSED**
+- `DOCFILTER-04`: GET /sales/invoices?status=PAID returns strictly PAID invoices. **PASSED**
+- `DOCFILTER-05`: GET /sales/invoices?status=OVERDUE isolates invoices where status != PAID and due_date < today. **PASSED**
+- `DOCFILTER-06`: Multi-field invoice query properly filters by search, amount boundaries, branch, and returns pagination envelope. **PASSED**
+- `DOCFILTER-07`: GET /sales/quotations returns HTTP 200 with Lifecycle Status pills, Linked Payment dropdown, and Register. **PASSED**
+- `DOCFILTER-08`: GET /sales/quotations?status=SENT filters strictly SENT lifecycle quotations. **PASSED**
+- `DOCFILTER-09`: GET /sales/quotations?payment_status=UNPAID successfully filters quotations converted to unpaid invoices. **PASSED**
+- `DOCFILTER-10`: Quotation multi-field query cleanly processes search, branch, and returns pagination envelope. **PASSED**
+
+---
+
+## Final Verification Summary
+- **Total Assertions Executed**: 680
+- **Passed**: 680
+- **Failed**: 0
+- **Pass Percentage**: 100%
+- **Status**: ALL TEST SUITES PASSED (100%)
+
+
 
 
 

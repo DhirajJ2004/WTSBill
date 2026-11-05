@@ -62,6 +62,9 @@ $router->get('/customers/create', [$customerController, 'createForm'], [$auth, $
 $router->post('/customers/create', [$customerController, 'store'], [$auth, $csrf, $can('customers.create')]);
 $router->post('/customers', [$customerController, 'store'], [$auth, $csrf, $can('customers.create')]);
 $router->get('/customers/{id}', [$customerController, 'show'], [$auth, $can('customers.view')]);
+$router->get('/customers/{id}/profile', [$customerController, 'profile'], [$auth, $can('customers.view')]);
+$router->get('/customers/{id}/statement', [$customerController, 'profile'], [$auth, $can('customers.view')]);
+$router->get('/customers/{id}/statement/csv', [$customerController, 'statementCsv'], [$auth, $can('customers.view')]);
 $router->post('/customers/{id}/update', [$customerController, 'update'], [$auth, $csrf, $can('customers.edit')]);
 $router->post('/customers/{id}/delete', [$customerController, 'delete'], [$auth, $csrf, $can('customers.delete')]);
 $router->delete('/customers/{id}', [$customerController, 'delete'], [$auth, $csrf, $can('customers.delete')]);
@@ -208,13 +211,10 @@ $router->get('/accounts', [$accountingController, 'accountsIndex'], [$auth, $can
 $router->post('/accounts', [$accountingController, 'accountStore'], [$auth, $csrf, $can('accounting.create')]);
 $router->get('/accounts/journals', [$accountingController, 'journalsIndex'], [$auth, $can('accounting.create')]);
 $router->post('/accounts/journals', [$accountingController, 'journalStore'], [$auth, $csrf, $can('accounting.create')]);
-$router->get('/accounts/ledger', function (Request $req) {
-    $html = \WTSBill\Core\View::renderWithLayout('accounting/ledger', [
-        'title' => 'General Ledger',
-        'currentUri' => '/accounts/ledger',
-    ], 'layouts/app');
-    return Response::html($html);
-}, [$auth, $can('accounting.view')]);
+$router->get('/accounts/ledger', [$accountingController, 'ledgerIndex'], [$auth, $can('accounting.view')]);
+$router->get('/accounting/ledger', [$accountingController, 'ledgerIndex'], [$auth, $can('accounting.view')]);
+$router->get('/api/accounting/ledger', [$accountingController, 'ledgerApi'], [$auth, $can('accounting.view')]);
+$router->get('/accounting/ledger/export', [$accountingController, 'ledgerExport'], [$auth, $can('accounting.view')]);
 $router->get('/accounts/{id}', [$accountingController, 'accountShow'], [$auth, $can('accounting.view')]);
 $router->post('/accounts/{id}/update', [$accountingController, 'accountUpdate'], [$auth, $csrf, $can('accounting.edit')]);
 $router->post('/accounts/{id}/delete', [$accountingController, 'accountDelete'], [$auth, $csrf, $can('accounting.delete')]);

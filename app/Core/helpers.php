@@ -267,3 +267,24 @@ if (!function_exists('gst_state_info')) {
     }
 }
 
+if (!function_exists('csrf_token')) {
+    /**
+     * Get current session CSRF token.
+     */
+    function csrf_token(): string
+    {
+        return \WTSBill\Core\Session::csrfToken();
+    }
+}
+
+if (!function_exists('csrf_field')) {
+    /**
+     * Generate hidden HTML CSRF input field.
+     */
+    function csrf_field(): string
+    {
+        return '<input type="hidden" name="_csrf_token" value="' . e(csrf_token()) . '">';
+    }
+}
+
+

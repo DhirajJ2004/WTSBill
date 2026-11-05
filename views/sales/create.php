@@ -37,8 +37,14 @@ $errorMsg = \WTSBill\Core\Session::getFlash('error');
                     <label for="inv-customer">Customer Name <span style="color: var(--danger);">*</span></label>
                     <select id="inv-customer" name="customer_id" class="form-control" required autofocus onchange="window.onCustomerChange()">
                         <option value="">-- Select Customer --</option>
+                        <?php 
+                            $preselectedCustId = (int)($_GET['customer_id'] ?? 0);
+                        ?>
                         <?php foreach ($customers ?? [] as $c): ?>
-                            <option value="<?= e((string)$c['id']) ?>" data-gstin="<?= e($c['gstin'] ?? '') ?>" data-state="<?= e($c['state_code'] ?? '27') ?>">
+                            <option value="<?= e((string)$c['id']) ?>" 
+                                    <?= ($preselectedCustId === (int)$c['id']) ? 'selected' : '' ?>
+                                    data-gstin="<?= e($c['gstin'] ?? '') ?>" 
+                                    data-state="<?= e($c['state_code'] ?? '27') ?>">
                                 <?= e($c['name']) ?> (<?= e($c['gstin'] ?: 'Unregistered') ?>)
                             </option>
                         <?php endforeach; ?>
@@ -591,6 +597,11 @@ $errorMsg = \WTSBill\Core\Session::getFlash('error');
             });
         } else {
             window.addLineItem();
+        }
+
+        // Auto-populate customer fields if pre-selected
+        if (document.getElementById('inv-customer') && document.getElementById('inv-customer').value) {
+            window.onCustomerChange();
         }
     });
 </script>

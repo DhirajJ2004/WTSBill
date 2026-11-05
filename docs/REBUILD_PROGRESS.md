@@ -111,3 +111,30 @@
   - Payment reconciliation workflows distinguishing pending/unverified payments from confirmed payments.
   - Duplicate transaction reference defense enforcing HTTP 422 safeguards.
   - Synchronized across Invoice Details Modal (`#invoice-view-modal`), Printable Invoice (`/sales/invoices/{id}/print`), and REST APIs.
+
+- [x] **Accounting Balance Sheet & General Ledger Drill-Down (Feature 1):**
+  - Refined Balance Sheet categorized into standard accounting groups: Assets (Cash, Bank, AR, Inventory, Fixed, Other), Liabilities (AP, Expenses, Loans, Current, Long-term), and Equity (Capital, Retained Earnings, Current Period P&L).
+  - Strict double-entry accounting integrity ($Total Assets = Total Liabilities + Total Equity$) with zero artificial adjustments.
+  - Clickable Balance Sheet accounts with interactive AJAX quick-preview modal (`#accountLedgerModal`) linking directly to full General Ledger.
+  - Dedicated General Ledger page (`/accounting/ledger`) with multi-filtering (Date range, Branch, Account, Type, Customer/Supplier, Voucher #), running Dr/Cr balances, pagination, and CSV export (`/accounting/ledger/export`).
+
+- [x] **Complete 360-Degree Customer Profile & History (Feature 2):**
+  - Dedicated Customer Profile view (`/customers/{id}`) accessible anywhere customer names are shown in ERP.
+  - Comprehensive customer identity header: Code (`CUST-0001`), Contact, Phone, Email, Billing & Shipping Address, GSTIN, Registration Date, Status, Assigned Branch.
+  - 8 Financial Summary KPI dashboard cards: Total Invoiced, Total Paid, Outstanding Balance, Overdue Amount, Total Quotations, Accepted Quotations, Pending Quotations, Credit Notes & Adjustments.
+  - 7 Tabbed Panels: (1) Overview, (2) Invoices, (3) Payments, (4) Quotations, (5) Credit Notes, (6) Ledger & Statements, (7) Activity History.
+  - Interactive Outstanding Invoices table with Days Overdue calculations and direct "+ Pay" modal trigger.
+  - Seamless action buttons: Edit Customer, Create Invoice (pre-selected customer), Create Quotation (pre-selected customer), Record Payment modal, Statement CSV export, and Share Statement.
+
+- [x] **Universal WhatsApp & Email PDF Sharing (Feature 3):**
+  - Universal Share action on invoice and quotation details and listings.
+  - WhatsApp PDF dispatch via Meta WhatsApp Business Cloud API (`type: "document"`, signed public URL, caption) with fallback to wa.me click-to-chat.
+  - Email PDF dispatch with real PDF-1.4 attachment generated via `PdfGenerator`.
+  - Secure signed public PDF viewing link (`/doc/invoices/{id}/pdf?token={hash}`).
+
+- [x] **Invoice & Quotation List Status Filters & Pagination (Feature 4):**
+  - Tax Invoice status pills tabs with live counts: All, Pending / Unpaid, Partially Paid, Paid, Overdue (`status != 'PAID' AND due_date < CURDATE()`).
+  - Invoice multi-field filter bar: Search, Branch, Date Range (from/to), Min/Max amount, Reset.
+  - Quotation lifecycle status pills: All, Draft, Sent, Accepted, Converted, Rejected, Expired.
+  - Quotation linked invoice payment status dropdown: All, Unpaid / Pending, Partially Paid, Paid.
+  - Responsive pagination footer across both registers.

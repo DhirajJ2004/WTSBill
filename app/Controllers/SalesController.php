@@ -20,23 +20,114 @@ use WTSBill\Services\QrCodeService;
 class SalesController
 {
     /**
-     * List all tax invoices.
+     * List all tax invoices with comprehensive payment status, date range, branch, and amount filters.
      */
     public function invoicesIndex(Request $req): Response
     {
-        $companyId = Session::getCompanyId() ?? 1;
-        $branchId = Session::getBranchId() ?? 1;
-        $invoices = Database::select(
-            "SELECT i.id, i.invoice_number, i.customer_id, COALESCE(c.name, i.customer_name, 'Direct Customer') as customer_name,
-                    i.invoice_date, i.due_date, i.sub_total, i.total_tax, i.grand_total, i.amount_paid, i.amount_due, i.status 
-             FROM invoices i 
-             LEFT JOIN customers c ON i.customer_id = c.id 
-             WHERE i.company_id = ? AND (i.branch_id = ? OR i.branch_id IS NULL)
-               AND i.deleted_at IS NULL
-               AND i.status != 'CANCELLED'
-             ORDER BY i.id DESC",
-            [$companyId, $branchId]
-        );
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $statusFilter = strtoupper(trim((string)$req->query('status', 'ALL')));
+        $search = trim((string)$req->query('search', ''));
+        $fromDate = trim((string)$req->query('from_date', ''));
+        $toDate = trim((string)$req->query('to_date', ''));
+        $branchQuery = $req->query('branch_id');
+        $minAmount = $req->query('min_amount');
+        $maxAmount = $req->query('max_amount');
+        $page = max(1, (int)$req->query('page', 1));
+        $perPage = max(5, min(100, (int)$req->query('per_page', 25)));
+
+        // Branch scoping
+        $effectiveBranchId = null;
+        if ($branchQuery !== null && $branchQuery !== '' && strtoupper((string)$branchQuery) !== 'ALL') {
+            $effectiveBranchId = (int)$branchQuery;
+        } elseif ($branchQuery === null || $branchQuery === '') {
+            $effectiveBranchId = Session::getBranchId() ? (int)Session::getBranchId() : 1;
+        }
+
+        // 1. Compute exact status counts for tabs / badges
+        $countWhere = ["i.company_id = ?", "i.deleted_at IS NULL", "i.status != 'CANCELLED'"];
+        $countParams = [$companyId];
+        if ($effectiveBranchId !== null) {
+            $countWhere[] = "(i.branch_id = ? OR i.branch_id IS NULL)";
+            $countParams[] = $effectiveBranchId;
+        }
+
+        $countSql = "SELECT 
+            COUNT(*) AS total,
+            COUNT(CASE WHEN i.status = 'UNPAID' THEN 1 END) AS unpaid,
+            COUNT(CASE WHEN i.status = 'PARTIAL' THEN 1 END) AS partial,
+            COUNT(CASE WHEN i.status = 'PAID' THEN 1 END) AS paid,
+            COUNT(CASE WHEN i.status != 'PAID' AND i.due_date IS NOT NULL AND i.due_date < CURDATE() THEN 1 END) AS overdue
+        FROM invoices i
+        WHERE " . implode(' AND ', $countWhere);
+
+        $statusCounts = Database::selectOne($countSql, $countParams) ?: [
+            'total' => 0, 'unpaid' => 0, 'partial' => 0, 'paid' => 0, 'overdue' => 0
+        ];
+
+        // 2. Build filtered invoices query
+        $where = ["i.company_id = ?", "i.deleted_at IS NULL", "i.status != 'CANCELLED'"];
+        $params = [$companyId];
+
+        if ($effectiveBranchId !== null) {
+            $where[] = "(i.branch_id = ? OR i.branch_id IS NULL)";
+            $params[] = $effectiveBranchId;
+        }
+
+        if ($statusFilter === 'UNPAID' || $statusFilter === 'PENDING') {
+            $where[] = "i.status = 'UNPAID'";
+        } elseif ($statusFilter === 'PARTIAL' || $statusFilter === 'PARTIALLY_PAID') {
+            $where[] = "i.status = 'PARTIAL'";
+        } elseif ($statusFilter === 'PAID') {
+            $where[] = "i.status = 'PAID'";
+        } elseif ($statusFilter === 'OVERDUE') {
+            $where[] = "(i.status != 'PAID' AND i.due_date IS NOT NULL AND i.due_date < CURDATE())";
+        }
+
+        if (!empty($search)) {
+            $term = '%' . $search . '%';
+            $where[] = "(i.invoice_number LIKE ? OR c.name LIKE ? OR i.customer_name LIKE ?)";
+            $params[] = $term;
+            $params[] = $term;
+            $params[] = $term;
+        }
+
+        if (!empty($fromDate)) {
+            $where[] = "i.invoice_date >= ?";
+            $params[] = $fromDate;
+        }
+        if (!empty($toDate)) {
+            $where[] = "i.invoice_date <= ?";
+            $params[] = $toDate;
+        }
+
+        if ($minAmount !== null && $minAmount !== '' && is_numeric($minAmount)) {
+            $where[] = "i.grand_total >= ?";
+            $params[] = (float)$minAmount;
+        }
+        if ($maxAmount !== null && $maxAmount !== '' && is_numeric($maxAmount)) {
+            $where[] = "i.grand_total <= ?";
+            $params[] = (float)$maxAmount;
+        }
+
+        // 3. Pagination count
+        $countQuery = "SELECT COUNT(*) AS cnt FROM invoices i LEFT JOIN customers c ON i.customer_id = c.id WHERE " . implode(' AND ', $where);
+        $countRow = Database::selectOne($countQuery, $params);
+        $totalMatching = (int)($countRow['cnt'] ?? 0);
+        $totalPages = max(1, (int)ceil($totalMatching / $perPage));
+        $page = min($page, $totalPages);
+        $offset = ($page - 1) * $perPage;
+
+        // 4. Invoices dataset
+        $sql = "SELECT i.id, i.invoice_number, i.customer_id, COALESCE(c.name, i.customer_name, 'Direct Customer') as customer_name,
+                       c.phone as customer_phone, c.email as customer_email,
+                       i.invoice_date, i.due_date, i.sub_total, i.total_tax, i.grand_total, i.amount_paid, i.amount_due, i.status, i.branch_id
+                FROM invoices i 
+                LEFT JOIN customers c ON i.customer_id = c.id 
+                WHERE " . implode(' AND ', $where) . "
+                ORDER BY i.id DESC
+                LIMIT ? OFFSET ?";
+        $queryParams = array_merge($params, [$perPage, $offset]);
+        $invoices = Database::select($sql, $queryParams);
 
         $bankAccounts = Database::select(
             "SELECT id, bank_name, account_name, account_number 
@@ -46,11 +137,53 @@ class SalesController
             [$companyId]
         );
 
+        $branches = Database::select(
+            "SELECT id, name, branch_code FROM branches WHERE company_id = ? AND is_active = 1 ORDER BY id ASC",
+            [$companyId]
+        );
+
+        if ($req->expectsJson()) {
+            return Response::success([
+                'invoices' => $invoices,
+                'counts' => $statusCounts,
+                'pagination' => [
+                    'page' => $page,
+                    'per_page' => $perPage,
+                    'total' => $totalMatching,
+                    'total_pages' => $totalPages,
+                ],
+                'filters' => [
+                    'status' => $statusFilter,
+                    'search' => $search,
+                    'from_date' => $fromDate,
+                    'to_date' => $toDate,
+                    'branch_id' => $branchQuery,
+                    'min_amount' => $minAmount,
+                    'max_amount' => $maxAmount,
+                ],
+            ]);
+        }
+
         $html = View::renderWithLayout('sales/invoices', [
             'title' => 'Tax Invoices',
             'currentUri' => '/sales/invoices',
             'invoices' => $invoices,
             'bankAccounts' => $bankAccounts,
+            'branches' => $branches,
+            'statusCounts' => $statusCounts,
+            'activeStatus' => $statusFilter,
+            'search' => $search,
+            'fromDate' => $fromDate,
+            'toDate' => $toDate,
+            'selectedBranch' => $branchQuery !== null ? (string)$branchQuery : ($effectiveBranchId !== null ? (string)$effectiveBranchId : 'ALL'),
+            'minAmount' => $minAmount,
+            'maxAmount' => $maxAmount,
+            'pagination' => [
+                'page' => $page,
+                'per_page' => $perPage,
+                'total' => $totalMatching,
+                'total_pages' => $totalPages,
+            ],
         ], 'layouts/app');
 
         return Response::html($html);

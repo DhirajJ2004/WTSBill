@@ -174,4 +174,10 @@
 | `tests/Feature/ThemePersistenceTest.php` | Feature | 6 assertions: Light & dark theme switching, users table & session persistence, HTML data-theme binding, print white background isolation |
 | `tests/Feature/BackupAndCleanupTest.php` | Feature | 11 assertions: Pure PHP backup creation, SHA-256 verification, secure download, safety snapshots, DR restore, atomic audit log retention cleanup |
 | `tests/Feature/SessionIdleDraftTest.php` | Feature | 11 assertions: 15-minute inactivity session expiration, background request bypass, user_drafts persistence, multi-tab sync, form recovery |
-| `tests/run_tests.php` | Master Runner | Executes all 48 test suites (649 assertions, 100% pass) |
+| `app/Services/LedgerService.php` | Service | General Ledger running balance calculation, opening balance resolution, party name mapping, CSV export |
+| `views/accounting/ledger.php` | View | General Ledger page with KPI cards, multi-filters (date, branch, account, type), Dr/Cr running balances, CSV/print |
+| `views/parties/customer_profile.php` | View | Complete 360-degree customer profile with 8 KPI cards, 7 tabs, overdue days calculation, payment modal, statement CSV |
+| `tests/Feature/LedgerStatementTest.php` | Feature | 9 assertions: General Ledger view, KPI cards, filters, JSON API, chronological running balance, branch scoping, CSV export |
+| `tests/Feature/CustomerProfileTest.php` | Feature | 9 assertions: Customer profile HTML, compliance details, 8 KPI cards, 7 tabs, days overdue, pre-selected create actions, statement CSV |
+| `tests/Feature/DocumentFilterTest.php` | Feature | 10 assertions: Invoice payment status pills, multi-filters, overdue calculation, Quotation lifecycle & linked payment filters, pagination |
+| `tests/run_tests.php` | Master Runner | Executes all 51 test suites (680 assertions, 100% pass) |

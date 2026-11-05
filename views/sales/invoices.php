@@ -3,24 +3,139 @@
  * WTSBill ERP — Tax Invoices List View & Invoice Inspection Workflow
  *
  * @var array $invoices
+ * @var array $bankAccounts
+ * @var array $branches
+ * @var array $statusCounts
+ * @var string $activeStatus
+ * @var string $search
+ * @var string $fromDate
+ * @var string $toDate
+ * @var string $selectedBranch
+ * @var mixed $minAmount
+ * @var mixed $maxAmount
+ * @var array $pagination
  */
+
+$currentStatus = $activeStatus ?? 'ALL';
+$searchVal = $search ?? '';
+$fromVal = $fromDate ?? '';
+$toVal = $toDate ?? '';
+$branchVal = $selectedBranch ?? 'ALL';
+$minVal = $minAmount ?? '';
+$maxVal = $maxAmount ?? '';
+
+$buildQuery = function(array $overrides = []) use ($currentStatus, $searchVal, $fromVal, $toVal, $branchVal, $minVal, $maxVal) {
+    $params = [
+        'status' => $overrides['status'] ?? $currentStatus,
+        'search' => $overrides['search'] ?? $searchVal,
+        'from_date' => $overrides['from_date'] ?? $fromVal,
+        'to_date' => $overrides['to_date'] ?? $toVal,
+        'branch_id' => $overrides['branch_id'] ?? $branchVal,
+        'min_amount' => $overrides['min_amount'] ?? $minVal,
+        'max_amount' => $overrides['max_amount'] ?? $maxVal,
+        'page' => $overrides['page'] ?? 1,
+    ];
+    $clean = [];
+    foreach ($params as $k => $v) {
+        if ($v !== null && $v !== '' && !($k === 'status' && $v === 'ALL')) {
+            $clean[$k] = $v;
+        }
+    }
+    return '/sales/invoices' . (!empty($clean) ? '?' . http_build_query($clean) : '');
+};
 ?>
-<div class="page-header">
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
     <div>
-        <h1 class="page-title">Tax Invoices</h1>
-        <p class="page-subtitle">Accounts receivable, GST compliance, invoice generation, and settlement tracking</p>
+        <h1 class="page-title" style="margin: 0; font-size: 1.5rem; font-weight: 700;">Tax Invoices</h1>
+        <p class="page-subtitle" style="margin: 0.25rem 0 0 0; color: var(--text-muted); font-size: 0.875rem;">Accounts receivable, GST compliance, invoice generation, settlement tracking, and payment status verification</p>
     </div>
     <div style="display: flex; gap: 0.5rem; align-items: center;">
-        <input type="text" id="invoice-search" class="form-control" placeholder="Search invoice number or client..." style="width: 250px; padding: 0.4rem 0.75rem; font-size: 0.85rem;">
         <?php if (\WTSBill\Auth\Gate::can('invoices.create')): ?>
-            <a href="/sales/invoices/create" class="btn btn-primary">+ Create Invoice</a>
+            <a href="/sales/invoices/create" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.35rem; font-weight: 600;">+ Create Invoice</a>
         <?php endif; ?>
     </div>
 </div>
 
+<!-- Status Pill Tabs (Feature 4.1) -->
+<div class="status-pills-bar" style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; align-items: center;">
+    <a href="<?= $buildQuery(['status' => 'ALL', 'page' => 1]) ?>" class="btn <?= $currentStatus === 'ALL' ? 'btn-primary' : 'btn-secondary' ?>" style="padding: 0.35rem 0.85rem; font-size: 0.82rem; border-radius: 9999px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem;">
+        <span>All Invoices</span>
+        <span class="badge" style="background: rgba(255,255,255,0.25); font-size: 0.75rem; padding: 0.1rem 0.45rem; border-radius: 9999px;"><?= (int)($statusCounts['total'] ?? 0) ?></span>
+    </a>
+    <a href="<?= $buildQuery(['status' => 'UNPAID', 'page' => 1]) ?>" class="btn <?= ($currentStatus === 'UNPAID' || $currentStatus === 'PENDING') ? 'btn-primary' : 'btn-secondary' ?>" style="padding: 0.35rem 0.85rem; font-size: 0.82rem; border-radius: 9999px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem;">
+        <span>Pending / Unpaid</span>
+        <span class="badge" style="background: rgba(255,255,255,0.25); font-size: 0.75rem; padding: 0.1rem 0.45rem; border-radius: 9999px;"><?= (int)($statusCounts['unpaid'] ?? 0) ?></span>
+    </a>
+    <a href="<?= $buildQuery(['status' => 'PARTIAL', 'page' => 1]) ?>" class="btn <?= ($currentStatus === 'PARTIAL' || $currentStatus === 'PARTIALLY_PAID') ? 'btn-primary' : 'btn-secondary' ?>" style="padding: 0.35rem 0.85rem; font-size: 0.82rem; border-radius: 9999px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem;">
+        <span>Partially Paid</span>
+        <span class="badge" style="background: rgba(255,255,255,0.25); font-size: 0.75rem; padding: 0.1rem 0.45rem; border-radius: 9999px;"><?= (int)($statusCounts['partial'] ?? 0) ?></span>
+    </a>
+    <a href="<?= $buildQuery(['status' => 'PAID', 'page' => 1]) ?>" class="btn <?= $currentStatus === 'PAID' ? 'btn-primary' : 'btn-secondary' ?>" style="padding: 0.35rem 0.85rem; font-size: 0.82rem; border-radius: 9999px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem;">
+        <span>Paid</span>
+        <span class="badge" style="background: rgba(255,255,255,0.25); font-size: 0.75rem; padding: 0.1rem 0.45rem; border-radius: 9999px;"><?= (int)($statusCounts['paid'] ?? 0) ?></span>
+    </a>
+    <a href="<?= $buildQuery(['status' => 'OVERDUE', 'page' => 1]) ?>" class="btn <?= $currentStatus === 'OVERDUE' ? 'btn-danger' : 'btn-outline-danger' ?>" style="padding: 0.35rem 0.85rem; font-size: 0.82rem; border-radius: 9999px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; <?= $currentStatus !== 'OVERDUE' ? 'border: 1px solid var(--danger, #ef4444); color: var(--danger, #ef4444);' : '' ?>">
+        <span>Overdue</span>
+        <span class="badge" style="background: rgba(239,68,68,0.2); color: inherit; font-size: 0.75rem; padding: 0.1rem 0.45rem; border-radius: 9999px;"><?= (int)($statusCounts['overdue'] ?? 0) ?></span>
+    </a>
+</div>
+
+<!-- Multi-Field Filter Bar (Feature 4.1) -->
+<div class="card" style="margin-bottom: 1.25rem;">
+    <div class="card-body" style="padding: 1rem 1.25rem;">
+        <form method="GET" action="/sales/invoices" id="invoiceFilterForm" style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end;">
+            <input type="hidden" name="status" value="<?= e($currentStatus) ?>">
+
+            <div style="flex: 2; min-width: 200px;">
+                <label style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-bottom: 0.25rem; display: block;">Search Invoices</label>
+                <input type="text" id="invoice-search" name="search" class="form-control" placeholder="Search invoice # or customer..." value="<?= e($searchVal) ?>" style="font-size: 0.85rem; padding: 0.4rem 0.65rem;">
+            </div>
+
+            <div style="flex: 1; min-width: 140px;">
+                <label style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-bottom: 0.25rem; display: block;">Branch</label>
+                <select name="branch_id" class="form-control" style="font-size: 0.85rem; padding: 0.4rem 0.65rem;">
+                    <option value="ALL" <?= $branchVal === 'ALL' ? 'selected' : '' ?>>All Branches</option>
+                    <?php if (!empty($branches)): ?>
+                        <?php foreach ($branches as $b): ?>
+                            <option value="<?= (int)$b['id'] ?>" <?= ((string)$branchVal === (string)$b['id']) ? 'selected' : '' ?>>
+                                <?= e($b['name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+            </div>
+
+            <div style="width: 135px;">
+                <label style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-bottom: 0.25rem; display: block;">From Date</label>
+                <input type="date" name="from_date" class="form-control" value="<?= e($fromVal) ?>" style="font-size: 0.85rem; padding: 0.4rem 0.5rem;">
+            </div>
+
+            <div style="width: 135px;">
+                <label style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-bottom: 0.25rem; display: block;">To Date</label>
+                <input type="date" name="to_date" class="form-control" value="<?= e($toVal) ?>" style="font-size: 0.85rem; padding: 0.4rem 0.5rem;">
+            </div>
+
+            <div style="width: 105px;">
+                <label style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-bottom: 0.25rem; display: block;">Min Amount</label>
+                <input type="number" step="0.01" name="min_amount" class="form-control" placeholder="₹ Min" value="<?= e((string)$minVal) ?>" style="font-size: 0.85rem; padding: 0.4rem 0.5rem;">
+            </div>
+
+            <div style="width: 105px;">
+                <label style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-bottom: 0.25rem; display: block;">Max Amount</label>
+                <input type="number" step="0.01" name="max_amount" class="form-control" placeholder="₹ Max" value="<?= e((string)$maxVal) ?>" style="font-size: 0.85rem; padding: 0.4rem 0.5rem;">
+            </div>
+
+            <div style="display: flex; gap: 0.4rem;">
+                <button type="submit" class="btn btn-primary" style="padding: 0.42rem 1rem; font-size: 0.85rem; font-weight: 600;">Filter</button>
+                <a href="/sales/invoices" class="btn btn-secondary" style="padding: 0.42rem 0.8rem; font-size: 0.85rem; text-decoration: none;">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Generated Sales Invoices (<span id="invoices-count"><?= count($invoices ?? []) ?></span> Invoices)</h3>
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card-title" style="margin: 0;">Tax Invoices List (<span id="invoices-count"><?= (int)($pagination['total'] ?? count($invoices ?? [])) ?></span> Invoices Found)</h3>
     </div>
     <div class="table-container">
         <table class="table" id="invoices-table">
@@ -38,18 +153,40 @@
             <tbody id="invoices-table-body">
                 <?php if (!empty($invoices)): ?>
                     <?php foreach ($invoices as $inv): ?>
+                        <?php
+                            $isPaid = $inv['status'] === 'PAID';
+                            $isPartial = $inv['status'] === 'PARTIAL';
+                            $isOverdue = !$isPaid && !empty($inv['due_date']) && (strtotime($inv['due_date']) < strtotime(date('Y-m-d')));
+                        ?>
                         <tr id="invoice-row-<?= (int)$inv['id'] ?>">
                             <td><strong><?= e($inv['invoice_number']) ?></strong></td>
-                            <td><?= e($inv['customer_name'] ?: 'Customer #' . $inv['customer_id']) ?></td>
+                            <td>
+                                <?php if (!empty($inv['customer_id'])): ?>
+                                    <a href="/customers/<?= (int)$inv['customer_id'] ?>" style="color: inherit; text-decoration: underline; font-weight: 500;">
+                                        <?= e($inv['customer_name'] ?: 'Customer #' . $inv['customer_id']) ?>
+                                    </a>
+                                <?php else: ?>
+                                    <?= e($inv['customer_name'] ?: 'Direct Customer') ?>
+                                <?php endif; ?>
+                            </td>
                             <td><?= e(format_date($inv['invoice_date'])) ?></td>
                             <td style="text-align: right; font-weight: 600;"><?= format_currency((float)$inv['grand_total']) ?></td>
                             <td style="text-align: right; color: <?= (float)($inv['amount_due'] ?? 0) > 0 ? 'var(--color-danger)' : 'var(--color-success)' ?>;">
                                 <?= format_currency((float)($inv['amount_due'] ?? 0)) ?>
                             </td>
                             <td style="text-align: center;">
-                                <span class="badge badge-<?= $inv['status'] === 'PAID' ? 'success' : ($inv['status'] === 'PARTIAL' ? 'warning' : 'danger') ?>">
-                                    <?= e($inv['status']) ?>
-                                </span>
+                                <?php if ($isPaid): ?>
+                                    <span class="badge badge-success">Paid</span>
+                                <?php elseif ($isOverdue): ?>
+                                    <span class="badge badge-danger">Overdue</span>
+                                    <?php if ($isPartial): ?>
+                                        <div style="font-size: 0.7rem; color: var(--color-warning, #f59e0b); font-weight: 600; margin-top: 2px;">Partially Paid</div>
+                                    <?php endif; ?>
+                                <?php elseif ($isPartial): ?>
+                                    <span class="badge badge-warning">Partially Paid</span>
+                                <?php else: ?>
+                                    <span class="badge badge-secondary">Pending</span>
+                                <?php endif; ?>
                             </td>
                             <td style="text-align: right; white-space: nowrap;">
                                 <?php if (\WTSBill\Auth\Gate::can('payments.create') && (float)($inv['amount_due'] ?? 0) > 0.001): ?>
@@ -60,11 +197,11 @@
                                 <?php endif; ?>
                                 <?php if (\WTSBill\Auth\Gate::can('invoices.view')): ?>
                                     <button type="button" class="btn btn-success" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; margin-right: 3px; display: inline-flex; align-items: center; gap: 3px; background: #25D366; border-color: #25D366; color: #fff;" onclick="window.sendDirectWhatsAppPdf('INVOICE', <?= (int)$inv['id'] ?>, '<?= e(addslashes($inv['invoice_number'])) ?>', '<?= e(addslashes($inv['customer_name'] ?: 'Customer #' . $inv['customer_id'])) ?>', '<?= e(addslashes($inv['customer_phone'] ?? '')) ?>')" title="Direct WhatsApp PDF">
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
                                         WhatsApp PDF
                                     </button>
                                     <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; margin-right: 3px; display: inline-flex; align-items: center; gap: 3px;" onclick="window.openShareModal('INVOICE', <?= (int)$inv['id'] ?>, '<?= e(addslashes($inv['invoice_number'])) ?>', '<?= e(addslashes($inv['customer_name'] ?: 'Customer #' . $inv['customer_id'])) ?>', '<?= e(addslashes($inv['customer_phone'] ?? '')) ?>', '<?= e(addslashes($inv['customer_email'] ?? '')) ?>')">
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
                                         Share
                                     </button>
                                 <?php endif; ?>
@@ -82,15 +219,34 @@
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr id="no-invoices-row">
-                        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No invoice records found.</td>
+                        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No invoice records found matching the filter criteria.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>
         </table>
     </div>
+
+    <!-- Pagination Footer -->
+    <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1.25rem; border-top: 1px solid var(--border-color); flex-wrap: wrap; gap: 0.5rem;">
+        <div style="font-size: 0.85rem; color: var(--text-muted);">
+            Showing <strong><?= count($invoices ?? []) ?></strong> of <strong><?= (int)($pagination['total'] ?? 0) ?></strong> invoices (Page <?= (int)($pagination['page'] ?? 1) ?> of <?= (int)($pagination['total_pages'] ?? 1) ?>)
+        </div>
+        <?php if (($pagination['total_pages'] ?? 1) > 1): ?>
+            <div style="display: flex; gap: 0.25rem; align-items: center;">
+                <?php if (($pagination['page'] ?? 1) > 1): ?>
+                    <a href="<?= $buildQuery(['page' => $pagination['page'] - 1]) ?>" class="btn btn-sm btn-secondary">&laquo; Prev</a>
+                <?php endif; ?>
+                <span style="font-size: 0.85rem; padding: 0.25rem 0.5rem; color: var(--text-primary); font-weight: 600;">
+                    <?= (int)$pagination['page'] ?> / <?= (int)$pagination['total_pages'] ?>
+                </span>
+                <?php if (($pagination['page'] ?? 1) < ($pagination['total_pages'] ?? 1)): ?>
+                    <a href="<?= $buildQuery(['page' => $pagination['page'] + 1]) ?>" class="btn btn-sm btn-secondary">Next &raquo;</a>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+    </div>
 </div>
 
-<!-- Working Invoice Details View Modal -->
 <div id="invoice-view-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="inv-modal-title">
     <div class="modal-dialog" style="max-width: 760px;">
         <div class="modal-header">

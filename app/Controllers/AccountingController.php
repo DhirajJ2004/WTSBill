@@ -11,6 +11,7 @@ use WTSBill\Core\Response;
 use WTSBill\Core\Session;
 use WTSBill\Core\View;
 use WTSBill\Services\AuditLogger;
+use WTSBill\Services\LedgerService;
 
 /**
  * Accounting Controller.
@@ -18,6 +19,12 @@ use WTSBill\Services\AuditLogger;
  */
 class AccountingController
 {
+    protected LedgerService $ledgerService;
+
+    public function __construct(?LedgerService $ledgerService = null)
+    {
+        $this->ledgerService = $ledgerService ?? new LedgerService();
+    }
     /**
      * Chart of accounts view.
      */
@@ -469,6 +476,107 @@ class AccountingController
             Session::flash('error', 'Failed to post journal entry: ' . $e->getMessage());
             return Response::redirect('/accounting/journals');
         }
+    }
+
+    /**
+     * General Ledger page view.
+     * Route: GET /accounting/ledger or /accounts/ledger
+     */
+    public function ledgerIndex(Request $req): Response
+    {
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $userBranchId = (int)(Session::getBranchId() ?? 0);
+        $branchId = (int)($req->query('branch_id') ?? $userBranchId);
+
+        $filters = [
+            'account_id' => (int)($req->query('account_id') ?? 0),
+            'branch_id' => $branchId,
+            'from_date' => (string)($req->query('from_date') ?? date('Y-01-01')),
+            'to_date' => (string)($req->query('to_date') ?? $req->query('as_of') ?? date('Y-m-d')),
+            'transaction_type' => (string)($req->query('transaction_type') ?? 'ALL'),
+            'voucher_no' => (string)($req->query('voucher_no') ?? ''),
+            'search' => (string)($req->query('search') ?? ''),
+            'page' => max(1, (int)($req->query('page') ?? 1)),
+            'per_page' => 50,
+        ];
+
+        $ledger = $this->ledgerService->getLedger($companyId, $filters);
+
+        $branches = Database::select(
+            "SELECT id, name, branch_code FROM branches WHERE company_id = ? AND is_active = 1 ORDER BY id ASC",
+            [$companyId]
+        );
+
+        $html = View::renderWithLayout('accounting/ledger', [
+            'title' => 'General Ledger',
+            'currentUri' => '/accounting/ledger',
+            'ledger' => $ledger,
+            'filters' => $filters,
+            'branches' => $branches,
+        ], 'layouts/app');
+
+        return Response::html($html);
+    }
+
+    /**
+     * Live General Ledger JSON API endpoint.
+     * Route: GET /api/accounting/ledger
+     */
+    public function ledgerApi(Request $req): Response
+    {
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $userBranchId = (int)(Session::getBranchId() ?? 0);
+        $branchId = (int)($req->query('branch_id') ?? $userBranchId);
+
+        $filters = [
+            'account_id' => (int)($req->query('account_id') ?? 0),
+            'branch_id' => $branchId,
+            'from_date' => (string)($req->query('from_date') ?? date('Y-01-01')),
+            'to_date' => (string)($req->query('to_date') ?? $req->query('as_of') ?? date('Y-m-d')),
+            'transaction_type' => (string)($req->query('transaction_type') ?? 'ALL'),
+            'voucher_no' => (string)($req->query('voucher_no') ?? ''),
+            'search' => (string)($req->query('search') ?? ''),
+            'page' => max(1, (int)($req->query('page') ?? 1)),
+            'per_page' => (int)($req->query('per_page') ?? 50),
+        ];
+
+        $ledger = $this->ledgerService->getLedger($companyId, $filters);
+
+        return Response::json($ledger);
+    }
+
+    /**
+     * Export General Ledger to CSV, Excel, or PDF.
+     * Route: GET /accounting/ledger/export
+     */
+    public function ledgerExport(Request $req): Response
+    {
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $userBranchId = (int)(Session::getBranchId() ?? 0);
+        $branchId = (int)($req->query('branch_id') ?? $userBranchId);
+        $format = strtolower(trim((string)($req->query('format') ?? 'csv')));
+
+        $filters = [
+            'account_id' => (int)($req->query('account_id') ?? 0),
+            'branch_id' => $branchId,
+            'from_date' => (string)($req->query('from_date') ?? date('Y-01-01')),
+            'to_date' => (string)($req->query('to_date') ?? $req->query('as_of') ?? date('Y-m-d')),
+            'transaction_type' => (string)($req->query('transaction_type') ?? 'ALL'),
+            'voucher_no' => (string)($req->query('voucher_no') ?? ''),
+            'search' => (string)($req->query('search') ?? ''),
+            'per_page' => 0, // All records for export
+        ];
+
+        $ledger = $this->ledgerService->getLedger($companyId, $filters);
+
+        $csv = $this->ledgerService->exportCsv($ledger);
+        $code = !empty($ledger['account']['code']) ? $ledger['account']['code'] : 'all';
+        $filename = 'ledger_' . $code . '_' . date('Ymd_His') . '.csv';
+
+        return new Response($csv, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
     }
 
     protected function expectsJson(Request $req): bool

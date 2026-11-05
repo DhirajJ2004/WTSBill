@@ -5,16 +5,52 @@
  * @var array $quotations
  * @var array $summary
  * @var array $customers
+ * @var array $branches
+ * @var array $statusCounts
  * @var string $activeStatus
+ * @var string $activePaymentStatus
  * @var string $search
+ * @var string $fromDate
+ * @var string $toDate
+ * @var string $selectedBranch
+ * @var mixed $minAmount
+ * @var mixed $maxAmount
+ * @var array $pagination
  */
 
 use WTSBill\Auth\Gate;
 use WTSBill\Core\Session;
 
 $csrfToken = Session::getCsrfToken();
-$activeStatus = $activeStatus ?? 'ALL';
-$search = $search ?? '';
+$currentStatus = $activeStatus ?? 'ALL';
+$currentPaymentStatus = $activePaymentStatus ?? 'ALL';
+$searchVal = $search ?? '';
+$fromVal = $fromDate ?? '';
+$toVal = $toDate ?? '';
+$branchVal = $selectedBranch ?? 'ALL';
+$minVal = $minAmount ?? '';
+$maxVal = $maxAmount ?? '';
+
+$buildQuery = function(array $overrides = []) use ($currentStatus, $currentPaymentStatus, $searchVal, $fromVal, $toVal, $branchVal, $minVal, $maxVal) {
+    $params = [
+        'status' => $overrides['status'] ?? $currentStatus,
+        'payment_status' => $overrides['payment_status'] ?? $currentPaymentStatus,
+        'search' => $overrides['search'] ?? $searchVal,
+        'from_date' => $overrides['from_date'] ?? $fromVal,
+        'to_date' => $overrides['to_date'] ?? $toVal,
+        'branch_id' => $overrides['branch_id'] ?? $branchVal,
+        'min_amount' => $overrides['min_amount'] ?? $minVal,
+        'max_amount' => $overrides['max_amount'] ?? $maxVal,
+        'page' => $overrides['page'] ?? 1,
+    ];
+    $clean = [];
+    foreach ($params as $k => $v) {
+        if ($v !== null && $v !== '' && !($k === 'status' && $v === 'ALL') && !($k === 'payment_status' && $v === 'ALL')) {
+            $clean[$k] = $v;
+        }
+    }
+    return '/sales/quotations' . (!empty($clean) ? '?' . http_build_query($clean) : '');
+};
 ?>
 <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
     <div>
@@ -35,7 +71,7 @@ $search = $search ?? '';
 </div>
 
 <!-- Quotations Pipeline Summary Cards -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
     <div class="card" style="margin-bottom: 0;">
         <div class="card-body">
             <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Total Active Pipeline</div>
@@ -67,31 +103,107 @@ $search = $search ?? '';
     </div>
 </div>
 
-<!-- Search & Status Filter -->
-<div class="card" style="margin-bottom: 1.5rem;">
+<!-- Lifecycle Status Pills (Feature 4.2) -->
+<div class="status-pills-bar" style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; align-items: center;">
+    <a href="<?= $buildQuery(['status' => 'ALL', 'page' => 1]) ?>" class="btn <?= $currentStatus === 'ALL' ? 'btn-primary' : 'btn-secondary' ?>" style="padding: 0.35rem 0.85rem; font-size: 0.82rem; border-radius: 9999px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem;">
+        <span>All Lifecycle</span>
+        <span class="badge" style="background: rgba(255,255,255,0.25); font-size: 0.75rem; padding: 0.1rem 0.45rem; border-radius: 9999px;"><?= (int)($statusCounts['total'] ?? 0) ?></span>
+    </a>
+    <a href="<?= $buildQuery(['status' => 'DRAFT', 'page' => 1]) ?>" class="btn <?= $currentStatus === 'DRAFT' ? 'btn-primary' : 'btn-secondary' ?>" style="padding: 0.35rem 0.85rem; font-size: 0.82rem; border-radius: 9999px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem;">
+        <span>Draft</span>
+        <span class="badge" style="background: rgba(255,255,255,0.25); font-size: 0.75rem; padding: 0.1rem 0.45rem; border-radius: 9999px;"><?= (int)($statusCounts['draft'] ?? 0) ?></span>
+    </a>
+    <a href="<?= $buildQuery(['status' => 'SENT', 'page' => 1]) ?>" class="btn <?= $currentStatus === 'SENT' ? 'btn-primary' : 'btn-secondary' ?>" style="padding: 0.35rem 0.85rem; font-size: 0.82rem; border-radius: 9999px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem;">
+        <span>Sent</span>
+        <span class="badge" style="background: rgba(255,255,255,0.25); font-size: 0.75rem; padding: 0.1rem 0.45rem; border-radius: 9999px;"><?= (int)($statusCounts['sent'] ?? 0) ?></span>
+    </a>
+    <a href="<?= $buildQuery(['status' => 'ACCEPTED', 'page' => 1]) ?>" class="btn <?= $currentStatus === 'ACCEPTED' ? 'btn-primary' : 'btn-secondary' ?>" style="padding: 0.35rem 0.85rem; font-size: 0.82rem; border-radius: 9999px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem;">
+        <span>Accepted</span>
+        <span class="badge" style="background: rgba(255,255,255,0.25); font-size: 0.75rem; padding: 0.1rem 0.45rem; border-radius: 9999px;"><?= (int)($statusCounts['accepted'] ?? 0) ?></span>
+    </a>
+    <a href="<?= $buildQuery(['status' => 'CONVERTED', 'page' => 1]) ?>" class="btn <?= $currentStatus === 'CONVERTED' ? 'btn-primary' : 'btn-secondary' ?>" style="padding: 0.35rem 0.85rem; font-size: 0.82rem; border-radius: 9999px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem;">
+        <span>Converted</span>
+        <span class="badge" style="background: rgba(255,255,255,0.25); font-size: 0.75rem; padding: 0.1rem 0.45rem; border-radius: 9999px;"><?= (int)($statusCounts['converted'] ?? 0) ?></span>
+    </a>
+    <a href="<?= $buildQuery(['status' => 'REJECTED', 'page' => 1]) ?>" class="btn <?= $currentStatus === 'REJECTED' ? 'btn-danger' : 'btn-secondary' ?>" style="padding: 0.35rem 0.85rem; font-size: 0.82rem; border-radius: 9999px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem;">
+        <span>Rejected</span>
+        <span class="badge" style="background: rgba(255,255,255,0.25); font-size: 0.75rem; padding: 0.1rem 0.45rem; border-radius: 9999px;"><?= (int)($statusCounts['rejected'] ?? 0) ?></span>
+    </a>
+    <a href="<?= $buildQuery(['status' => 'EXPIRED', 'page' => 1]) ?>" class="btn <?= $currentStatus === 'EXPIRED' ? 'btn-warning' : 'btn-secondary' ?>" style="padding: 0.35rem 0.85rem; font-size: 0.82rem; border-radius: 9999px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem;">
+        <span>Expired</span>
+        <span class="badge" style="background: rgba(255,255,255,0.25); font-size: 0.75rem; padding: 0.1rem 0.45rem; border-radius: 9999px;"><?= (int)($statusCounts['expired'] ?? 0) ?></span>
+    </a>
+</div>
+
+<!-- Comprehensive Multi-Field Filter Bar (Feature 4.2) -->
+<div class="card" style="margin-bottom: 1.25rem;">
     <div class="card-body" style="padding: 1rem 1.25rem;">
-        <form method="GET" action="/sales/quotations" style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end;">
-            <div style="flex: 1; min-width: 220px;">
+        <form method="GET" action="/sales/quotations" id="quotationFilterForm" style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end;">
+            <div style="flex: 2; min-width: 200px;">
                 <label style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-bottom: 0.25rem; display: block;">Search</label>
-                <input type="text" name="search" class="form-control" placeholder="Search quote #, customer, or ref..." value="<?= e($search) ?>" style="font-size: 0.85rem; padding: 0.4rem 0.65rem;">
+                <input type="text" name="search" class="form-control" placeholder="Search quote #, customer, or ref..." value="<?= e($searchVal) ?>" style="font-size: 0.85rem; padding: 0.4rem 0.65rem;">
             </div>
 
-            <div style="width: 180px;">
-                <label style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-bottom: 0.25rem; display: block;">Filter by Status</label>
+            <div style="flex: 1; min-width: 140px;">
+                <label style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-bottom: 0.25rem; display: block;">Lifecycle Status</label>
                 <select name="status" class="form-control" style="font-size: 0.85rem; padding: 0.4rem 0.65rem;">
-                    <option value="ALL" <?= $activeStatus === 'ALL' ? 'selected' : '' ?>>All Statuses</option>
-                    <option value="DRAFT" <?= $activeStatus === 'DRAFT' ? 'selected' : '' ?>>Draft</option>
-                    <option value="SENT" <?= $activeStatus === 'SENT' ? 'selected' : '' ?>>Sent</option>
-                    <option value="ACCEPTED" <?= $activeStatus === 'ACCEPTED' ? 'selected' : '' ?>>Accepted</option>
-                    <option value="CONVERTED" <?= $activeStatus === 'CONVERTED' ? 'selected' : '' ?>>Converted</option>
-                    <option value="REJECTED" <?= $activeStatus === 'REJECTED' ? 'selected' : '' ?>>Rejected</option>
-                    <option value="EXPIRED" <?= $activeStatus === 'EXPIRED' ? 'selected' : '' ?>>Expired</option>
+                    <option value="ALL" <?= $currentStatus === 'ALL' ? 'selected' : '' ?>>All Lifecycle</option>
+                    <option value="DRAFT" <?= $currentStatus === 'DRAFT' ? 'selected' : '' ?>>Draft</option>
+                    <option value="SENT" <?= $currentStatus === 'SENT' ? 'selected' : '' ?>>Sent</option>
+                    <option value="ACCEPTED" <?= $currentStatus === 'ACCEPTED' ? 'selected' : '' ?>>Accepted</option>
+                    <option value="CONVERTED" <?= $currentStatus === 'CONVERTED' ? 'selected' : '' ?>>Converted</option>
+                    <option value="REJECTED" <?= $currentStatus === 'REJECTED' ? 'selected' : '' ?>>Rejected</option>
+                    <option value="EXPIRED" <?= $currentStatus === 'EXPIRED' ? 'selected' : '' ?>>Expired</option>
                 </select>
             </div>
 
-            <div style="display: flex; gap: 0.5rem;">
-                <button type="submit" class="btn btn-primary" style="padding: 0.45rem 1rem; font-size: 0.85rem;">Filter</button>
-                <a href="/sales/quotations" class="btn btn-secondary" style="padding: 0.45rem 0.75rem; font-size: 0.85rem;">Reset</a>
+            <div style="flex: 1; min-width: 160px;">
+                <label style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-bottom: 0.25rem; display: block;">Linked Invoice Payment</label>
+                <select name="payment_status" class="form-control" style="font-size: 0.85rem; padding: 0.4rem 0.65rem;">
+                    <option value="ALL" <?= $currentPaymentStatus === 'ALL' ? 'selected' : '' ?>>All Linked Statuses</option>
+                    <option value="UNPAID" <?= ($currentPaymentStatus === 'UNPAID' || $currentPaymentStatus === 'PENDING') ? 'selected' : '' ?>>Unpaid / Pending (<?= (int)($statusCounts['pay_unpaid'] ?? 0) ?>)</option>
+                    <option value="PARTIAL" <?= $currentPaymentStatus === 'PARTIAL' ? 'selected' : '' ?>>Partially Paid (<?= (int)($statusCounts['pay_partial'] ?? 0) ?>)</option>
+                    <option value="PAID" <?= $currentPaymentStatus === 'PAID' ? 'selected' : '' ?>>Fully Paid (<?= (int)($statusCounts['pay_paid'] ?? 0) ?>)</option>
+                </select>
+            </div>
+
+            <div style="flex: 1; min-width: 130px;">
+                <label style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-bottom: 0.25rem; display: block;">Branch</label>
+                <select name="branch_id" class="form-control" style="font-size: 0.85rem; padding: 0.4rem 0.65rem;">
+                    <option value="ALL" <?= $branchVal === 'ALL' ? 'selected' : '' ?>>All Branches</option>
+                    <?php if (!empty($branches)): ?>
+                        <?php foreach ($branches as $b): ?>
+                            <option value="<?= (int)$b['id'] ?>" <?= ((string)$branchVal === (string)$b['id']) ? 'selected' : '' ?>>
+                                <?= e($b['name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+            </div>
+
+            <div style="width: 130px;">
+                <label style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-bottom: 0.25rem; display: block;">From Date</label>
+                <input type="date" name="from_date" class="form-control" value="<?= e($fromVal) ?>" style="font-size: 0.85rem; padding: 0.4rem 0.5rem;">
+            </div>
+
+            <div style="width: 130px;">
+                <label style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-bottom: 0.25rem; display: block;">To Date</label>
+                <input type="date" name="to_date" class="form-control" value="<?= e($toVal) ?>" style="font-size: 0.85rem; padding: 0.4rem 0.5rem;">
+            </div>
+
+            <div style="width: 100px;">
+                <label style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-bottom: 0.25rem; display: block;">Min Amount</label>
+                <input type="number" step="0.01" name="min_amount" class="form-control" placeholder="₹ Min" value="<?= e((string)$minVal) ?>" style="font-size: 0.85rem; padding: 0.4rem 0.5rem;">
+            </div>
+
+            <div style="width: 100px;">
+                <label style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-bottom: 0.25rem; display: block;">Max Amount</label>
+                <input type="number" step="0.01" name="max_amount" class="form-control" placeholder="₹ Max" value="<?= e((string)$maxVal) ?>" style="font-size: 0.85rem; padding: 0.4rem 0.5rem;">
+            </div>
+
+            <div style="display: flex; gap: 0.4rem;">
+                <button type="submit" class="btn btn-primary" style="padding: 0.42rem 1rem; font-size: 0.85rem; font-weight: 600;">Filter</button>
+                <a href="/sales/quotations" class="btn btn-secondary" style="padding: 0.42rem 0.8rem; font-size: 0.85rem; text-decoration: none;">Reset</a>
             </div>
         </form>
     </div>
@@ -99,8 +211,8 @@ $search = $search ?? '';
 
 <!-- Quotations Master Table -->
 <div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Quotations Register (<span id="quotations-count"><?= count($quotations ?? []) ?></span> Quotes)</h3>
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card-title" style="margin: 0;">Quotations Register (<span id="quotations-count"><?= (int)($pagination['total'] ?? count($quotations ?? [])) ?></span> Quotes Found)</h3>
     </div>
     <div class="table-container">
         <table class="table" id="quote-table">
@@ -113,7 +225,8 @@ $search = $search ?? '';
                     <th style="text-align: right;">Subtotal</th>
                     <th style="text-align: right;">Total Tax</th>
                     <th style="text-align: right;">Grand Total</th>
-                    <th style="text-align: center;">Status</th>
+                    <th style="text-align: center;">Lifecycle</th>
+                    <th style="text-align: center;">Linked Payment</th>
                     <th style="text-align: right;">Actions</th>
                 </tr>
             </thead>
@@ -132,6 +245,7 @@ $search = $search ?? '';
                                 'EXPIRED' => 'warning',
                                 default => 'info'
                             };
+                            $invStatus = strtoupper((string)($q['converted_invoice_status'] ?? ''));
                         ?>
                         <tr id="quote-row-<?= (int)$q['id'] ?>">
                             <td>
@@ -140,7 +254,15 @@ $search = $search ?? '';
                                     <div style="font-size: 0.72rem; color: var(--text-muted);"><?= e($q['reference_no']) ?></div>
                                 <?php endif; ?>
                             </td>
-                            <td><?= e($q['customer_name'] ?: 'Customer #' . $q['customer_id']) ?></td>
+                            <td>
+                                <?php if (!empty($q['customer_id'])): ?>
+                                    <a href="/customers/<?= (int)$q['customer_id'] ?>" style="color: inherit; text-decoration: underline; font-weight: 500;">
+                                        <?= e($q['customer_name'] ?: 'Customer #' . $q['customer_id']) ?>
+                                    </a>
+                                <?php else: ?>
+                                    <?= e($q['customer_name'] ?: 'Customer #' . $q['customer_id']) ?>
+                                <?php endif; ?>
+                            </td>
                             <td style="font-size: 0.85rem;"><?= e(format_date($q['quotation_date'])) ?></td>
                             <td style="font-size: 0.85rem; color: <?= strtotime($q['valid_until'] ?? '') < time() ? 'var(--color-danger)' : 'var(--text-muted)' ?>;">
                                 <?= e(format_date($q['valid_until'] ?? date('Y-m-d', strtotime('+30 days')))) ?>
@@ -150,10 +272,23 @@ $search = $search ?? '';
                             <td style="text-align: right; font-weight: 700;"><?= format_currency((float)($q['grand_total'] ?? 0)) ?></td>
                             <td style="text-align: center;">
                                 <span class="badge badge-<?= $statusBadge ?>"><?= e($status) ?></span>
+                            </td>
+                            <td style="text-align: center;">
                                 <?php if ($isConverted && !empty($q['converted_invoice_number'])): ?>
-                                    <div style="font-size: 0.72rem; margin-top: 0.2rem; color: #8b5cf6;">
-                                        Inv: <strong><?= e($q['converted_invoice_number']) ?></strong>
-                                    </div>
+                                    <a href="/sales/invoices" style="text-decoration: none;">
+                                        <div style="font-size: 0.75rem; font-weight: 600; color: #8b5cf6;">
+                                            <?= e($q['converted_invoice_number']) ?>
+                                        </div>
+                                    </a>
+                                    <?php if ($invStatus === 'PAID'): ?>
+                                        <span class="badge badge-success" style="font-size: 0.7rem; padding: 0.1rem 0.35rem;">Paid</span>
+                                    <?php elseif ($invStatus === 'PARTIAL'): ?>
+                                        <span class="badge badge-warning" style="font-size: 0.7rem; padding: 0.1rem 0.35rem;">Partial</span>
+                                    <?php else: ?>
+                                        <span class="badge badge-secondary" style="font-size: 0.7rem; padding: 0.1rem 0.35rem;">Unpaid</span>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    <span style="font-size: 0.75rem; color: var(--text-muted);">&mdash;</span>
                                 <?php endif; ?>
                             </td>
                             <td style="text-align: right; white-space: nowrap;">
@@ -168,14 +303,10 @@ $search = $search ?? '';
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
                                             WhatsApp PDF
                                         </button>
-                                    <?php endif; ?>
-                                    <?php if (Gate::can('quotations.view')): ?>
                                         <button type="button" class="btn btn-sm btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 3px;" onclick="window.openShareModal('QUOTATION', <?= (int)$q['id'] ?>, '<?= e(addslashes($q['quotation_number'])) ?>', '<?= e(addslashes($q['customer_name'] ?: 'Customer #' . $q['customer_id'])) ?>', '<?= e(addslashes($q['customer_phone'] ?? '')) ?>', '<?= e(addslashes($q['customer_email'] ?? '')) ?>')">
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
                                             Share
                                         </button>
-                                    <?php endif; ?>
-                                    <?php if (Gate::can('quotations.view')): ?>
                                         <button type="button" class="btn btn-sm btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" onclick="window.viewQuotation(<?= (int)$q['id'] ?>)">
                                             View
                                         </button>
@@ -206,7 +337,7 @@ $search = $search ?? '';
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr id="no-quote-row">
-                        <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 3rem 1rem;">
+                        <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 3rem 1rem;">
                             No commercial quotation records found matching the filter criteria.
                         </td>
                     </tr>
@@ -214,9 +345,29 @@ $search = $search ?? '';
             </tbody>
         </table>
     </div>
+
+    <!-- Pagination Footer -->
+    <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1.25rem; border-top: 1px solid var(--border-color); flex-wrap: wrap; gap: 0.5rem;">
+        <div style="font-size: 0.85rem; color: var(--text-muted);">
+            Showing <strong><?= count($quotations ?? []) ?></strong> of <strong><?= (int)($pagination['total'] ?? 0) ?></strong> quotations (Page <?= (int)($pagination['page'] ?? 1) ?> of <?= (int)($pagination['total_pages'] ?? 1) ?>)
+        </div>
+        <?php if (($pagination['total_pages'] ?? 1) > 1): ?>
+            <div style="display: flex; gap: 0.25rem; align-items: center;">
+                <?php if (($pagination['page'] ?? 1) > 1): ?>
+                    <a href="<?= $buildQuery(['page' => $pagination['page'] - 1]) ?>" class="btn btn-sm btn-secondary">&laquo; Prev</a>
+                <?php endif; ?>
+                <span style="font-size: 0.85rem; padding: 0.25rem 0.5rem; color: var(--text-primary); font-weight: 600;">
+                    <?= (int)$pagination['page'] ?> / <?= (int)$pagination['total_pages'] ?>
+                </span>
+                <?php if (($pagination['page'] ?? 1) < ($pagination['total_pages'] ?? 1)): ?>
+                    <a href="<?= $buildQuery(['page' => $pagination['page'] + 1]) ?>" class="btn btn-sm btn-secondary">Next &raquo;</a>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+    </div>
 </div>
 
-<!-- Working Quotation Details View Modal -->
+<!-- View Quotation Modal -->
 <div id="quotation-view-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="qvm-title" style="display: none;">
     <div class="modal-dialog" style="max-width: 760px;">
         <div class="modal-header">

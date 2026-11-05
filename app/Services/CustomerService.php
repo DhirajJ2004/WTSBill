@@ -190,4 +190,309 @@ class CustomerService
             'payment_terms_days' => (int)($data['payment_terms_days'] ?? 30),
         ]);
     }
+
+    /**
+     * Retrieve complete Customer Profile and historical ledger/documents for 360-degree profile.
+     *
+     * @param int $customerId
+     * @param int $branchId (0 for consolidated or specific branch)
+     * @return array|null
+     */
+    public function getCustomerProfileData(int $customerId, int $branchId = 0): ?array
+    {
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+
+        $customer = \WTSBill\Core\Database::selectOne(
+            "SELECT c.*, b.name AS branch_name 
+             FROM customers c 
+             LEFT JOIN branches b ON c.customer_group_id = b.id 
+             WHERE c.id = ? AND c.company_id = ? AND c.deleted_at IS NULL",
+            [$customerId, $companyId]
+        );
+
+        if (!$customer) {
+            return null;
+        }
+
+        // Branch clause for documents
+        $invBranchSql = "";
+        $invParams = [$customerId, $companyId];
+        if ($branchId > 0) {
+            $invBranchSql = " AND (branch_id = ? OR branch_id IS NULL)";
+            $invParams[] = $branchId;
+        }
+
+        // 1. Invoices
+        $invoices = \WTSBill\Core\Database::select(
+            "SELECT id, invoice_number, invoice_date, due_date, grand_total, amount_paid, amount_due, status, branch_id
+             FROM invoices 
+             WHERE customer_id = ? AND company_id = ? AND deleted_at IS NULL AND status != 'CANCELLED'
+             {$invBranchSql}
+             ORDER BY invoice_date DESC, id DESC",
+            $invParams
+        );
+
+        $today = date('Y-m-d');
+        $outstandingInvoices = [];
+        $totalInvoiced = 0.0;
+        $totalPaid = 0.0;
+        $outstandingBal = 0.0;
+        $overdueAmt = 0.0;
+
+        foreach ($invoices as &$inv) {
+            $gt = (float)$inv['grand_total'];
+            $pd = (float)($inv['amount_paid'] ?? 0);
+            $due = (float)($inv['amount_due'] ?? 0);
+            $totalInvoiced += $gt;
+            $totalPaid += $pd;
+            $outstandingBal += $due;
+
+            $dueDate = !empty($inv['due_date']) ? $inv['due_date'] : $inv['invoice_date'];
+            $isOverdue = ($due > 0.001 && $dueDate < $today);
+            $daysOverdue = $isOverdue ? (int)floor((strtotime($today) - strtotime($dueDate)) / 86400) : 0;
+            if ($isOverdue) {
+                $overdueAmt += $due;
+            }
+            $inv['days_overdue'] = $daysOverdue;
+            $inv['is_overdue'] = $isOverdue;
+            $inv['grand_total_formatted'] = $this->formatCurrency($gt);
+            $inv['amount_paid_formatted'] = $this->formatCurrency($pd);
+            $inv['amount_due_formatted'] = $this->formatCurrency($due);
+
+            if ($due > 0.001) {
+                $outstandingInvoices[] = $inv;
+            }
+        }
+        unset($inv);
+
+        // 2. Payments
+        $pmtBranchSql = "";
+        $pmtParams = [$customerId, $customerId];
+        if ($branchId > 0) {
+            $pmtBranchSql = " AND (p.branch_id = ? OR p.branch_id IS NULL)";
+            $pmtParams[] = $branchId;
+        }
+
+        $payments = \WTSBill\Core\Database::select(
+            "SELECT p.id, COALESCE(p.receipt_number, p.payment_number, CONCAT('RCP-', p.id)) AS receipt_number,
+                    p.payment_date, p.amount, p.payment_mode,
+                    COALESCE(p.transaction_reference, p.reference_number, p.reference_no, p.utr, p.cheque_number, '—') AS reference_number,
+                    i.invoice_number, i.id AS invoice_id, p.status, p.branch_id
+             FROM payments p
+             LEFT JOIN payment_allocations pa ON p.id = pa.payment_id AND pa.document_type = 'INVOICE'
+             LEFT JOIN invoices i ON pa.document_id = i.id
+             WHERE ((p.party_id = ? AND p.party_type = 'CUSTOMER') OR (i.customer_id = ?))
+             {$pmtBranchSql}
+             GROUP BY p.id
+             ORDER BY p.payment_date DESC, p.id DESC",
+            $pmtParams
+        );
+
+        foreach ($payments as &$pmt) {
+            $pmt['amount_formatted'] = $this->formatCurrency((float)$pmt['amount']);
+        }
+        unset($pmt);
+
+        // 3. Quotations
+        $qBranchSql = "";
+        $qParams = [$customerId, $companyId];
+        if ($branchId > 0) {
+            $qBranchSql = " AND (q.branch_id = ? OR q.branch_id IS NULL)";
+            $qParams[] = $branchId;
+        }
+
+        $quotations = \WTSBill\Core\Database::select(
+            "SELECT q.id, q.quotation_number, q.quotation_date, q.valid_until, q.grand_total, q.status,
+                    q.converted_to_invoice, q.converted_invoice_id, inv.invoice_number AS converted_invoice_number,
+                    inv.status AS linked_invoice_status
+             FROM quotations q
+             LEFT JOIN invoices inv ON q.converted_invoice_id = inv.id
+             WHERE q.customer_id = ? AND q.company_id = ? AND q.deleted_at IS NULL
+             {$qBranchSql}
+             ORDER BY q.quotation_date DESC, q.id DESC",
+            $qParams
+        );
+
+        $qTotalCount = count($quotations);
+        $qAcceptedCount = 0;
+        $qPendingCount = 0;
+        foreach ($quotations as &$q) {
+            $st = strtoupper((string)$q['status']);
+            if ($st === 'ACCEPTED' || $st === 'CONVERTED' || (int)$q['converted_to_invoice'] === 1) {
+                $qAcceptedCount++;
+            } elseif ($st === 'SENT' || $st === 'PENDING' || $st === 'DRAFT') {
+                $qPendingCount++;
+            }
+            $q['grand_total_formatted'] = $this->formatCurrency((float)$q['grand_total']);
+        }
+        unset($q);
+
+        // 4. Credit Notes
+        $cnParams = [$customerId, $customerId, $companyId];
+        $creditNotes = \WTSBill\Core\Database::select(
+            "SELECT cn.id, cn.credit_note_number, cn.credit_note_date, cn.amount, cn.reason,
+                    i.invoice_number, i.id AS invoice_id, cn.status
+             FROM credit_notes cn
+             LEFT JOIN invoices i ON cn.invoice_id = i.id
+             WHERE (cn.customer_id = ? OR i.customer_id = ?) AND cn.company_id = ?
+             ORDER BY cn.credit_note_date DESC, cn.id DESC",
+            $cnParams
+        );
+
+        $totalCreditNotes = 0.0;
+        foreach ($creditNotes as &$cn) {
+            $amt = (float)$cn['amount'];
+            $totalCreditNotes += $amt;
+            $cn['amount_formatted'] = $this->formatCurrency($amt);
+        }
+        unset($cn);
+
+        // 5. Customer Ledger (Chronological running balance)
+        $cOpen = (float)($customer['opening_balance'] ?? 0);
+        $ledgerEvents = [];
+
+        if (abs($cOpen) > 0.001) {
+            $ledgerEvents[] = [
+                'date' => $customer['created_at'] ? date('Y-m-d', strtotime((string)$customer['created_at'])) : date('Y-01-01'),
+                'voucher' => 'OPENING',
+                'type' => 'OPENING_BALANCE',
+                'description' => 'Opening Balance',
+                'debit' => $cOpen > 0 ? $cOpen : 0.0,
+                'credit' => $cOpen < 0 ? abs($cOpen) : 0.0,
+                'sort_ts' => strtotime((string)($customer['created_at'] ?? '2026-01-01')),
+            ];
+        }
+
+        foreach ($invoices as $invRow) {
+            $ledgerEvents[] = [
+                'date' => $invRow['invoice_date'],
+                'voucher' => $invRow['invoice_number'],
+                'type' => 'INVOICE',
+                'description' => 'Tax Invoice ' . $invRow['invoice_number'],
+                'debit' => (float)$invRow['grand_total'],
+                'credit' => 0.0,
+                'sort_ts' => strtotime($invRow['invoice_date'] . ' 00:00:00'),
+            ];
+        }
+
+        foreach ($payments as $pmtRow) {
+            $ledgerEvents[] = [
+                'date' => $pmtRow['payment_date'],
+                'voucher' => $pmtRow['receipt_number'],
+                'type' => 'PAYMENT',
+                'description' => 'Payment Receipt (' . $pmtRow['payment_mode'] . ($pmtRow['invoice_number'] ? ' for ' . $pmtRow['invoice_number'] : '') . ')',
+                'debit' => 0.0,
+                'credit' => (float)$pmtRow['amount'],
+                'sort_ts' => strtotime($pmtRow['payment_date'] . ' 12:00:00'),
+            ];
+        }
+
+        foreach ($creditNotes as $cnRow) {
+            $ledgerEvents[] = [
+                'date' => $cnRow['credit_note_date'],
+                'voucher' => $cnRow['credit_note_number'],
+                'type' => 'CREDIT_NOTE',
+                'description' => 'Credit Note' . ($cnRow['reason'] ? ' - ' . $cnRow['reason'] : ''),
+                'debit' => 0.0,
+                'credit' => (float)$cnRow['amount'],
+                'sort_ts' => strtotime($cnRow['credit_note_date'] . ' 15:00:00'),
+            ];
+        }
+
+        usort($ledgerEvents, fn($a, $b) => $a['sort_ts'] <=> $b['sort_ts']);
+
+        $customerLedger = [];
+        $runningBal = 0.0;
+        foreach ($ledgerEvents as $ev) {
+            $dr = (float)$ev['debit'];
+            $cr = (float)$ev['credit'];
+            $runningBal += ($dr - $cr);
+            $customerLedger[] = [
+                'date' => $ev['date'],
+                'voucher_number' => $ev['voucher'],
+                'type' => $ev['type'],
+                'description' => $ev['description'],
+                'debit' => $dr,
+                'debit_formatted' => $dr > 0 ? $this->formatCurrency($dr) : '-',
+                'credit' => $cr,
+                'credit_formatted' => $cr > 0 ? $this->formatCurrency($cr) : '-',
+                'running_balance' => round($runningBal, 2),
+                'running_balance_formatted' => $this->formatCurrency($runningBal) . ($runningBal >= 0 ? ' Dr' : ' Cr'),
+            ];
+        }
+
+        // 6. Activity History
+        $custNameTerm = '%' . $customer['name'] . '%';
+        $activityHistory = \WTSBill\Core\Database::select(
+            "SELECT id, action, entity_type, entity_id, description, ip_address, created_at, user_name
+             FROM audit_logs
+             WHERE (entity_type = 'CUSTOMER' AND entity_id = ?)
+                OR (entity_type = 'INVOICE' AND entity_id IN (SELECT id FROM invoices WHERE customer_id = ?))
+                OR (description LIKE ?)
+             ORDER BY id DESC
+             LIMIT 30",
+            [$customerId, $customerId, $custNameTerm]
+        );
+
+        $customerCode = 'CUST-' . str_pad((string)$customer['id'], 4, '0', STR_PAD_LEFT);
+
+        return [
+            'success' => true,
+            'customer' => array_merge($customer, [
+                'customer_code' => $customerCode,
+                'phone' => $customer['phone'] ?: '—',
+                'email' => $customer['email'] ?: '—',
+                'gstin' => $customer['gstin'] ?: '—',
+                'customer_type' => $customer['customer_type'] ?: 'Business',
+                'status' => ((int)$customer['is_active'] === 1) ? 'ACTIVE' : 'INACTIVE',
+                'registration_date' => $customer['created_at'] ? date('d-M-Y', strtotime((string)$customer['created_at'])) : '—',
+                'assigned_branch' => $customer['branch_name'] ?: 'All Branches (Shared Access)',
+                'billing_address' => implode(', ', array_filter([$customer['address_line1'], $customer['city'], $customer['state'], $customer['pincode']])) ?: '—',
+                'shipping_address' => implode(', ', array_filter([$customer['address_line1'], $customer['city'], $customer['state'], $customer['pincode']])) ?: '—',
+            ]),
+            'financial_summary' => [
+                'total_invoiced' => round($totalInvoiced, 2),
+                'total_invoiced_formatted' => $this->formatCurrency($totalInvoiced),
+                'total_paid' => round($totalPaid, 2),
+                'total_paid_formatted' => $this->formatCurrency($totalPaid),
+                'outstanding_balance' => round($outstandingBal, 2),
+                'outstanding_balance_formatted' => $this->formatCurrency($outstandingBal),
+                'overdue_amount' => round($overdueAmt, 2),
+                'overdue_amount_formatted' => $this->formatCurrency($overdueAmt),
+                'total_quotations' => $qTotalCount,
+                'accepted_quotations' => $qAcceptedCount,
+                'pending_quotations' => $qPendingCount,
+                'total_credit_notes' => round($totalCreditNotes, 2),
+                'total_credit_notes_formatted' => $this->formatCurrency($totalCreditNotes),
+            ],
+            'invoices' => $invoices,
+            'outstanding_invoices' => $outstandingInvoices,
+            'payments' => $payments,
+            'quotations' => $quotations,
+            'credit_notes' => $creditNotes,
+            'ledger' => $customerLedger,
+            'activities' => $activityHistory,
+        ];
+    }
+
+    /**
+     * Format currency in Indian grouping format (₹ 1,23,456.78).
+     */
+    public function formatCurrency(float $amount): string
+    {
+        $abs = abs($amount);
+        $formatted = '₹ ' . number_format($abs, 2, '.', ',');
+        $parts = explode('.', number_format($abs, 2, '.', ''));
+        $intPart = $parts[0];
+        $decPart = $parts[1] ?? '00';
+
+        if (strlen($intPart) > 3) {
+            $lastThree = substr($intPart, -3);
+            $remaining = substr($intPart, 0, -3);
+            $grouped = preg_replace('/\B(?=(\d{2})+(?!\d))/', ',', $remaining) . ',' . $lastThree;
+            $formatted = '₹ ' . $grouped . '.' . $decPart;
+        }
+
+        return $amount < 0 ? '(' . $formatted . ')' : $formatted;
+    }
 }

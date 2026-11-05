@@ -192,6 +192,69 @@ class BalanceSheetService
     }
 
     /**
+     * Classify an account into standard Balance Sheet categories.
+     */
+    public function classifyAccountGroup(string $type, string $code, string $name): ?array
+    {
+        $code = trim($code);
+        $nameLower = strtolower(trim($name));
+
+        if ($type === 'ASSET') {
+            if ($code === '100100' || str_contains($nameLower, 'cash')) {
+                return ['side' => 'assets', 'key' => 'cash_in_hand', 'title' => 'Cash in Hand'];
+            }
+            if ($code === '100200' || str_contains($nameLower, 'bank') || str_contains($nameLower, 'hdfc') || str_contains($nameLower, 'sbi') || str_contains($nameLower, 'current account') || str_contains($nameLower, 'savings')) {
+                return ['side' => 'assets', 'key' => 'bank_accounts', 'title' => 'Bank Accounts'];
+            }
+            if ($code === '100300' || str_contains($nameLower, 'receivable') || str_contains($nameLower, 'debtor')) {
+                return ['side' => 'assets', 'key' => 'accounts_receivable', 'title' => 'Accounts Receivable'];
+            }
+            if ($code === '100400' || str_contains($nameLower, 'inventory') || str_contains($nameLower, 'stock')) {
+                return ['side' => 'assets', 'key' => 'inventory_stock', 'title' => 'Inventory/Stock Value'];
+            }
+            if (str_contains($nameLower, 'fixed') || str_contains($nameLower, 'plant') || str_contains($nameLower, 'machinery') || str_contains($nameLower, 'equipment') || str_contains($nameLower, 'furniture')) {
+                return ['side' => 'assets', 'key' => 'fixed_assets', 'title' => 'Fixed Assets'];
+            }
+            if (str_contains($nameLower, 'gst input') || str_contains($nameLower, 'advance') || str_contains($nameLower, 'prepaid') || str_starts_with($code, '1')) {
+                return ['side' => 'assets', 'key' => 'other_current_assets', 'title' => 'Other Current Assets'];
+            }
+            if (!in_array($type, ['ASSET', 'LIABILITY', 'EQUITY'], true)) {
+            return null;
+        }
+        }
+
+        if ($type === 'LIABILITY') {
+            if ($code === '200100' || str_contains($nameLower, 'creditor') || str_contains($nameLower, 'accounts payable') || str_contains($nameLower, 'trade payable')) {
+                return ['side' => 'liabilities_equity', 'key' => 'accounts_payable', 'title' => 'Accounts Payable'];
+            }
+            if (str_contains($nameLower, 'outstanding') || str_contains($nameLower, 'accrued') || str_contains($nameLower, 'expense payable')) {
+                return ['side' => 'liabilities_equity', 'key' => 'outstanding_expenses', 'title' => 'Outstanding Expenses'];
+            }
+            if (str_contains($nameLower, 'long') || str_contains($nameLower, 'term loan') || str_contains($nameLower, 'debenture')) {
+                return ['side' => 'liabilities_equity', 'key' => 'long_term_liabilities', 'title' => 'Long-term Liabilities'];
+            }
+            if (str_contains($nameLower, 'loan') || str_contains($nameLower, 'borrowing') || str_contains($nameLower, 'credit line')) {
+                return ['side' => 'liabilities_equity', 'key' => 'loans_borrowings', 'title' => 'Loans and Borrowings'];
+            }
+            return ['side' => 'liabilities_equity', 'key' => 'other_current_liabilities', 'title' => 'Other Current Liabilities'];
+        }
+
+        if ($type === 'EQUITY') {
+            if ($code === '300100' || str_contains($nameLower, 'capital') || str_contains($nameLower, 'owner') || str_contains($nameLower, 'share')) {
+                return ['side' => 'liabilities_equity', 'key' => 'owners_capital', 'title' => "Owner's Capital"];
+            }
+            if (str_contains($nameLower, 'retained') || str_contains($nameLower, 'reserve') || str_contains($nameLower, 'surplus')) {
+                return ['side' => 'liabilities_equity', 'key' => 'retained_earnings', 'title' => 'Retained Earnings'];
+            }
+            return ['side' => 'liabilities_equity', 'key' => 'other_equity', 'title' => 'Other Equity Accounts'];
+        }
+
+        if (!in_array($type, ['ASSET', 'LIABILITY', 'EQUITY'], true)) {
+            return null;
+        }
+    }
+
+    /**
      * Assemble grouped balance sheet structure with comparison calculations.
      */
     private function assembleStatement(
@@ -205,32 +268,104 @@ class BalanceSheetService
         $curNetProfit = (float)($current['net_profit'] ?? 0.0);
         $prevNetProfit = $previous ? (float)($previous['net_profit'] ?? 0.0) : 0.0;
 
-        // --- ASSETS SIDE ---
+        // --- ASSETS SIDE (Categorized per standards) ---
         $assetGroups = [
-            'current_assets' => [
-                'title' => 'Current Assets',
+            'cash_in_hand' => [
+                'title' => 'Cash in Hand',
                 'accounts' => [],
                 'subtotal' => 0.0,
                 'previous_subtotal' => 0.0,
             ],
-            'non_current_assets' => [
-                'title' => 'Non-Current & Fixed Assets',
+            'bank_accounts' => [
+                'title' => 'Bank Accounts',
+                'accounts' => [],
+                'subtotal' => 0.0,
+                'previous_subtotal' => 0.0,
+            ],
+            'accounts_receivable' => [
+                'title' => 'Accounts Receivable',
+                'accounts' => [],
+                'subtotal' => 0.0,
+                'previous_subtotal' => 0.0,
+            ],
+            'inventory_stock' => [
+                'title' => 'Inventory/Stock Value',
+                'accounts' => [],
+                'subtotal' => 0.0,
+                'previous_subtotal' => 0.0,
+            ],
+            'other_current_assets' => [
+                'title' => 'Other Current Assets',
+                'accounts' => [],
+                'subtotal' => 0.0,
+                'previous_subtotal' => 0.0,
+            ],
+            'fixed_assets' => [
+                'title' => 'Fixed Assets',
+                'accounts' => [],
+                'subtotal' => 0.0,
+                'previous_subtotal' => 0.0,
+            ],
+            'other_assets' => [
+                'title' => 'Other Assets',
                 'accounts' => [],
                 'subtotal' => 0.0,
                 'previous_subtotal' => 0.0,
             ],
         ];
 
-        // --- LIABILITIES & EQUITY SIDE ---
+        // --- LIABILITIES & EQUITY SIDE (Categorized per standards) ---
         $liabilityGroups = [
-            'current_liabilities' => [
-                'title' => 'Current Liabilities',
+            'accounts_payable' => [
+                'title' => 'Accounts Payable',
                 'accounts' => [],
                 'subtotal' => 0.0,
                 'previous_subtotal' => 0.0,
             ],
-            'owner_equity' => [
-                'title' => 'Owner Equity & Reserves',
+            'outstanding_expenses' => [
+                'title' => 'Outstanding Expenses',
+                'accounts' => [],
+                'subtotal' => 0.0,
+                'previous_subtotal' => 0.0,
+            ],
+            'loans_borrowings' => [
+                'title' => 'Loans and Borrowings',
+                'accounts' => [],
+                'subtotal' => 0.0,
+                'previous_subtotal' => 0.0,
+            ],
+            'other_current_liabilities' => [
+                'title' => 'Other Current Liabilities',
+                'accounts' => [],
+                'subtotal' => 0.0,
+                'previous_subtotal' => 0.0,
+            ],
+            'long_term_liabilities' => [
+                'title' => 'Long-term Liabilities',
+                'accounts' => [],
+                'subtotal' => 0.0,
+                'previous_subtotal' => 0.0,
+            ],
+            'owners_capital' => [
+                'title' => "Owner's Capital",
+                'accounts' => [],
+                'subtotal' => 0.0,
+                'previous_subtotal' => 0.0,
+            ],
+            'retained_earnings' => [
+                'title' => 'Retained Earnings',
+                'accounts' => [],
+                'subtotal' => 0.0,
+                'previous_subtotal' => 0.0,
+            ],
+            'current_period_pnl' => [
+                'title' => 'Current Period Profit or Loss',
+                'accounts' => [],
+                'subtotal' => 0.0,
+                'previous_subtotal' => 0.0,
+            ],
+            'other_equity' => [
+                'title' => 'Other Equity Accounts',
                 'accounts' => [],
                 'subtotal' => 0.0,
                 'previous_subtotal' => 0.0,
@@ -242,44 +377,46 @@ class BalanceSheetService
             $curAmt = (float)$acc['balance'];
             $prevAmt = $hasComparison ? (float)($prevAccounts[$id]['balance'] ?? 0.0) : 0.0;
 
+            $classification = $this->classifyAccountGroup($type, $acc['code'], $acc['name']);
+            if ($classification === null) {
+                continue;
+            }
+
             $item = $this->buildLineItem($acc['name'], $id, $acc['code'], $curAmt, $prevAmt, $hasComparison);
 
-            if ($type === 'ASSET') {
-                // Group as Current Assets or Non-Current
-                if (str_starts_with($acc['code'], '1') || stripos($acc['name'], 'fixed') === false) {
-                    $assetGroups['current_assets']['accounts'][] = $item;
-                    $assetGroups['current_assets']['subtotal'] += $curAmt;
-                    $assetGroups['current_assets']['previous_subtotal'] += $prevAmt;
-                } else {
-                    $assetGroups['non_current_assets']['accounts'][] = $item;
-                    $assetGroups['non_current_assets']['subtotal'] += $curAmt;
-                    $assetGroups['non_current_assets']['previous_subtotal'] += $prevAmt;
+            if ($classification['side'] === 'assets') {
+                $k = $classification['key'];
+                if (!isset($assetGroups[$k])) {
+                    $k = 'other_assets';
                 }
-            } elseif ($type === 'LIABILITY') {
-                $liabilityGroups['current_liabilities']['accounts'][] = $item;
-                $liabilityGroups['current_liabilities']['subtotal'] += $curAmt;
-                $liabilityGroups['current_liabilities']['previous_subtotal'] += $prevAmt;
-            } elseif ($type === 'EQUITY') {
-                $liabilityGroups['owner_equity']['accounts'][] = $item;
-                $liabilityGroups['owner_equity']['subtotal'] += $curAmt;
-                $liabilityGroups['owner_equity']['previous_subtotal'] += $prevAmt;
+                $assetGroups[$k]['accounts'][] = $item;
+                $assetGroups[$k]['subtotal'] += $curAmt;
+                $assetGroups[$k]['previous_subtotal'] += $prevAmt;
+            } else {
+                $k = $classification['key'];
+                if (!isset($liabilityGroups[$k])) {
+                    $k = 'other_current_liabilities';
+                }
+                $liabilityGroups[$k]['accounts'][] = $item;
+                $liabilityGroups[$k]['subtotal'] += $curAmt;
+                $liabilityGroups[$k]['previous_subtotal'] += $prevAmt;
             }
         }
 
-        // Add Retained Earnings & Net Profit to Owner Equity
+        // Add Current Period Profit or Loss to Equity
         $netProfitItem = $this->buildLineItem(
-            'Retained Earnings & Current Net Profit',
+            'Current Period Profit or Loss',
             0,
-            'RE-NP',
+            'P&L-NP',
             $curNetProfit,
             $prevNetProfit,
             $hasComparison
         );
-        $liabilityGroups['owner_equity']['accounts'][] = $netProfitItem;
-        $liabilityGroups['owner_equity']['subtotal'] += $curNetProfit;
-        $liabilityGroups['owner_equity']['previous_subtotal'] += $prevNetProfit;
+        $liabilityGroups['current_period_pnl']['accounts'][] = $netProfitItem;
+        $liabilityGroups['current_period_pnl']['subtotal'] += $curNetProfit;
+        $liabilityGroups['current_period_pnl']['previous_subtotal'] += $prevNetProfit;
 
-        // Clean empty groups
+        // Clean empty groups — only include categories supported by existing chart of accounts
         $finalAssetGroups = [];
         $totalAssets = 0.0;
         $prevTotalAssets = 0.0;
@@ -287,6 +424,8 @@ class BalanceSheetService
             if (!empty($grp['accounts'])) {
                 $grp['subtotal'] = round($grp['subtotal'], 2);
                 $grp['previous_subtotal'] = round($grp['previous_subtotal'], 2);
+                $grp['subtotal_formatted'] = $this->formatCurrency($grp['subtotal']);
+                $grp['previous_subtotal_formatted'] = $this->formatCurrency($grp['previous_subtotal']);
                 $grp = array_merge($grp, $this->computeVariance($grp['subtotal'], $grp['previous_subtotal'], $hasComparison));
                 $finalAssetGroups[] = $grp;
                 $totalAssets += $grp['subtotal'];
@@ -301,6 +440,8 @@ class BalanceSheetService
             if (!empty($grp['accounts'])) {
                 $grp['subtotal'] = round($grp['subtotal'], 2);
                 $grp['previous_subtotal'] = round($grp['previous_subtotal'], 2);
+                $grp['subtotal_formatted'] = $this->formatCurrency($grp['subtotal']);
+                $grp['previous_subtotal_formatted'] = $this->formatCurrency($grp['previous_subtotal']);
                 $grp = array_merge($grp, $this->computeVariance($grp['subtotal'], $grp['previous_subtotal'], $hasComparison));
                 $finalLiabilityGroups[] = $grp;
                 $totalLiabEquity += $grp['subtotal'];
@@ -358,6 +499,7 @@ class BalanceSheetService
         $variance = $this->computeVariance($curAmt, $prevAmt, $hasComparison);
 
         return [
+            'id' => $id,
             'account_id' => $id,
             'code' => $code,
             'name' => $name,

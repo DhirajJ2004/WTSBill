@@ -58,6 +58,9 @@ require_once ROOT_PATH . '/tests/Feature/CommunicationSharingTest.php';
 require_once ROOT_PATH . '/tests/Feature/ThemePersistenceTest.php';
 require_once ROOT_PATH . '/tests/Feature/BackupAndCleanupTest.php';
 require_once ROOT_PATH . '/tests/Feature/SessionIdleDraftTest.php';
+require_once ROOT_PATH . '/tests/Feature/LedgerStatementTest.php';
+require_once ROOT_PATH . '/tests/Feature/CustomerProfileTest.php';
+require_once ROOT_PATH . '/tests/Feature/DocumentFilterTest.php';
 
 
 
@@ -223,6 +226,15 @@ echo "\n--- SECTION 47: FEATURE TESTS — AUTOMATIC WEEKLY BACKUP & DISASTER REC
 
 echo "\n--- SECTION 48: FEATURE TESTS — 15-MINUTE INACTIVITY TIMEOUT & DRAFT SAVING ---\n";
 \Tests\Feature\SessionIdleDraftTest::run($assert);
+
+echo "\n--- SECTION 49: FEATURE TESTS — GENERAL LEDGER & TRANSACTION VISIBILITY ---\n";
+\Tests\Feature\LedgerStatementTest::run($assert);
+
+echo "\n--- SECTION 50: FEATURE TESTS — COMPLETE 360-DEGREE CUSTOMER PROFILE & HISTORY ---\n";
+\Tests\Feature\CustomerProfileTest::run($assert);
+
+echo "\n--- SECTION 51: FEATURE TESTS — COMPREHENSIVE INVOICE & QUOTATION LIST FILTERS ---\n";
+\Tests\Feature\DocumentFilterTest::run($assert);
 
 
 

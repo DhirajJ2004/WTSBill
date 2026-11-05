@@ -31,14 +31,79 @@ class QuotationController
 
         $companyId = (int)(Session::getCompanyId() ?? 1);
         $statusFilter = strtoupper(trim((string)$req->query('status', 'ALL')));
+        $paymentStatusFilter = strtoupper(trim((string)$req->query('payment_status', 'ALL')));
         $search = trim((string)$req->query('search', ''));
+        $fromDate = trim((string)$req->query('from_date', ''));
+        $toDate = trim((string)$req->query('to_date', ''));
+        $branchQuery = $req->query('branch_id');
+        $minAmount = $req->query('min_amount');
+        $maxAmount = $req->query('max_amount');
+        $page = max(1, (int)$req->query('page', 1));
+        $perPage = max(5, min(100, (int)$req->query('per_page', 25)));
 
+        // Branch scoping
+        $effectiveBranchId = null;
+        if ($branchQuery !== null && $branchQuery !== '' && strtoupper((string)$branchQuery) !== 'ALL') {
+            $effectiveBranchId = (int)$branchQuery;
+        }
+
+        // 1. Status counts (Lifecycle & Linked Invoice Payment status)
+        $countWhere = ["q.company_id = ?", "q.deleted_at IS NULL"];
+        $countParams = [$companyId];
+        if ($effectiveBranchId !== null) {
+            $countWhere[] = "(q.branch_id = ? OR q.branch_id IS NULL)";
+            $countParams[] = $effectiveBranchId;
+        }
+
+        $counts = Database::selectOne(
+            "SELECT 
+                COUNT(*) AS total,
+                COUNT(CASE WHEN q.status = 'DRAFT' THEN 1 END) AS draft,
+                COUNT(CASE WHEN q.status = 'SENT' THEN 1 END) AS sent,
+                COUNT(CASE WHEN q.status = 'ACCEPTED' THEN 1 END) AS accepted,
+                COUNT(CASE WHEN q.converted_to_invoice = 1 OR q.status = 'CONVERTED' THEN 1 END) AS converted,
+                COUNT(CASE WHEN q.status = 'REJECTED' THEN 1 END) AS rejected,
+                COUNT(CASE WHEN q.status = 'EXPIRED' OR (q.status = 'SENT' AND q.valid_until < CURDATE()) THEN 1 END) AS expired,
+                COUNT(CASE WHEN q.converted_to_invoice = 1 AND inv.status = 'UNPAID' THEN 1 END) AS pay_unpaid,
+                COUNT(CASE WHEN q.converted_to_invoice = 1 AND inv.status = 'PARTIAL' THEN 1 END) AS pay_partial,
+                COUNT(CASE WHEN q.converted_to_invoice = 1 AND inv.status = 'PAID' THEN 1 END) AS pay_paid
+             FROM quotations q
+             LEFT JOIN invoices inv ON q.converted_invoice_id = inv.id
+             WHERE " . implode(' AND ', $countWhere),
+            $countParams
+        ) ?: [
+            'total' => 0, 'draft' => 0, 'sent' => 0, 'accepted' => 0, 'converted' => 0, 'rejected' => 0, 'expired' => 0,
+            'pay_unpaid' => 0, 'pay_partial' => 0, 'pay_paid' => 0
+        ];
+
+        // 2. Build filtered where conditions
         $where = ["q.company_id = ?", "q.deleted_at IS NULL"];
         $params = [$companyId];
 
+        if ($effectiveBranchId !== null) {
+            $where[] = "(q.branch_id = ? OR q.branch_id IS NULL)";
+            $params[] = $effectiveBranchId;
+        }
+
         if ($statusFilter !== 'ALL' && !empty($statusFilter)) {
-            $where[] = "q.status = ?";
-            $params[] = $statusFilter;
+            if ($statusFilter === 'CONVERTED') {
+                $where[] = "(q.converted_to_invoice = 1 OR q.status = 'CONVERTED')";
+            } elseif ($statusFilter === 'EXPIRED') {
+                $where[] = "(q.status = 'EXPIRED' OR (q.status = 'SENT' AND q.valid_until < CURDATE()))";
+            } else {
+                $where[] = "q.status = ?";
+                $params[] = $statusFilter;
+            }
+        }
+
+        if ($paymentStatusFilter !== 'ALL' && !empty($paymentStatusFilter)) {
+            if ($paymentStatusFilter === 'UNPAID' || $paymentStatusFilter === 'PENDING') {
+                $where[] = "(q.converted_to_invoice = 1 AND inv.status = 'UNPAID')";
+            } elseif ($paymentStatusFilter === 'PARTIAL' || $paymentStatusFilter === 'PARTIALLY_PAID') {
+                $where[] = "(q.converted_to_invoice = 1 AND inv.status = 'PARTIAL')";
+            } elseif ($paymentStatusFilter === 'PAID') {
+                $where[] = "(q.converted_to_invoice = 1 AND inv.status = 'PAID')";
+            }
         }
 
         if (!empty($search)) {
@@ -50,19 +115,55 @@ class QuotationController
             $params[] = $term;
         }
 
+        if (!empty($fromDate)) {
+            $where[] = "q.quotation_date >= ?";
+            $params[] = $fromDate;
+        }
+        if (!empty($toDate)) {
+            $where[] = "q.quotation_date <= ?";
+            $params[] = $toDate;
+        }
+
+        if ($minAmount !== null && $minAmount !== '' && is_numeric($minAmount)) {
+            $where[] = "q.grand_total >= ?";
+            $params[] = (float)$minAmount;
+        }
+        if ($maxAmount !== null && $maxAmount !== '' && is_numeric($maxAmount)) {
+            $where[] = "q.grand_total <= ?";
+            $params[] = (float)$maxAmount;
+        }
+
+        // 3. Count matching quotations for pagination
+        $countQuery = "SELECT COUNT(*) AS cnt FROM quotations q 
+                       LEFT JOIN customers c ON q.customer_id = c.id 
+                       LEFT JOIN invoices inv ON q.converted_invoice_id = inv.id 
+                       WHERE " . implode(' AND ', $where);
+        $countRow = Database::selectOne($countQuery, $params);
+        $totalMatching = (int)($countRow['cnt'] ?? 0);
+        $totalPages = max(1, (int)ceil($totalMatching / $perPage));
+        $page = min($page, $totalPages);
+        $offset = ($page - 1) * $perPage;
+
+        // 4. Quotations dataset
         $sql = "SELECT q.id, q.quotation_number, q.customer_id, q.quotation_date, q.valid_until,
                        q.sub_total, q.total_tax, q.grand_total, q.status, q.reference_no,
-                       q.converted_to_invoice, q.converted_invoice_id, q.created_at,
+                       q.converted_to_invoice, q.converted_invoice_id, q.created_at, q.branch_id,
                        COALESCE(c.name, 'Direct Client') AS customer_name,
                        c.phone AS customer_phone,
-                       inv.invoice_number AS converted_invoice_number
+                       c.email AS customer_email,
+                       inv.invoice_number AS converted_invoice_number,
+                       inv.status AS converted_invoice_status,
+                       inv.grand_total AS converted_invoice_total,
+                       inv.amount_paid AS converted_invoice_paid,
+                       inv.amount_due AS converted_invoice_due
                 FROM quotations q
                 LEFT JOIN customers c ON q.customer_id = c.id
                 LEFT JOIN invoices inv ON q.converted_invoice_id = inv.id
                 WHERE " . implode(' AND ', $where) . "
-                ORDER BY q.id DESC LIMIT 200";
-
-        $quotations = Database::select($sql, $params);
+                ORDER BY q.id DESC
+                LIMIT ? OFFSET ?";
+        $queryParams = array_merge($params, [$perPage, $offset]);
+        $quotations = Database::select($sql, $queryParams);
 
         // Calculate KPI summary
         $summary = Database::selectOne(
@@ -83,10 +184,32 @@ class QuotationController
             [$companyId]
         );
 
+        $branches = Database::select(
+            "SELECT id, name, branch_code FROM branches WHERE company_id = ? AND is_active = 1 ORDER BY id ASC",
+            [$companyId]
+        );
+
         if ($req->expectsJson()) {
             return Response::success([
                 'quotations' => $quotations,
                 'summary' => $summary,
+                'counts' => $counts,
+                'pagination' => [
+                    'page' => $page,
+                    'per_page' => $perPage,
+                    'total' => $totalMatching,
+                    'total_pages' => $totalPages,
+                ],
+                'filters' => [
+                    'status' => $statusFilter,
+                    'payment_status' => $paymentStatusFilter,
+                    'search' => $search,
+                    'from_date' => $fromDate,
+                    'to_date' => $toDate,
+                    'branch_id' => $branchQuery,
+                    'min_amount' => $minAmount,
+                    'max_amount' => $maxAmount,
+                ],
             ]);
         }
 
@@ -96,8 +219,22 @@ class QuotationController
             'quotations' => $quotations,
             'summary' => $summary,
             'customers' => $customers,
+            'branches' => $branches,
+            'statusCounts' => $counts,
             'activeStatus' => $statusFilter,
+            'activePaymentStatus' => $paymentStatusFilter,
             'search' => $search,
+            'fromDate' => $fromDate,
+            'toDate' => $toDate,
+            'selectedBranch' => $branchQuery !== null ? (string)$branchQuery : 'ALL',
+            'minAmount' => $minAmount,
+            'maxAmount' => $maxAmount,
+            'pagination' => [
+                'page' => $page,
+                'per_page' => $perPage,
+                'total' => $totalMatching,
+                'total_pages' => $totalPages,
+            ],
         ], 'layouts/app');
 
         return Response::html($html);

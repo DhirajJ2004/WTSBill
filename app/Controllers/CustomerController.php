@@ -101,18 +101,113 @@ class CustomerController
     }
 
     /**
-     * Show single customer record (JSON for modal / details).
+     * Show single customer record (JSON for modal / details) or render full Profile page.
      */
     public function show(Request $req, mixed $id = null): Response
     {
-        $customerId = (int)(is_array($id) ? ($id['id'] ?? 0) : ($id ?: ($req->query('id') ?? 0)));
-        $customer = $this->customerService->getCustomer($customerId);
+        $customerId = (int)(is_array($id) ? ($id['id'] ?? 0) : ($id ?: ($req->query('id') ?? $req->param('id') ?? 0)));
 
-        if (!$customer) {
+        // If client is AJAX or explicitly asking for JSON, preserve existing JSON contract
+        if ($this->expectsJson($req) || $req->query('format') === 'json') {
+            $customer = $this->customerService->getCustomer($customerId);
+            if (!$customer) {
+                return Response::json(['success' => false, 'message' => 'Customer not found.'], 404);
+            }
+            return Response::json(['success' => true, 'customer' => $customer]);
+        }
+
+        // Standard browser navigation: render full Customer Profile page
+        return $this->profile($req, $customerId);
+    }
+
+    /**
+     * Comprehensive 360-degree Customer Profile page.
+     * Route: GET /customers/{id} or /customers/{id}/profile
+     */
+    public function profile(Request $req, mixed $id = null): Response
+    {
+        $customerId = (int)(is_array($id) ? ($id['id'] ?? 0) : ($id ?: ($req->query('id') ?? $req->param('id') ?? 0)));
+        $branchId = (int)($req->query('branch_id') ?? Session::getBranchId() ?? 0);
+
+        $profileData = $this->customerService->getCustomerProfileData($customerId, $branchId);
+
+        if (!$profileData) {
+            if ($this->expectsJson($req)) {
+                return Response::json(['success' => false, 'message' => 'Customer record not found.'], 404);
+            }
+            Session::flash('error', 'Customer record not found.');
+            return Response::redirect('/customers');
+        }
+
+        if ($this->expectsJson($req) || $req->query('format') === 'json') {
+            return Response::json($profileData);
+        }
+
+        $bankAccounts = \WTSBill\Core\Database::select(
+            "SELECT id, bank_name, account_name, account_number FROM bank_accounts WHERE company_id = ? AND is_active = 1 ORDER BY is_primary DESC, id ASC",
+            [Session::getCompanyId() ?? 1]
+        );
+
+        $html = View::renderWithLayout('parties/customer_profile', [
+            'title' => $profileData['customer']['name'] . ' — Customer Profile',
+            'currentUri' => '/customers/' . $customerId,
+            'data' => $profileData,
+            'customer' => $profileData['customer'],
+            'stats' => $profileData['financial_summary'],
+            'invoices' => $profileData['invoices'],
+            'outstandingInvoices' => $profileData['outstanding_invoices'],
+            'payments' => $profileData['payments'],
+            'quotations' => $profileData['quotations'],
+            'creditNotes' => $profileData['credit_notes'],
+            'ledger' => $profileData['ledger'],
+            'activities' => $profileData['activities'],
+            'bankAccounts' => $bankAccounts,
+        ], 'layouts/app');
+
+        return Response::html($html);
+    }
+
+    /**
+     * Export customer ledger statement as CSV.
+     * Route: GET /customers/{id}/statement/csv
+     */
+    public function statementCsv(Request $req, mixed $id = null): Response
+    {
+        $customerId = (int)(is_array($id) ? ($id['id'] ?? 0) : ($id ?: ($req->query('id') ?? $req->param('id') ?? 0)));
+        $branchId = (int)($req->query('branch_id') ?? Session::getBranchId() ?? 0);
+
+        $profileData = $this->customerService->getCustomerProfileData($customerId, $branchId);
+        if (!$profileData) {
             return Response::json(['success' => false, 'message' => 'Customer not found.'], 404);
         }
 
-        return Response::json(['success' => true, 'customer' => $customer]);
+        $cust = $profileData['customer'];
+        $lines = [];
+        $lines[] = '"WTSBill ERP — Customer Account Statement"';
+        $lines[] = '"Customer: ' . str_replace('"', '""', $cust['name']) . '","Code: ' . $cust['customer_code'] . '","GSTIN: ' . $cust['gstin'] . '"';
+        $lines[] = '"Phone: ' . $cust['phone'] . '","Email: ' . $cust['email'] . '","As of: ' . date('d-M-Y') . '"';
+        $lines[] = '"Total Invoiced: ' . $profileData['financial_summary']['total_invoiced_formatted'] . '","Total Paid: ' . $profileData['financial_summary']['total_paid_formatted'] . '","Outstanding: ' . $profileData['financial_summary']['outstanding_balance_formatted'] . '"';
+        $lines[] = '""';
+        $lines[] = '"Date","Voucher #","Type","Description","Debit (₹)","Credit (₹)","Running Balance (₹)"';
+
+        foreach ($profileData['ledger'] as $entry) {
+            $lines[] = sprintf(
+                '"%s","%s","%s","%s",%s,%s,"%s"',
+                $entry['date'],
+                $entry['voucher_number'],
+                $entry['type'],
+                str_replace('"', '""', $entry['description']),
+                $entry['debit'] > 0 ? sprintf('%.2f', $entry['debit']) : '""',
+                $entry['credit'] > 0 ? sprintf('%.2f', $entry['credit']) : '""',
+                $entry['running_balance_formatted']
+            );
+        }
+
+        $filename = 'statement_' . $cust['customer_code'] . '_' . date('Ymd_His') . '.csv';
+        return new Response(implode("\r\n", $lines), 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
     }
 
     /**

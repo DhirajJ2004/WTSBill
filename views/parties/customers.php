@@ -41,7 +41,9 @@
                         <tr id="customer-row-<?= (int)$c['id'] ?>">
                             <td><?= e((string)$c['id']) ?></td>
                             <td>
-                                <strong><?= e($c['name']) ?></strong>
+                                <a href="/customers/<?= (int)$c['id'] ?>" style="color: var(--color-primary, #0ea5e9); font-weight: 700; text-decoration: none;">
+                                    <?= e($c['name']) ?>
+                                </a>
                                 <?php if (!empty($c['company_name'])): ?>
                                     <div style="font-size: 0.75rem; color: var(--text-muted);"><?= e($c['company_name']) ?></div>
                                 <?php endif; ?>
@@ -59,6 +61,7 @@
                             </td>
                             <td style="text-align: center;">
                                 <div style="display: flex; gap: 0.35rem; justify-content: center;">
+                                    <a href="/customers/<?= (int)$c['id'] ?>" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; text-decoration: none;">View</a>
                                     <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="window.editCustomer(<?= (int)$c['id'] ?>)">Edit</button>
                                     <button type="button" class="btn btn-outline-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; color: var(--danger); border-color: var(--danger);" onclick="window.deleteCustomer(<?= (int)$c['id'] ?>, '<?= e(addslashes($c['name'])) ?>')">Delete</button>
                                 </div>

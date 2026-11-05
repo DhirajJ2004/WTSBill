@@ -145,11 +145,17 @@ class ReportController
     public function balanceSheet(Request $req): Response
     {
         $companyId = (int)(Session::getCompanyId() ?? 1);
-        $branchId = (int)(Session::getBranchId() ?? 0);
+        $reqBranch = $req->query('branch_id');
+        $branchId = ($reqBranch !== null && $reqBranch !== '') ? (int)$reqBranch : (int)(Session::getBranchId() ?? 0);
         $asOf = (string)($req->query('as_of') ?? date('Y-m-d'));
         $compare = (string)($req->query('compare') ?? 'none');
 
         $statement = $this->balanceSheetService->getStatement($companyId, $branchId, $asOf, $compare);
+
+        $branches = Database::select(
+            "SELECT id, name, branch_code FROM branches WHERE company_id = ? AND is_active = 1 ORDER BY id ASC",
+            [$companyId]
+        );
 
         $html = View::renderWithLayout('reports/balance-sheet', [
             'title' => 'Balance Sheet',
@@ -157,6 +163,8 @@ class ReportController
             'statement' => $statement,
             'asOf' => $statement['as_of'],
             'compare' => $statement['compare'],
+            'branches' => $branches,
+            'activeBranchId' => $branchId,
         ], 'layouts/app');
 
         return Response::html($html);
@@ -169,7 +177,8 @@ class ReportController
     public function balanceSheetApi(Request $req): Response
     {
         $companyId = (int)(Session::getCompanyId() ?? 1);
-        $branchId = (int)(Session::getBranchId() ?? 0);
+        $reqBranch = $req->query('branch_id');
+        $branchId = ($reqBranch !== null && $reqBranch !== '') ? (int)$reqBranch : (int)(Session::getBranchId() ?? 0);
         $asOf = (string)($req->query('as_of') ?? date('Y-m-d'));
         $compare = (string)($req->query('compare') ?? 'none');
 
@@ -185,7 +194,8 @@ class ReportController
     public function balanceSheetExport(Request $req): Response
     {
         $companyId = (int)(Session::getCompanyId() ?? 1);
-        $branchId = (int)(Session::getBranchId() ?? 0);
+        $reqBranch = $req->query('branch_id');
+        $branchId = ($reqBranch !== null && $reqBranch !== '') ? (int)$reqBranch : (int)(Session::getBranchId() ?? 0);
         $asOf = (string)($req->query('as_of') ?? date('Y-m-d'));
         $compare = (string)($req->query('compare') ?? 'none');
         $format = strtolower(trim((string)($req->query('format') ?? 'csv')));

@@ -77,8 +77,21 @@ $hasComparison = ($activeCompare !== 'none');
         </p>
     </div>
 
-    <!-- Controls Toolbar (Period Selector, Comparison Toggle, Export & Print) -->
+    <!-- Controls Toolbar (Period Selector, Comparison Toggle, Branch Selector, Export & Print) -->
     <div class="balance-sheet-toolbar">
+        <!-- Branch Selector -->
+        <div class="toolbar-group branch-selector-group">
+            <label for="bs-branch-select" class="toolbar-label">Branch</label>
+            <select id="bs-branch-select" class="form-select toolbar-select" aria-label="Select Operating Branch">
+                <option value="0" <?= ((int)($activeBranchId ?? 0) === 0) ? 'selected' : '' ?>>All Branches (Consolidated)</option>
+                <?php foreach (($branches ?? []) as $br): ?>
+                    <option value="<?= (int)$br['id'] ?>" <?= ((int)($activeBranchId ?? 0) === (int)$br['id']) ? 'selected' : '' ?>>
+                        <?= e($br['name']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+
         <!-- Requirement 1: Period Selector -->
         <div class="toolbar-group period-selector-group">
             <label for="bs-preset-select" class="toolbar-label">Period</label>
@@ -193,11 +206,13 @@ $hasComparison = ($activeCompare !== 'none');
                                     </td>
                                 </tr>
                                 <?php foreach ($grp['accounts'] as $acc): ?>
-                                    <tr class="statement-row">
+                                    <tr class="statement-row clickable-account-row" data-account-id="<?= (int)$acc['id'] ?>" data-account-code="<?= e($acc['code']) ?>" data-account-name="<?= e($acc['name']) ?>" onclick="WTSBill.BalanceSheet.openQuickLedger(<?= (int)$acc['id'] ?>, '<?= e(addslashes($acc['code'])) ?>', '<?= e(addslashes($acc['name'])) ?>')" style="cursor: pointer;" title="Click to view transaction ledger">
                                         <td class="cell-name">
-                                            <span class="account-bullet">•</span>
-                                            <span><?= e($acc['name']) ?></span>
-                                            <span class="account-code-tag"><?= e($acc['code']) ?></span>
+                                            <a href="/accounting/ledger?account_id=<?= (int)$acc['id'] ?>&as_of=<?= e($asOf) ?>&branch_id=<?= (int)($activeBranchId ?? 0) ?>" class="account-link" onclick="event.stopPropagation();" style="text-decoration: none; color: inherit; display: inline-flex; align-items: center; gap: 0.35rem;">
+                                                <span class="account-bullet">•</span>
+                                                <span class="account-name-text" style="border-bottom: 1px dotted var(--color-primary, #0ea5e9);"><?= e($acc['name']) ?></span>
+                                                <span class="account-code-tag"><?= e($acc['code']) ?></span>
+                                            </a>
                                         </td>
                                         <td class="cell-amount tabular-nums"><?= e($acc['amount_formatted']) ?></td>
                                         <?php if ($hasComparison): ?>
@@ -211,7 +226,7 @@ $hasComparison = ($activeCompare !== 'none');
                                 <?php endforeach; ?>
                                 <tr class="statement-subtotal-row">
                                     <td class="cell-subtotal-label">Subtotal <?= e($grp['title']) ?></td>
-                                    <td class="cell-subtotal-amt tabular-nums"><?= e($statement['assets']['groups'][0]['subtotal_formatted'] ?? format_currency((float)$grp['subtotal'])) ?></td>
+                                    <td class="cell-subtotal-amt tabular-nums"><?= e($grp['subtotal_formatted'] ?? format_currency((float)$grp['subtotal'])) ?></td>
                                     <?php if ($hasComparison): ?>
                                         <td class="cell-subtotal-prev tabular-nums"><?= format_currency((float)$grp['previous_subtotal']) ?></td>
                                         <td class="cell-subtotal-change tabular-nums delta-asset-<?= e($grp['change_direction']) ?>">
@@ -280,12 +295,22 @@ $hasComparison = ($activeCompare !== 'none');
                                     </td>
                                 </tr>
                                 <?php foreach ($grp['accounts'] as $acc): ?>
-                                    <tr class="statement-row">
+                                    <tr class="statement-row clickable-account-row" data-account-id="<?= (int)$acc['id'] ?>" data-account-code="<?= e($acc['code']) ?>" data-account-name="<?= e($acc['name']) ?>" <?php if ((int)$acc['id'] > 0): ?>onclick="WTSBill.BalanceSheet.openQuickLedger(<?= (int)$acc['id'] ?>, '<?= e(addslashes($acc['code'])) ?>', '<?= e(addslashes($acc['name'])) ?>')" style="cursor: pointer;" title="Click to view transaction ledger"<?php endif; ?>>
                                         <td class="cell-name">
-                                            <span class="account-bullet">•</span>
-                                            <span><?= e($acc['name']) ?></span>
-                                            <?php if ($acc['code'] !== 'RE-NP'): ?>
-                                                <span class="account-code-tag"><?= e($acc['code']) ?></span>
+                                            <?php if ((int)$acc['id'] > 0): ?>
+                                                <a href="/accounting/ledger?account_id=<?= (int)$acc['id'] ?>&as_of=<?= e($asOf) ?>&branch_id=<?= (int)($activeBranchId ?? 0) ?>" class="account-link" onclick="event.stopPropagation();" style="text-decoration: none; color: inherit; display: inline-flex; align-items: center; gap: 0.35rem;">
+                                                    <span class="account-bullet">•</span>
+                                                    <span class="account-name-text" style="border-bottom: 1px dotted var(--color-primary, #0ea5e9);"><?= e($acc['name']) ?></span>
+                                                    <?php if ($acc['code'] !== 'RE-NP' && $acc['code'] !== 'P&L-NP'): ?>
+                                                        <span class="account-code-tag"><?= e($acc['code']) ?></span>
+                                                    <?php endif; ?>
+                                                </a>
+                                            <?php else: ?>
+                                                <span class="account-bullet">•</span>
+                                                <span><?= e($acc['name']) ?></span>
+                                                <?php if ($acc['code'] !== 'RE-NP' && $acc['code'] !== 'P&L-NP'): ?>
+                                                    <span class="account-code-tag"><?= e($acc['code']) ?></span>
+                                                <?php endif; ?>
                                             <?php endif; ?>
                                         </td>
                                         <td class="cell-amount tabular-nums"><?= e($acc['amount_formatted']) ?></td>
@@ -300,7 +325,7 @@ $hasComparison = ($activeCompare !== 'none');
                                 <?php endforeach; ?>
                                 <tr class="statement-subtotal-row">
                                     <td class="cell-subtotal-label">Subtotal <?= e($grp['title']) ?></td>
-                                    <td class="cell-subtotal-amt tabular-nums"><?= format_currency((float)$grp['subtotal']) ?></td>
+                                    <td class="cell-subtotal-amt tabular-nums"><?= e($grp['subtotal_formatted'] ?? format_currency((float)$grp['subtotal'])) ?></td>
                                     <?php if ($hasComparison): ?>
                                         <td class="cell-subtotal-prev tabular-nums"><?= format_currency((float)$grp['previous_subtotal']) ?></td>
                                         <td class="cell-subtotal-change tabular-nums delta-neutral">
@@ -703,6 +728,44 @@ $hasComparison = ($activeCompare !== 'none');
 }
 </style>
 
+<!-- Quick Transaction Ledger Modal (Feature 1.2) -->
+<div id="accountLedgerModal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); z-index: 9999; align-items: center; justify-content: center; padding: 1.5rem;" onclick="if(event.target === this) WTSBill.BalanceSheet.closeQuickLedger()">
+    <div class="card" style="width: 100%; max-width: 900px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color, #e2e8f0); padding: 1rem 1.25rem;">
+            <div>
+                <h3 class="card-title" id="modalLedgerTitle" style="font-size: 1.15rem; margin: 0;">Account Ledger</h3>
+                <small style="color: var(--color-muted);">Underlying double-entry transactions &amp; audit trail</small>
+            </div>
+            <button type="button" class="btn btn-secondary" onclick="WTSBill.BalanceSheet.closeQuickLedger()" style="padding: 0.25rem 0.6rem; font-size: 1.1rem; line-height: 1;">&times;</button>
+        </div>
+        <div class="card-body" style="overflow-y: auto; padding: 1rem 1.25rem; flex: 1;">
+            <table class="table" style="width: 100%; font-size: 0.85rem;">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Voucher #</th>
+                        <th>Type</th>
+                        <th>Party</th>
+                        <th>Description</th>
+                        <th style="text-align: right;">Debit (INR)</th>
+                        <th style="text-align: right;">Credit (INR)</th>
+                    </tr>
+                </thead>
+                <tbody id="modalLedgerTbody">
+                    <tr><td colspan="7" style="text-align: center; padding: 2rem;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1.25rem; border-top: 1px solid var(--border-color, #e2e8f0); background: var(--bg-surface, #f8fafc);">
+            <div style="font-size: 0.8rem; color: var(--color-muted);">Showing recent 10 transactions. Click below for full ledger with filters &amp; exports.</div>
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="button" class="btn btn-secondary" onclick="WTSBill.BalanceSheet.closeQuickLedger()">Close</button>
+                <a href="#" id="modalLedgerFullLink" class="btn btn-primary" style="text-decoration: none;">View Full Ledger Page &rarr;</a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Vanilla JavaScript Client Script for AJAX Period Selection & Exports -->
 <script>
 (function() {
@@ -713,6 +776,7 @@ $hasComparison = ($activeCompare !== 'none');
         state: {
             asOf: '<?= e($asOf) ?>',
             compare: '<?= e($activeCompare) ?>',
+            branchId: '<?= (int)($activeBranchId ?? 0) ?>',
             loading: false
         },
 
@@ -725,8 +789,16 @@ $hasComparison = ($activeCompare !== 'none');
             const presetSelect = document.getElementById('bs-preset-select');
             const asOfInput = document.getElementById('bs-asof-date');
             const compareSelect = document.getElementById('bs-compare-select');
+            const branchSelect = document.getElementById('bs-branch-select');
             const exportBtn = document.getElementById('bs-export-btn');
             const exportMenu = document.getElementById('bs-export-menu');
+
+            // 0. Branch change
+            if (branchSelect) {
+                branchSelect.addEventListener('change', (e) => {
+                    this.updateState({ branchId: e.target.value });
+                });
+            }
 
             // 1. Preset change
             if (presetSelect) {
@@ -860,18 +932,20 @@ $hasComparison = ($activeCompare !== 'none');
             this.state.loading = true;
 
             // Update URL query string without reloading page
+            const branchId = this.state.branchId || 0;
             if (pushHistory) {
                 const params = new URLSearchParams();
                 if (asOf) params.set('as_of', asOf);
                 if (compare && compare !== 'none') params.set('compare', compare);
+                if (branchId && branchId !== '0' && branchId !== 0) params.set('branch_id', branchId);
                 const newUrl = `${window.location.pathname}?${params.toString()}`;
-                window.history.pushState({ asOf: asOf, compare: compare }, '', newUrl);
+                window.history.pushState({ asOf: asOf, compare: compare, branchId: branchId }, '', newUrl);
             }
 
             // Show loading skeleton in cards
             this.renderSkeleton();
 
-            const apiUrl = `/api/reports/balance-sheet?as_of=${encodeURIComponent(asOf)}&compare=${encodeURIComponent(compare)}`;
+            const apiUrl = `/api/reports/balance-sheet?as_of=${encodeURIComponent(asOf)}&compare=${encodeURIComponent(compare)}&branch_id=${encodeURIComponent(branchId)}`;
             fetch(apiUrl, {
                 headers: {
                     'Accept': 'application/json',
@@ -1071,14 +1145,24 @@ $hasComparison = ($activeCompare !== 'none');
                 grp.accounts.forEach(acc => {
                     const arrow = acc.change_direction === 'up' ? '▲' : (acc.change_direction === 'down' ? '▼' : '•');
                     const deltaClass = isAsset ? `delta-asset-${acc.change_direction}` : `delta-neutral`;
-                    const codeHtml = (acc.code && acc.code !== 'RE-NP') ? `<span class="account-code-tag">${this.escape(acc.code)}</span>` : '';
+                    const codeHtml = (acc.code && acc.code !== 'RE-NP' && acc.code !== 'P&L-NP') ? `<span class="account-code-tag">${this.escape(acc.code)}</span>` : '';
+                    const branchId = this.state.branchId || 0;
+                    const asOf = this.state.asOf || document.getElementById('bs-asof-date').value;
+
+                    const accLink = (acc.id > 0)
+                        ? `<a href="/accounting/ledger?account_id=${acc.id}&as_of=${encodeURIComponent(asOf)}&branch_id=${branchId}" class="account-link" onclick="event.stopPropagation();" style="text-decoration:none; color:inherit; display:inline-flex; align-items:center; gap:0.35rem;">
+                            <span class="account-bullet">•</span>
+                            <span class="account-name-text" style="border-bottom:1px dotted var(--color-primary, #0ea5e9);">${this.escape(acc.name)}</span>
+                            ${codeHtml}
+                           </a>`
+                        : `<span class="account-bullet">•</span><span>${this.escape(acc.name)}</span>${codeHtml}`;
+
+                    const rowClick = (acc.id > 0) ? `onclick="WTSBill.BalanceSheet.openQuickLedger(${acc.id}, '${this.escape(acc.code)}', '${this.escape(acc.name)}')" style="cursor:pointer;"` : '';
 
                     html += `
-                        <tr class="statement-row">
+                        <tr class="statement-row clickable-account-row" ${rowClick} title="Click to view transaction ledger">
                             <td class="cell-name">
-                                <span class="account-bullet">•</span>
-                                <span>${this.escape(acc.name)}</span>
-                                ${codeHtml}
+                                ${accLink}
                             </td>
                             <td class="cell-amount tabular-nums">${this.escape(acc.amount_formatted)}</td>
                             ${hasCompare ? `
@@ -1113,15 +1197,66 @@ $hasComparison = ($activeCompare !== 'none');
         export: function(format) {
             const asOf = this.state.asOf || document.getElementById('bs-asof-date').value;
             const compare = this.state.compare || document.getElementById('bs-compare-select').value;
+            const branchId = this.state.branchId || 0;
 
             if (format === 'pdf') {
                 // Open dedicated printable view in new window or trigger print
-                window.open(`/reports/balance-sheet/export?format=pdf&as_of=${encodeURIComponent(asOf)}&compare=${encodeURIComponent(compare)}`, '_blank');
+                window.open(`/reports/balance-sheet/export?format=pdf&as_of=${encodeURIComponent(asOf)}&compare=${encodeURIComponent(compare)}&branch_id=${encodeURIComponent(branchId)}`, '_blank');
             } else {
                 // Trigger download for Excel (.xlsx) or CSV
-                const exportUrl = `/reports/balance-sheet/export?format=${encodeURIComponent(format)}&as_of=${encodeURIComponent(asOf)}&compare=${encodeURIComponent(compare)}`;
+                const exportUrl = `/reports/balance-sheet/export?format=${encodeURIComponent(format)}&as_of=${encodeURIComponent(asOf)}&compare=${encodeURIComponent(compare)}&branch_id=${encodeURIComponent(branchId)}`;
                 window.location.href = exportUrl;
             }
+        },
+
+        openQuickLedger: function(accountId, code, name) {
+            const modal = document.getElementById('accountLedgerModal');
+            if (!modal) return;
+            const titleEl = document.getElementById('modalLedgerTitle');
+            const tbody = document.getElementById('modalLedgerTbody');
+            const fullLink = document.getElementById('modalLedgerFullLink');
+            const asOf = this.state.asOf || document.getElementById('bs-asof-date').value;
+            const branchId = this.state.branchId || document.getElementById('bs-branch-select')?.value || 0;
+
+            if (titleEl) titleEl.textContent = `${code} — ${name}`;
+            if (fullLink) fullLink.href = `/accounting/ledger?account_id=${accountId}&as_of=${encodeURIComponent(asOf)}&branch_id=${branchId}`;
+            if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 2rem;">Loading transactions...</td></tr>';
+
+            modal.style.display = 'flex';
+
+            fetch(`/api/accounting/ledger?account_id=${accountId}&as_of=${encodeURIComponent(asOf)}&branch_id=${branchId}&per_page=10`, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success || !data.entries || data.entries.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 2rem; color: var(--color-muted);">No transactions recorded for this period.</td></tr>';
+                    return;
+                }
+                let rows = '';
+                data.entries.forEach(e => {
+                    rows += `
+                        <tr>
+                            <td>${this.escape(e.date)}</td>
+                            <td><strong>${this.escape(e.voucher_number)}</strong></td>
+                            <td><span class="badge badge-secondary" style="font-size:0.75rem;">${this.escape(e.transaction_type)}</span></td>
+                            <td><strong>${this.escape(e.party)}</strong></td>
+                            <td style="max-width:200px; white-space:normal;">${this.escape(e.description)}</td>
+                            <td style="text-align:right; font-weight:600; color:var(--color-primary);">${this.escape(e.debit_formatted)}</td>
+                            <td style="text-align:right; font-weight:600; color:var(--color-warning);">${this.escape(e.credit_formatted)}</td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = rows;
+            })
+            .catch(err => {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--color-danger); padding:2rem;">Failed to load transactions: ${this.escape(err.message)}</td></tr>`;
+            });
+        },
+
+        closeQuickLedger: function() {
+            const modal = document.getElementById('accountLedgerModal');
+            if (modal) modal.style.display = 'none';
         },
 
         formatRupee: function(num) {
