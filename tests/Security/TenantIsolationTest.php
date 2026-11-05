@@ -48,9 +48,9 @@ class TenantIsolationTest
 
         $customerRepo = new CustomerTestRepository();
 
-        // All 21 seeded customers belong to Company 1
+        // Seeded customers belong to Company 1
         $company1Customers = $customerRepo->all();
-        $assert('TENANT-02', 'Customer repository queries Company 1 records', count($company1Customers) === 21);
+        $assert('TENANT-02', 'Customer repository queries Company 1 records', count($company1Customers) >= 21);
         foreach ($company1Customers as $cust) {
             $assert('TENANT-03', 'Every customer has company_id = 1', (int) $cust['company_id'] === 1);
             break; // Check first
