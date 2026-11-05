@@ -98,7 +98,7 @@
 
         <?php if (isset($_GET['session_expired'])): ?>
             <div class="alert" style="background: rgba(234, 88, 12, 0.2); border: 1px solid #ea580c; color: #fdba74;">
-                Your session expired due to 15 minutes of inactivity. Any unfinished form data was saved as a draft.
+                Session expired.
             </div>
         <?php endif; ?>
 
