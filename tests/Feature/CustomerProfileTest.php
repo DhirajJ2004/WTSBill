@@ -144,3 +144,4 @@ class CustomerProfileTest
         Session::clear();
     }
 }
+

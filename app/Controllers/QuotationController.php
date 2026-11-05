@@ -12,6 +12,7 @@ use WTSBill\Core\Response;
 use WTSBill\Core\Session;
 use WTSBill\Core\View;
 use WTSBill\Services\AuditLogger;
+use WTSBill\Services\InvoiceNumberService;
 
 /**
  * Quotation Management Controller.
@@ -1055,14 +1056,9 @@ class QuotationController
                 $companyId, $branchId, $quote, $quoteId, $customer, $quoteItems,
                 &$invoiceId, &$invoiceNumber
             ) {
-                // Generate sequential Tax Invoice Number: INV-YYYY-XXXX
-                $year = date('Y');
-                $lastInv = Database::selectOne(
-                    "SELECT id FROM invoices WHERE company_id = ? ORDER BY id DESC LIMIT 1",
-                    [$companyId]
-                );
-                $nextNum = ($lastInv ? (int)$lastInv['id'] : 0) + 1;
-                $invoiceNumber = 'INV-' . $year . '-' . str_pad((string)$nextNum, 4, '0', STR_PAD_LEFT);
+                // Acquire sequential or reusable Tax Invoice Number
+                $targetBranchId = (int)($quote['branch_id'] ?: $branchId);
+                $invoiceNumber = InvoiceNumberService::acquireInvoiceNumber($companyId, $targetBranchId);
 
                 $isIntraState = ((string)($quote['place_of_supply_state_code'] ?? '27') === '27');
                 $grandTotal = (float)$quote['grand_total'];
@@ -1105,6 +1101,8 @@ class QuotationController
                     'created_at' => date('Y-m-d H:i:s'),
                     'updated_at' => date('Y-m-d H:i:s'),
                 ]);
+                InvoiceNumberService::confirmInvoiceNumberUsage($companyId, $invoiceNumber, $invoiceId);
+
 
                 // 2. Insert line items into invoice_items
                 foreach ($quoteItems as $qi) {

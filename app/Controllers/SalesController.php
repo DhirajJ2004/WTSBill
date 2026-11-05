@@ -12,6 +12,7 @@ use WTSBill\Core\Response;
 use WTSBill\Core\Session;
 use WTSBill\Core\View;
 use WTSBill\Services\QrCodeService;
+use WTSBill\Services\InvoiceNumberService;
 
 /**
  * Sales Controller.
@@ -1163,23 +1164,33 @@ class SalesController
         // Fetch customer details
         $customer = Database::selectOne("SELECT name, gstin, address_line1 FROM customers WHERE id = ?", [$customerId]);
 
+        $customInvNum = trim((string)($req->input('invoice_number') ?? $req->post('invoice_number') ?? ''));
+
         try {
             $invoiceId = 0;
             $invoiceNumber = '';
 
             Database::transaction(function() use (
+                $customInvNum,
                 $companyId, $customerId, $customer, $invoiceDate, $dueDate, $placeOfSupply,
                 $isIntraState, $taxableValue, $cgstAmount, $sgstAmount, $igstAmount, $totalTax,
                 $roundOff, $grandTotal, $notes, $processedItems, $poNo, $poDate, $challanNo, $billCreditDays,
                 $deliveryBy, $receiptMode, $lrNo, $posStateCode, &$invoiceId, &$invoiceNumber
             ) {
-                // Generate sequential invoice number
-                $lastInv = Database::selectOne(
-                    "SELECT id FROM invoices WHERE company_id = ? ORDER BY id DESC LIMIT 1",
-                    [$companyId]
-                );
-                $nextNum = ($lastInv ? (int)$lastInv['id'] : 0) + 1;
-                $invoiceNumber = 'INV-' . date('Y') . '-' . str_pad((string)$nextNum, 4, '0', STR_PAD_LEFT);
+                // Acquire sequential or reusable invoice number
+                $branchId = (int)(Session::getBranchId() ?? 1);
+                if (!empty($customInvNum)) {
+                    $activeConflict = Database::selectOne(
+                        "SELECT id FROM invoices WHERE company_id = ? AND invoice_number = ? AND deleted_at IS NULL LIMIT 1 FOR UPDATE",
+                        [$companyId, $customInvNum]
+                    );
+                    if ($activeConflict) {
+                        throw new ValidationException(['invoice_number' => "Invoice number '{$customInvNum}' is already in use by an active invoice."]);
+                    }
+                    $invoiceNumber = $customInvNum;
+                } else {
+                    $invoiceNumber = InvoiceNumberService::acquireInvoiceNumber($companyId, $branchId);
+                }
 
                 // Insert into invoices
                 $invoiceId = (int)Database::insert('invoices', [
@@ -1219,6 +1230,7 @@ class SalesController
                     'created_at' => date('Y-m-d H:i:s'),
                     'updated_at' => date('Y-m-d H:i:s'),
                 ]);
+                InvoiceNumberService::confirmInvoiceNumberUsage($companyId, $invoiceNumber, $invoiceId);
 
                 // Insert line items
                 foreach ($processedItems as $item) {
@@ -1279,6 +1291,18 @@ class SalesController
 
             Session::flash('success', "Invoice '{$invoiceNumber}' generated successfully.");
             return Response::redirect('/sales/invoices');
+        } catch (ValidationException $e) {
+            $errs = $e->getErrors();
+            $firstErr = !empty($errs) ? (is_array(reset($errs)) ? reset($errs)[0] : reset($errs)) : $e->getMessage();
+            if ($this->expectsJson($req)) {
+                return Response::json([
+                    'success' => false,
+                    'message' => $firstErr,
+                    'errors' => $errs,
+                ], 422);
+            }
+            Session::flash('error', $firstErr);
+            return Response::redirect('/sales/invoices/create');
         } catch (\Throwable $e) {
             if ($this->expectsJson($req)) {
                 return Response::json([
@@ -1750,40 +1774,140 @@ class SalesController
             return Response::redirect('/sales/invoices');
         }
 
-        try {
-            Database::transaction(function() use ($invoice, $invId, $companyId) {
-                $customerId = (int)$invoice['customer_id'];
-                $grandTotal = (float)$invoice['grand_total'];
-
-                // Roll back customer balance
-                Database::execute(
-                    "UPDATE customers SET current_balance = GREATEST(0, current_balance - ?) WHERE id = ? AND company_id = ?",
-                    [$grandTotal, $customerId, $companyId]
-                );
-
-                // Soft-delete invoice
-                Database::execute(
-                    "UPDATE invoices SET deleted_at = NOW(), status = 'CANCELLED' WHERE id = ? AND company_id = ?",
-                    [$invId, $companyId]
-                );
-            });
-
+        // Accounting safety check: Paid or partially paid invoices cannot be deleted
+        $canDelete = InvoiceNumberService::canDeleteInvoice($invoice, $companyId);
+        if (!$canDelete['allowed']) {
             if ($this->expectsJson($req)) {
-                return Response::json([
-                    'success' => true,
-                    'message' => "Invoice '{$invoice['invoice_number']}' deleted successfully.",
-                ]);
+                return Response::json(['success' => false, 'message' => $canDelete['reason']], 422);
             }
-
-            Session::flash('success', "Invoice '{$invoice['invoice_number']}' deleted successfully.");
-            return Response::redirect('/sales/invoices');
-        } catch (\Throwable $e) {
-            if ($this->expectsJson($req)) {
-                return Response::json(['success' => false, 'message' => 'Failed to delete invoice: ' . $e->getMessage()], 500);
-            }
-            Session::flash('error', 'Failed to delete invoice: ' . $e->getMessage());
+            Session::flash('error', $canDelete['reason']);
             return Response::redirect('/sales/invoices');
         }
+
+        $reason = trim((string)($req->input('reason') ?? $req->input('deletion_reason') ?? 'Invoice deleted'));
+        $userId = Session::getUserId();
+
+        $res = InvoiceNumberService::deleteInvoice($companyId, $invId, $reason, $userId, false);
+
+        if (!$res['success']) {
+            if ($this->expectsJson($req)) {
+                return Response::json(['success' => false, 'message' => $res['message']], 422);
+            }
+            Session::flash('error', $res['message']);
+            return Response::redirect('/sales/invoices');
+        }
+
+        if ($this->expectsJson($req)) {
+            return Response::json([
+                'success' => true,
+                'message' => "Invoice '{$invoice['invoice_number']}' deleted successfully.",
+            ]);
+        }
+
+        Session::flash('success', "Invoice '{$invoice['invoice_number']}' deleted successfully.");
+        return Response::redirect('/sales/invoices');
+    }
+
+    /**
+     * Cancel an invoice without releasing its number.
+     * Preserves invoice number and cancellation history for GST audit compliance.
+     * Route: POST /sales/invoices/{id}/cancel
+     */
+    public function invoiceCancel(Request $req, mixed $id = null): Response
+    {
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $invId = (int)(is_array($id) ? ($id['id'] ?? 0) : ($id ?: ($req->query('id') ?? 0)));
+
+        $invoice = Database::selectOne(
+            "SELECT * FROM invoices WHERE id = ? AND company_id = ? AND deleted_at IS NULL",
+            [$invId, $companyId]
+        );
+
+        if (!$invoice) {
+            if ($this->expectsJson($req)) {
+                return Response::json(['success' => false, 'message' => 'Invoice not found or already deleted.'], 404);
+            }
+            Session::flash('error', 'Invoice not found or already deleted.');
+            return Response::redirect('/sales/invoices');
+        }
+
+        $reason = trim((string)($req->input('reason') ?? $req->input('cancellation_reason') ?? 'Cancelled by user'));
+        $userId = Session::getUserId();
+
+        $res = InvoiceNumberService::cancelInvoice($companyId, $invId, $reason, $userId);
+
+        if (!$res['success']) {
+            if ($this->expectsJson($req)) {
+                return Response::json(['success' => false, 'message' => $res['message']], 422);
+            }
+            Session::flash('error', $res['message']);
+            return Response::redirect('/sales/invoices');
+        }
+
+        if ($this->expectsJson($req)) {
+            return Response::json([
+                'success' => true,
+                'message' => $res['message'],
+            ]);
+        }
+
+        Session::flash('success', $res['message']);
+        return Response::redirect('/sales/invoices');
+    }
+
+    /**
+     * Permanently delete an invoice and release its number for reuse.
+     * Route: POST /sales/invoices/{id}/permanent-delete
+     */
+    public function invoicePermanentDelete(Request $req, mixed $id = null): Response
+    {
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $invId = (int)(is_array($id) ? ($id['id'] ?? 0) : ($id ?: ($req->query('id') ?? 0)));
+
+        $invoice = Database::selectOne(
+            "SELECT * FROM invoices WHERE id = ? AND company_id = ?",
+            [$invId, $companyId]
+        );
+
+        if (!$invoice) {
+            if ($this->expectsJson($req)) {
+                return Response::json(['success' => false, 'message' => 'Invoice not found.'], 404);
+            }
+            Session::flash('error', 'Invoice not found.');
+            return Response::redirect('/sales/invoices');
+        }
+
+        $canDelete = InvoiceNumberService::canDeleteInvoice($invoice, $companyId);
+        if (!$canDelete['allowed']) {
+            if ($this->expectsJson($req)) {
+                return Response::json(['success' => false, 'message' => $canDelete['reason']], 422);
+            }
+            Session::flash('error', $canDelete['reason']);
+            return Response::redirect('/sales/invoices');
+        }
+
+        $reason = trim((string)($req->input('reason') ?? $req->input('deletion_reason') ?? 'Invoice permanently deleted'));
+        $userId = Session::getUserId();
+
+        $res = InvoiceNumberService::deleteInvoice($companyId, $invId, $reason, $userId, true);
+
+        if (!$res['success']) {
+            if ($this->expectsJson($req)) {
+                return Response::json(['success' => false, 'message' => $res['message']], 422);
+            }
+            Session::flash('error', $res['message']);
+            return Response::redirect('/sales/invoices');
+        }
+
+        if ($this->expectsJson($req)) {
+            return Response::json([
+                'success' => true,
+                'message' => "Invoice '{$invoice['invoice_number']}' permanently deleted. Number released for reuse.",
+            ]);
+        }
+
+        Session::flash('success', "Invoice '{$invoice['invoice_number']}' permanently deleted. Number released for reuse.");
+        return Response::redirect('/sales/invoices');
     }
 
     /**

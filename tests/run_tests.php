@@ -61,6 +61,7 @@ require_once ROOT_PATH . '/tests/Feature/SessionIdleDraftTest.php';
 require_once ROOT_PATH . '/tests/Feature/LedgerStatementTest.php';
 require_once ROOT_PATH . '/tests/Feature/CustomerProfileTest.php';
 require_once ROOT_PATH . '/tests/Feature/DocumentFilterTest.php';
+require_once ROOT_PATH . '/tests/Feature/InvoiceNumberReuseTest.php';
 
 
 
@@ -235,6 +236,9 @@ echo "\n--- SECTION 50: FEATURE TESTS — COMPLETE 360-DEGREE CUSTOMER PROFILE &
 
 echo "\n--- SECTION 51: FEATURE TESTS — COMPREHENSIVE INVOICE & QUOTATION LIST FILTERS ---\n";
 \Tests\Feature\DocumentFilterTest::run($assert);
+
+echo "\n--- SECTION 52: FEATURE TESTS — INVOICE NUMBER REUSE & STATUTORY PRESERVATION ---\n";
+\Tests\Feature\InvoiceNumberReuseTest::run($assert);
 
 
 

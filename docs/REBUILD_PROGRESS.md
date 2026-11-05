@@ -138,3 +138,12 @@
   - Quotation lifecycle status pills: All, Draft, Sent, Accepted, Converted, Rejected, Expired.
   - Quotation linked invoice payment status dropdown: All, Unpaid / Pending, Partially Paid, Paid.
   - Responsive pagination footer across both registers.
+
+## Milestone 16: Invoice Number Reuse After Invoice Deletion & Statutory Compliance (Completed 2026-11-05)
+- **Reusable Invoice Numbers Pool:** Implemented `reusable_invoice_numbers` table tracking released sequence numbers, prefixes, branches, and deletion audit details.
+- **Concurrency-Safe Acquisition:** `InvoiceNumberService::acquireInvoiceNumber` uses row-level `FOR UPDATE` locking inside database transactions to ensure zero race conditions or duplicate voucher assignments.
+- **Ascending Gap Fill:** Deleted numbers are reused in strictly ascending order before incrementing to the next monotonic sequence.
+- **Branch Numbering Isolation:** Branch-specific prefixes (e.g., Pune `INV-PUN-`, Mumbai `INV-BOM-`) strictly isolate reusable sequence pools to their respective branches.
+- **Statutory Accounting Rules:** Invoices with confirmed payments (`amount_paid > 0` or status `PAID`/`PARTIAL`) or inside closed accounting periods are strictly blocked from deletion (HTTP 422).
+- **GST Cancellation Separation:** Cancelled invoices (`POST /sales/invoices/{id}/cancel`) retain their numbers and log cancellation reasons for GST tax audit reconciliation; only authorized/permanent deletion releases numbers to the reusable pool.
+- **Master Test Suite:** 10 new feature assertions in Section 52 bringing the total to **690 / 690 passing assertions (100%)**.

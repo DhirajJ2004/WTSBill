@@ -100,6 +100,8 @@ $router->post('/sales/invoices/{id}/update', [$salesController, 'invoiceUpdate']
 $router->post('/sales/invoices/{id}/delete', [$salesController, 'invoiceDelete'], [$auth, $csrf, $can('invoices.delete')]);
 $router->get('/sales/invoices/{id}/delete', [$salesController, 'invoiceDelete'], [$auth, $can('invoices.delete')]);
 $router->delete('/sales/invoices/{id}', [$salesController, 'invoiceDelete'], [$auth, $csrf, $can('invoices.delete')]);
+$router->post('/sales/invoices/{id}/cancel', [$salesController, 'invoiceCancel'], [$auth, $csrf, $can('invoices.delete')]);
+$router->post('/sales/invoices/{id}/permanent-delete', [$salesController, 'invoicePermanentDelete'], [$auth, $csrf, $can('invoices.delete')]);
 $router->get('/sales/invoices/{id}/print', [$salesController, 'invoicePrint'], [$auth, $can('invoices.print')]);
 $router->get('/api/categories/{id}/products', [$salesController, 'categoryProductsApi'], [$auth, $can(['invoices.create', 'invoices.edit', 'invoices.view', 'items.view'])]);
 $router->get('/api/categories/products', [$salesController, 'categoryProductsApi'], [$auth, $can(['invoices.create', 'invoices.edit', 'invoices.view', 'items.view'])]);

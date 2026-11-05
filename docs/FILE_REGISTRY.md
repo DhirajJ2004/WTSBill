@@ -36,6 +36,7 @@
 | `app/Services/AuditCleanupService.php` | `WTSBill\Services` | Post-backup atomic audit cleaner: validates backup integrity and purges non-security logs older than retention period (default 7 days) |
 | `app/Services/DraftService.php` | `WTSBill\Services` | Form draft persistence: stores in-flight drafts in `user_drafts` with zero GL/ledger side-effects, recovery queries, and discard handling |
 | `app/Services/PdfGenerator.php` | `WTSBill\Services` | Standalone pure PHP binary `%PDF-1.4` stream generator for Invoices and Quotations with xref tables and EOF trailers |
+| `app/Services/InvoiceNumberService.php` | `WTSBill\Services` | Intelligent invoice number sequencing, concurrency-safe acquisition (`FOR UPDATE`), number reuse from `reusable_invoice_numbers` after authorized invoice deletion, branch prefix isolation, and statutory GST cancellation preservation |
 
 ---
 
@@ -180,4 +181,5 @@
 | `tests/Feature/LedgerStatementTest.php` | Feature | 9 assertions: General Ledger view, KPI cards, filters, JSON API, chronological running balance, branch scoping, CSV export |
 | `tests/Feature/CustomerProfileTest.php` | Feature | 9 assertions: Customer profile HTML, compliance details, 8 KPI cards, 7 tabs, days overdue, pre-selected create actions, statement CSV |
 | `tests/Feature/DocumentFilterTest.php` | Feature | 10 assertions: Invoice payment status pills, multi-filters, overdue calculation, Quotation lifecycle & linked payment filters, pagination |
-| `tests/run_tests.php` | Master Runner | Executes all 51 test suites (680 assertions, 100% pass) |
+| `tests/Feature/InvoiceNumberReuseTest.php` | Feature | 10 assertions: Invoice number reuse after deletion, next monotonic sequence, ascending order reuse, branch scoping, payment protection, accounting period locks, GST cancellation preservation, permanent deletion, audit logging, active uniqueness |
+| `tests/run_tests.php` | Master Runner | Executes all 52 test suites (690 assertions, 100% pass) |
