@@ -64,17 +64,21 @@ class InvoiceNumberService
         if ($branchId !== null && $branchId > 0) {
             // Check if branch has an established numbering pattern in active invoices
             $existing = Database::selectOne(
-                "SELECT invoice_number FROM invoices WHERE company_id = ? AND branch_id = ? AND deleted_at IS NULL ORDER BY id DESC LIMIT 1",
+                "SELECT invoice_number FROM invoices 
+                 WHERE company_id = ? AND branch_id = ? AND deleted_at IS NULL AND invoice_number LIKE 'INV-%' 
+                 ORDER BY id DESC LIMIT 1",
                 [$companyId, $branchId]
             );
 
             if ($existing && !empty($existing['invoice_number'])) {
                 $parsed = self::parse($existing['invoice_number']);
-                return [
-                    'prefix' => $parsed['prefix'],
-                    'padding' => max(3, $parsed['padding']),
-                    'year' => $parsed['year'] ?? $currentYear,
-                ];
+                if (!empty($parsed['prefix']) && str_starts_with($parsed['prefix'], 'INV-')) {
+                    return [
+                        'prefix' => $parsed['prefix'],
+                        'padding' => max(3, $parsed['padding']),
+                        'year' => $parsed['year'] ?? $currentYear,
+                    ];
+                }
             }
 
             // Look up branch code
@@ -284,9 +288,8 @@ class InvoiceNumberService
         $activeInvoices = Database::select(
             "SELECT invoice_number FROM invoices 
              WHERE company_id = ? AND invoice_number LIKE ? 
-             ORDER BY LENGTH(invoice_number) DESC, invoice_number DESC 
-             LIMIT 100 
-             FOR UPDATE",
+             ORDER BY id DESC 
+             LIMIT 100",
             [$companyId, $prefix . '%']
         );
 
@@ -310,7 +313,7 @@ class InvoiceNumberService
         // Fallback: If no invoice matching prefix exists yet and using default year prefix, use last invoice id to maintain continuity
         if ($maxSeq === 0 && str_starts_with($prefix, 'INV-' . date('Y'))) {
             $lastInv = Database::selectOne(
-                "SELECT id FROM invoices WHERE company_id = ? ORDER BY id DESC LIMIT 1 FOR UPDATE",
+                "SELECT id FROM invoices WHERE company_id = ? ORDER BY id DESC LIMIT 1",
                 [$companyId]
             );
             $maxSeq = $lastInv ? (int)$lastInv['id'] : 0;

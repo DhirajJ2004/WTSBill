@@ -11,9 +11,10 @@ use WTSBill\Core\Database;
 use WTSBill\Core\Config;
 
 /**
- * Enterprise Backup and Disaster Recovery Service.
+ * Enterprise Automatic Weekly Backup and Disaster Recovery Service.
  * Generates verified, encrypted/secure archives containing pure-PHP database dumps,
  * uploaded attachments, sanitized configuration, and audit logs.
+ * Includes automated weekly scheduling, duplicate run prevention, and failure alerts.
  */
 class BackupService
 {
@@ -38,30 +39,32 @@ class BackupService
         int $companyId,
         string $type = 'MANUAL',
         string $createdBy = 'Administrator',
-        int $retentionDays = 30
+        int $retentionDays = 30,
+        ?string $encryptionPassword = null
     ): array {
         $backupDir = self::getBackupDir();
         $lockFile = $backupDir . '/.backup.lock';
+        $timestamp = date('Y-m-d_H-i-s');
+        $fileName = "WTSBill_Backup_{$timestamp}.zip";
+        $zipPath = $backupDir . '/' . $fileName;
 
-        // Check concurrency lock
-        if (file_exists($lockFile)) {
-            $lockTime = filemtime($lockFile);
-            if (time() - $lockTime < 600) { // 10 minutes lock timeout
-                throw new RuntimeException('Another backup job is currently running.');
-            }
-        }
-        file_put_contents($lockFile, date('Y-m-d H:i:s'));
-
+        $lockAcquired = false;
         try {
+            // Check concurrency lock
+            if (file_exists($lockFile)) {
+                $lockTime = filemtime($lockFile);
+                if (time() - $lockTime < 600) { // 10 minutes lock timeout
+                    throw new RuntimeException('Another backup job is currently running.');
+                }
+            }
+            file_put_contents($lockFile, date('Y-m-d H:i:s'));
+            $lockAcquired = true;
+
             // Check disk storage space (require at least 50 MB)
             $freeSpace = @disk_free_space($backupDir);
             if ($freeSpace !== false && $freeSpace < (50 * 1024 * 1024)) {
                 throw new RuntimeException('Insufficient server storage space to create backup. Free space is below 50MB.');
             }
-
-            $timestamp = date('Y-m-d_H-i-s');
-            $fileName = "WTSBill_Backup_{$timestamp}.zip";
-            $zipPath = $backupDir . '/' . $fileName;
 
             // 1. Generate Pure PHP Database Dump
             $pdo = Database::pdo();
@@ -79,11 +82,13 @@ class BackupService
                 'app_name' => Config::get('app.name', 'WTSBill ERP'),
                 'app_env' => Config::get('app.env', 'production'),
                 'backup_timestamp' => date('Y-m-d H:i:s'),
+                'timezone' => date_default_timezone_get(),
                 'php_version' => PHP_VERSION,
                 'mysql_version' => $pdo->getAttribute(PDO::ATTR_SERVER_VERSION),
                 'company_id' => $companyId,
                 'created_by' => $createdBy,
                 'backup_type' => $type,
+                'frequency' => 'Every 7 Days (Weekly)',
             ];
             $configJson = json_encode($configSummary, JSON_PRETTY_PRINT);
 
@@ -93,9 +98,23 @@ class BackupService
                 throw new RuntimeException("Failed to create ZIP archive at {$zipPath}");
             }
 
+            // Encryption check
+            $effectivePassword = $encryptionPassword ?? (string)(Config::get('backup.encryption_password', env('BACKUP_ENCRYPTION_PASSWORD', '')) ?: '');
+            $isEncrypted = false;
+            if (!empty($effectivePassword)) {
+                $zip->setPassword($effectivePassword);
+                $isEncrypted = true;
+            }
+
             $zip->addFromString('database.sql', $sqlDump);
             $zip->addFromString('audit_logs_archive.json', $auditJson ?: '[]');
             $zip->addFromString('config_summary.json', $configJson);
+
+            if ($isEncrypted) {
+                $zip->setEncryptionName('database.sql', ZipArchive::EM_AES_256);
+                $zip->setEncryptionName('audit_logs_archive.json', ZipArchive::EM_AES_256);
+                $zip->setEncryptionName('config_summary.json', ZipArchive::EM_AES_256);
+            }
 
             // 5. Add uploaded files if present
             $uploadsDir = (defined('ROOT_PATH') ? ROOT_PATH : dirname(__DIR__, 2)) . '/public/uploads';
@@ -109,7 +128,11 @@ class BackupService
                     if (!$file->isDir()) {
                         $filePath = $file->getRealPath();
                         $relativePath = 'uploads/' . substr($filePath, strlen($uploadsDir) + 1);
-                        $zip->addFile($filePath, str_replace('\\', '/', $relativePath));
+                        $entryName = str_replace('\\', '/', $relativePath);
+                        $zip->addFile($filePath, $entryName);
+                        if ($isEncrypted) {
+                            $zip->setEncryptionName($entryName, ZipArchive::EM_AES_256);
+                        }
                         $fileCount++;
                     }
                 }
@@ -121,11 +144,18 @@ class BackupService
                 'backup_type' => $type,
                 'created_at' => date('Y-m-d H:i:s'),
                 'created_by' => $createdBy,
+                'timezone' => date_default_timezone_get(),
+                'frequency' => '7_DAYS_WEEKLY',
                 'audit_logs_count' => count($auditLogs),
                 'uploaded_files_count' => $fileCount,
                 'database_dump_size' => strlen($sqlDump),
+                'is_encrypted' => $isEncrypted ? 1 : 0,
             ];
             $zip->addFromString('metadata.json', json_encode($metadata, JSON_PRETTY_PRINT));
+            if ($isEncrypted) {
+                $zip->setEncryptionName('metadata.json', ZipArchive::EM_AES_256);
+            }
+
             $zip->close();
 
             // 7. Verify Integrity and Calculate SHA-256 Checksum
@@ -147,7 +177,17 @@ class BackupService
             }
             $verifyZip->close();
 
-            // 8. Record in backup_records
+            // 8. Secondary Storage Destination Sync (if configured)
+            $secondaryDestination = (string)(Config::get('backup.secondary_destination', env('BACKUP_SECONDARY_PATH', '')) ?: '');
+            $secondarySynced = false;
+            if (!empty($secondaryDestination) && is_dir($secondaryDestination) && is_writable($secondaryDestination)) {
+                $secTarget = rtrim($secondaryDestination, '/\\') . '/' . $fileName;
+                if (@copy($zipPath, $secTarget)) {
+                    $secondarySynced = true;
+                }
+            }
+
+            // 9. Record in backup_records
             $expiresAt = date('Y-m-d H:i:s', strtotime("+{$retentionDays} days"));
             $backupId = (int)Database::insert('backup_records', [
                 'company_id' => $companyId,
@@ -156,12 +196,12 @@ class BackupService
                 'file_path' => $zipPath,
                 'file_size' => $fileSize,
                 'checksum' => $checksum,
-                'storage_location' => 'LOCAL_SECURE',
+                'storage_location' => $secondarySynced ? 'LOCAL_AND_SECONDARY' : 'LOCAL_SECURE',
                 'app_version' => '2.0.0',
                 'schema_version' => '1.0',
                 'status' => 'SUCCESS',
                 'metadata_json' => json_encode($metadata),
-                'is_encrypted' => 0,
+                'is_encrypted' => $isEncrypted ? 1 : 0,
                 'retention_days' => $retentionDays,
                 'expires_at' => $expiresAt,
                 'created_by' => $createdBy,
@@ -179,13 +219,199 @@ class BackupService
                 'audit_records' => count($auditLogs),
                 'status' => 'SUCCESS',
                 'verified' => true,
+                'is_encrypted' => $isEncrypted,
+                'secondary_synced' => $secondarySynced,
                 'created_at' => date('Y-m-d H:i:s'),
             ];
+        } catch (\Throwable $e) {
+            // Failure Handling:
+            // 1. Record error in backup_records with status FAILED
+            try {
+                Database::insert('backup_records', [
+                    'company_id' => $companyId,
+                    'backup_type' => $type,
+                    'file_name' => $fileName,
+                    'file_path' => $zipPath,
+                    'file_size' => (file_exists($zipPath) ? (int)filesize($zipPath) : 0),
+                    'checksum' => (file_exists($zipPath) ? hash_file('sha256', $zipPath) : ''),
+                    'storage_location' => 'LOCAL_SECURE',
+                    'app_version' => '2.0.0',
+                    'schema_version' => '1.0',
+                    'status' => 'FAILED',
+                    'error_message' => $e->getMessage(),
+                    'metadata_json' => json_encode(['error' => $e->getMessage(), 'time' => date('Y-m-d H:i:s')]),
+                    'is_encrypted' => 0,
+                    'retention_days' => $retentionDays,
+                    'expires_at' => date('Y-m-d H:i:s'),
+                    'created_by' => $createdBy,
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'updated_at' => date('Y-m-d H:i:s'),
+                ]);
+            } catch (\Throwable $dbe) {
+                // Ignore DB logging failure
+            }
+
+            // 2. Notify Authorized Administrators via NotificationService
+            try {
+                $notifService = new NotificationService();
+                $notifService->createNotification(
+                    $companyId,
+                    null,
+                    'Automated Backup Failed',
+                    "Weekly backup generation failed ({$type}): " . substr($e->getMessage(), 0, 150),
+                    'SYSTEM',
+                    'CRITICAL',
+                    '/settings?tab=backups'
+                );
+            } catch (\Throwable $ne) {
+                // Ignore notification failure during backup exception
+            }
+
+            throw $e;
         } finally {
-            if (file_exists($lockFile)) {
+            if ($lockAcquired && file_exists($lockFile)) {
                 @unlink($lockFile);
             }
         }
+    }
+
+    /**
+     * Create backup with safe automated retries on transient failures.
+     */
+    public static function createBackupWithRetry(
+        int $companyId,
+        string $type = 'SCHEDULED_WEEKLY',
+        string $createdBy = 'SCHEDULER',
+        int $retentionDays = 30,
+        int $maxRetries = 3,
+        ?string $encryptionPassword = null
+    ): array {
+        $attempt = 0;
+        $lastError = null;
+
+        while ($attempt < $maxRetries) {
+            $attempt++;
+            try {
+                return self::createBackup($companyId, $type, $createdBy, $retentionDays, $encryptionPassword);
+            } catch (\Throwable $e) {
+                $lastError = $e;
+                if ($attempt < $maxRetries) {
+                    usleep(500000); // 0.5s pause before retry
+                }
+            }
+        }
+
+        throw new RuntimeException("Backup failed after {$maxRetries} attempts: " . ($lastError ? $lastError->getMessage() : 'Unknown error'), 0, $lastError);
+    }
+
+    /**
+     * Check if a weekly backup is due (7 days since last successful backup).
+     */
+    public static function isBackupDue(int $companyId, int $intervalDays = 7): bool
+    {
+        $last = self::getLastSuccessful($companyId);
+        if (!$last) {
+            return true;
+        }
+
+        $lastTimestamp = strtotime((string)$last['created_at']);
+        $secondsSinceLast = time() - $lastTimestamp;
+        $thresholdSeconds = $intervalDays * 86400;
+
+        return $secondsSinceLast >= $thresholdSeconds;
+    }
+
+    /**
+     * Run automated weekly scheduled backup, safely preventing duplicate runs.
+     */
+    public static function runScheduledWeeklyBackup(
+        int $companyId = 1,
+        bool $force = false,
+        string $executedBy = 'SCHEDULER'
+    ): array {
+        if (!$force && !self::isBackupDue($companyId, 7)) {
+            $last = self::getLastSuccessful($companyId);
+            $next = self::getNextScheduled($companyId);
+            return [
+                'success' => true,
+                'skipped' => true,
+                'message' => "Weekly backup is not due yet. Last backup was created on " . ($last['created_at'] ?? 'N/A') . ". Next run scheduled for " . ($next['human'] ?? 'Every 7 Days'),
+                'last_backup' => $last,
+                'next_scheduled' => $next,
+            ];
+        }
+
+        $result = self::createBackupWithRetry(
+            $companyId,
+            'SCHEDULED_WEEKLY',
+            $executedBy,
+            30,
+            3
+        );
+
+        $result['skipped'] = false;
+        return $result;
+    }
+
+    /**
+     * Delete an existing backup archive and mark/remove from records.
+     * Safeguard: Prevents deleting the only remaining successful backup archive.
+     */
+    public static function deleteBackup(int $backupId, int $companyId, string $deletedBy = 'Administrator'): array
+    {
+        $backup = Database::selectOne(
+            "SELECT * FROM backup_records WHERE id = ? AND company_id = ?",
+            [$backupId, $companyId]
+        );
+
+        if (!$backup) {
+            throw new RuntimeException("Backup record #{$backupId} not found.");
+        }
+
+        // Safeguard: Count successful backups
+        if ($backup['status'] === 'SUCCESS') {
+            $successfulCount = (int)Database::selectOne(
+                "SELECT COUNT(*) as cnt FROM backup_records WHERE company_id = ? AND status = 'SUCCESS'",
+                [$companyId]
+            )['cnt'];
+
+            if ($successfulCount <= 1) {
+                throw new RuntimeException("Safety policy prevents deleting the only remaining successful backup archive.");
+            }
+        }
+
+        // Delete physical file if exists
+        $filePath = (string)($backup['file_path'] ?? '');
+        if (!empty($filePath) && file_exists($filePath)) {
+            @unlink($filePath);
+        }
+
+        // Update record status to DELETED
+        Database::update('backup_records', [
+            'status' => 'DELETED',
+            'updated_at' => date('Y-m-d H:i:s'),
+        ], 'id = ? AND company_id = ?', [$backupId, $companyId]);
+
+        // Audit Log Entry
+        Database::insert('audit_logs', [
+            'company_id' => $companyId,
+            'branch_id' => 1,
+            'user_id' => 1,
+            'user_name' => $deletedBy,
+            'action' => 'DELETE',
+            'entity_type' => 'BACKUP',
+            'entity_id' => $backupId,
+            'description' => "Permanently deleted backup archive {$backup['file_name']}",
+            'ip_address' => '127.0.0.1',
+            'status' => 'SUCCESS',
+            'severity' => 'WARNING',
+            'created_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        return [
+            'success' => true,
+            'message' => "Backup archive {$backup['file_name']} has been permanently deleted.",
+        ];
     }
 
     /**
@@ -195,7 +421,8 @@ class BackupService
         int $backupId,
         int $companyId,
         string $initiatedBy = 'Administrator',
-        string $ipAddress = '127.0.0.1'
+        string $ipAddress = '127.0.0.1',
+        ?string $encryptionPassword = null
     ): array {
         $backup = Database::selectOne(
             "SELECT * FROM backup_records WHERE id = ? AND company_id = ?",
@@ -225,6 +452,13 @@ class BackupService
         $zip = new ZipArchive();
         if ($zip->open($zipPath) !== true) {
             throw new RuntimeException("Cannot open backup archive for restoration.");
+        }
+
+        if (!empty($backup['is_encrypted'])) {
+            $effectivePassword = $encryptionPassword ?? (string)(Config::get('backup.encryption_password', env('BACKUP_ENCRYPTION_PASSWORD', '')) ?: '');
+            if (!empty($effectivePassword)) {
+                $zip->setPassword($effectivePassword);
+            }
         }
 
         $sqlContent = $zip->getFromName('database.sql');
@@ -392,7 +626,7 @@ class BackupService
     public static function getHistory(int $companyId): array
     {
         return Database::select(
-            "SELECT * FROM backup_records WHERE company_id = ? ORDER BY id DESC LIMIT 50",
+            "SELECT * FROM backup_records WHERE company_id = ? AND status != 'DELETED' ORDER BY id DESC LIMIT 50",
             [$companyId]
         );
     }

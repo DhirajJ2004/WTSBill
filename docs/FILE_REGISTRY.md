@@ -182,4 +182,68 @@
 | `tests/Feature/CustomerProfileTest.php` | Feature | 9 assertions: Customer profile HTML, compliance details, 8 KPI cards, 7 tabs, days overdue, pre-selected create actions, statement CSV |
 | `tests/Feature/DocumentFilterTest.php` | Feature | 10 assertions: Invoice payment status pills, multi-filters, overdue calculation, Quotation lifecycle & linked payment filters, pagination |
 | `tests/Feature/InvoiceNumberReuseTest.php` | Feature | 10 assertions: Invoice number reuse after deletion, next monotonic sequence, ascending order reuse, branch scoping, payment protection, accounting period locks, GST cancellation preservation, permanent deletion, audit logging, active uniqueness |
-| `tests/run_tests.php` | Master Runner | Executes all 52 test suites (690 assertions, 100% pass) |
+| `app/Controllers/SalesOrderController.php` | Controller | Commercial order fulfillment lifecycle, order listing with status pills, creation, quotation conversion, challan conversion, invoice generation, printable document |
+| `app/Services/SalesOrderService.php` | Service | Sales order management (SO-YYYY-XXXX), multi-item tax calculations, fulfillment status, and non-accounting commercial commitment safety |
+| `views/sales/orders/index.php` | View | Sales Orders list with status pills (ALL, PENDING, CONFIRMED, PROCESSING, DISPATCHED, COMPLETED, CANCELLED), branch filter, search |
+| `views/sales/orders/create.php` | View | Sales order creation form with customer selector, dynamic category/product rows, tax summary, notes |
+| `views/sales/orders/show.php` | View | Order details view with ordered vs delivered quantities, 1-click invoice/challan conversion, and document lineage |
+| `views/sales/orders/print.php` | View | Professional printable Sales Order document with buyer details, GST summary, authorized signatory |
+| `views/parties/supplier_profile.php` | View | Complete 360-degree Supplier Profile with 4 KPI cards, 5 tabs (Overview, Inward Bills, Disbursements, Debit Notes, Supplier Ledger), CSV export |
+| `tests/Feature/CrmExpansionTest.php` | Feature | 10 assertions: Customer multi-address book (`customer_addresses`), notes, contact person, 360-degree supplier profile, supplier ledger, CSV export |
+| `tests/Feature/SalesOrderWorkflowTest.php` | Feature | 10 assertions: Complete commercial order lifecycle (Quotation -> Sales Order -> Delivery Challan -> Tax Invoice), SO numbering, duplicate prevention, deletion safety |
+| `app/Services/WarehouseService.php` | Service | Multi-warehouse inventory balances, inter-warehouse transfers (TRF-YYYY-XXXX), stock velocity analysis |
+| `app/Controllers/WarehouseController.php` | Controller | Warehouse directory, stock movement logging, transfer orders, fast/slow moving velocity metrics |
+| `views/inventory/warehouses/index.php` | View | Warehouse master list with capacity, SKU counts, total stock valuations, and manager attribution |
+| `views/inventory/transfers/index.php` | View | Inter-warehouse stock transfer register with status pills and verification audit trail |
+| `views/inventory/transfers/create.php` | View | Stock transfer order creator with source/destination warehouse selectors and available stock guards |
+| `views/inventory/velocity.php` | View | Inventory turnover & stock movement velocity dashboard with Fast, Moderate, Slow, Dead categories |
+| `tests/Feature/WarehouseStockTransferTest.php` | Feature | 10 assertions: Multi-warehouse allocation, transfer workflow, atomic inventory deduction/addition, turnover velocity |
+| `app/Services/PurchaseOrderService.php` | Service | Supplier procurement lifecycle (PO-YYYY-XXXX), GRN receiving inspection, inward purchase billing, debit notes |
+| `app/Controllers/PurchaseOrderController.php` | Controller | Purchase orders, GRN verification, purchase invoice conversion, vendor debit notes |
+| `views/purchases/orders/index.php` | View | Purchase order register with status pills, supplier attribution, and received status |
+| `views/purchases/orders/create.php` | View | Purchase order creator with supplier selector, items, GST calculation, expected delivery date |
+| `views/purchases/orders/show.php` | View | PO details view with GRN receipt conversion, inward billing, and PDF print action |
+| `views/purchases/orders/print.php` | View | Professional printable Purchase Order document with billing/shipping addresses and signature section |
+| `views/purchases/debit_notes/index.php` | View | Vendor debit notes register with original bill links, tax reversals, and status |
+| `views/purchases/debit_notes/create.php` | View | Debit note generator against purchase bills with item return and tax reversal calculations |
+| `tests/Feature/ProcurementLifecycleTest.php` | Feature | 10 assertions: Complete procurement cycle (PO -> GRN -> Inward Bill -> Debit Note), line item integrity, vendor balances |
+| `app/Services/CustomerAdvanceService.php` | Service | Unallocated customer advances, FIFO and manual invoice allocation, aged receivables analysis |
+| `app/Controllers/CustomerAdvanceController.php` | Controller | Advance receipt creation, invoice settlement allocation, aging receivables report |
+| `views/payments/advances/index.php` | View | Customer advances register with unallocated balance tracking and settlement actions |
+| `views/payments/advances/create.php` | View | Record customer advance receipt form with payment mode, reference, and deposit account |
+| `views/reports/receivables_aging.php` | View | Accounts receivable aging report with 0-30, 31-60, 61-90, 90+ overdue aging brackets and CSV export |
+| `tests/Feature/CustomerAdvancesAgingTest.php` | Feature | 10 assertions: Advance recording, unallocated pool tracking, partial invoice allocation, receivables aging classification |
+| `app/Services/ExtendedAccountingService.php` | Service | Statutory double-entry reports: Trial Balance, Cash Book, Commercial Bank Book, Cash Flow Statement |
+| `app/Controllers/ExtendedAccountingController.php` | Controller | Accounting report views, date range/branch filters, and standardized CSV export streams |
+| `views/accounting/trial_balance.php` | View | Accountant-grade Trial Balance with double-entry balance check (Total Debits == Total Credits) |
+| `views/accounting/cash_book.php` | View | Cash Book ledger with Cash in Hand opening balance, receipts, payments, and running balance |
+| `views/accounting/bank_book.php` | View | Commercial Bank Book ledger with account selector, deposits, withdrawals, and balance verification |
+| `views/reports/cash_flow.php` | View | Cash Flow Statement with Operating, Investing, and Financing activities breakdown |
+| `tests/Feature/ExtendedAccountingReportsTest.php` | Feature | 10 assertions: Trial balance equality, Cash book receipts/disbursements, Bank book transactions, Cash flow net changes |
+| `app/Services/GstComplianceService.php` | Service | Statutory GSTR-3B summary (Tables 3.1, 4.0, 6.1), B2B/B2C Sales Register, Inward Purchase Register |
+| `app/Controllers/GstComplianceController.php` | Controller | GSTR-3B preparation, official GST portal JSON schema export, Sales/Purchase register CSV exports |
+| `views/reports/gstr_3b.php` | View | GSTR-3B summary table with Outward Taxable Supplies, Eligible ITC, and Net Cash Liability |
+| `views/reports/gst_sales_register.php` | View | Detailed GST Sales Register with B2B vs B2C categorization, place of supply, and tax split |
+| `views/reports/gst_purchase_register.php` | View | Detailed GST Purchase Register with supplier GSTINs, invoice details, and ITC eligibility |
+| `tests/Feature/GstRegistersComplianceTest.php` | Feature | 10 assertions: GSTR-3B table math, portal JSON schema compliance, Sales/Purchase register breakdowns, CSV streams |
+| `app/Services/AnalyticsService.php` | Service | Executive BI KPIs, gross/net margins, 6-month revenue trends, branch benchmarks, top products & accounts |
+| `app/Controllers/AnalyticsController.php` | Controller | Executive Business Intelligence dashboard and management CSV export |
+| `views/analytics/bi_dashboard.php` | View | Modern BI Dashboard with metric cards, revenue/expense trend charts, product ranking, and branch comparisons |
+| `tests/Feature/BusinessAnalyticsTest.php` | Feature | 10 assertions: KPI mathematical consistency, profit equations, monthly time-series, product/customer rankings |
+| `app/Services/NotificationService.php` | Service | Central in-app notification center, unread counters, automated low-stock and overdue invoice alerts |
+| `app/Controllers/NotificationController.php` | Controller | Notification center UI, unread count API, mark as read, and bulk read actions |
+| `views/notifications/index.php` | View | Central notification center with category filters, alert severity badges, and quick link actions |
+| `tests/Feature/NotificationCenterHubTest.php` | Feature | 10 assertions: In-app notification center, unread counter, mark as read, automated stock/debt alerts scanner, and AI removal verification (HTTP 404 on /assistant and /api/assistant/query, 0 menu items) |
+| `tests/run_tests.php` | Master Runner | Executes all 61 test suites (787 assertions, 100% pass) |
+| `docs/BACKUP_AND_RESTORE.md` | Documentation | Enterprise disaster recovery and automated weekly backup manual with AES-256 encryption & secondary sync |
+| `docs/BACKUP_SCHEDULE.md` | Documentation | Automated 7-day backup schedule guide with Linux crontab and Windows Task Scheduler instructions, duplicate prevention |
+| `docs/QA_MASTER_REPORT.md` | Documentation | Master QA audit report covering all 20 functional modules (A-T), 787 test assertions, 100% pass rate, and quality certification |
+| `docs/BUG_TRACKER.md` | Documentation | Comprehensive bug tracker recording all identified defects, root causes, corrective actions, and prevention controls |
+| `docs/MODULE_TEST_RESULTS.md` | Documentation | Detailed module-by-module test execution matrix with scenarios, inputs, expected/actual results, and pass statuses |
+| `docs/SECURITY_AUDIT.md` | Documentation | OWASP Top 10 security verification, multi-tenant/branch data isolation, session timeout, PDO injection defense, and disaster recovery |
+| `docs/PERFORMANCE_AUDIT.md` | Documentation | Performance benchmarks, EXPLAIN query plan evaluations, index coverage, chunked CSV streaming, and sub-40ms response metrics |
+| `docs/UI_UX_AUDIT.md` | Documentation | UI/UX design audit verifying zero browser popups, light/dark themes, print styling isolation, and responsive 360° profiles |
+| `docs/AI_ASSISTANT_REMOVAL_REPORT.md` | Documentation | Complete decommissioning report for AI Assistant routes, controllers, services, views, and navigation menus |
+| `docs/REGRESSION_TEST_RESULTS.md` | Documentation | Complete regression test results across 61 test sections and 787 passing assertions |
+| `docs/REBUILD_PROGRESS.md` | Documentation | Complete rebuild progress milestones up to Milestone 19 (Automatic 7-Day Weekly Backup Automation) |
+| `docs/FILE_REGISTRY.md` | Documentation | Authoritative inventory and registry of all application codebase and documentation files |

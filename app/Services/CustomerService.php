@@ -62,6 +62,8 @@ class CustomerService
             'current_balance' => (float)($validated['opening_balance'] ?? 0),
             'credit_limit' => (float)($validated['credit_limit'] ?? 0),
             'payment_terms_days' => (int)($validated['payment_terms_days'] ?? 30),
+            'notes' => $validated['notes'] ?? null,
+            'contact_person' => $validated['contact_person'] ?? null,
             'is_active' => isset($validated['is_active']) ? (int)(bool)$validated['is_active'] : 1,
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),
@@ -97,6 +99,8 @@ class CustomerService
             'pincode' => $validated['pincode'] ?? null,
             'credit_limit' => (float)($validated['credit_limit'] ?? 0),
             'payment_terms_days' => (int)($validated['payment_terms_days'] ?? 30),
+            'notes' => $validated['notes'] ?? null,
+            'contact_person' => $validated['contact_person'] ?? null,
             'is_active' => isset($validated['is_active']) ? (int)(bool)$validated['is_active'] : 1,
             'updated_at' => date('Y-m-d H:i:s'),
         ];
@@ -188,6 +192,8 @@ class CustomerService
             'opening_balance' => (float)($data['opening_balance'] ?? 0),
             'credit_limit' => (float)($data['credit_limit'] ?? 0),
             'payment_terms_days' => (int)($data['payment_terms_days'] ?? 30),
+            'notes' => trim((string)($data['notes'] ?? '')),
+            'contact_person' => trim((string)($data['contact_person'] ?? '')),
         ]);
     }
 
@@ -435,6 +441,7 @@ class CustomerService
         );
 
         $customerCode = 'CUST-' . str_pad((string)$customer['id'], 4, '0', STR_PAD_LEFT);
+        $customerAddresses = $this->getCustomerAddresses($customerId);
 
         return [
             'success' => true,
@@ -449,6 +456,8 @@ class CustomerService
                 'assigned_branch' => $customer['branch_name'] ?: 'All Branches (Shared Access)',
                 'billing_address' => implode(', ', array_filter([$customer['address_line1'], $customer['city'], $customer['state'], $customer['pincode']])) ?: '—',
                 'shipping_address' => implode(', ', array_filter([$customer['address_line1'], $customer['city'], $customer['state'], $customer['pincode']])) ?: '—',
+                'notes' => $customer['notes'] ?? '',
+                'contact_person' => $customer['contact_person'] ?? '',
             ]),
             'financial_summary' => [
                 'total_invoiced' => round($totalInvoiced, 2),
@@ -472,7 +481,79 @@ class CustomerService
             'credit_notes' => $creditNotes,
             'ledger' => $customerLedger,
             'activities' => $activityHistory,
+            'addresses' => $customerAddresses,
         ];
+    }
+
+    /**
+     * Retrieve all saved billing/shipping addresses for a customer.
+     */
+    public function getCustomerAddresses(int $customerId): array
+    {
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        return \WTSBill\Core\Database::select(
+            "SELECT * FROM customer_addresses WHERE customer_id = ? AND company_id = ? ORDER BY is_default DESC, id ASC",
+            [$customerId, $companyId]
+        );
+    }
+
+    /**
+     * Add a billing or shipping address for a customer.
+     */
+    public function addCustomerAddress(int $customerId, array $data): int
+    {
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $type = strtoupper((string)($data['type'] ?? 'BILLING'));
+        if (!in_array($type, ['BILLING', 'SHIPPING', 'BOTH'], true)) {
+            $type = 'BILLING';
+        }
+
+        $addressLine1 = trim((string)($data['address_line1'] ?? ''));
+        if (empty($addressLine1)) {
+            throw new ValidationException(['address_line1' => 'Address line 1 is required.']);
+        }
+
+        $city = trim((string)($data['city'] ?? ''));
+        $state = trim((string)($data['state'] ?? ''));
+        $stateCode = trim((string)($data['state_code'] ?? ''));
+        $pincode = trim((string)($data['pincode'] ?? ''));
+        $isDefault = !empty($data['is_default']) ? 1 : 0;
+
+        if ($isDefault) {
+            \WTSBill\Core\Database::update('customer_addresses', ['is_default' => 0], 'customer_id = ? AND company_id = ? AND type = ?', [$customerId, $companyId, $type]);
+        }
+
+        $id = \WTSBill\Core\Database::insert('customer_addresses', [
+            'company_id' => $companyId,
+            'customer_id' => $customerId,
+            'type' => $type,
+            'address_line1' => $addressLine1,
+            'address_line2' => trim((string)($data['address_line2'] ?? '')),
+            'city' => $city,
+            'state' => $state,
+            'state_code' => $stateCode ?: '27',
+            'pincode' => $pincode,
+            'country' => trim((string)($data['country'] ?? 'India')),
+            'landmark' => trim((string)($data['landmark'] ?? '')),
+            'is_default' => $isDefault,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        return (int)$id;
+    }
+
+    /**
+     * Delete a saved customer address.
+     */
+    public function deleteCustomerAddress(int $customerId, int $addressId): bool
+    {
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        \WTSBill\Core\Database::execute(
+            "DELETE FROM customer_addresses WHERE id = ? AND customer_id = ? AND company_id = ?",
+            [$addressId, $customerId, $companyId]
+        );
+        return true;
     }
 
     /**

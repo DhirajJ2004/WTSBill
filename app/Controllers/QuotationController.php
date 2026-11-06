@@ -1199,6 +1199,49 @@ class QuotationController
     }
 
     /**
+     * Convert Accepted Quotation to Sales Order.
+     * Route: POST /sales/quotations/{id}/convert-to-order
+     */
+    public function convertToOrder(Request $req, mixed $id = null): Response
+    {
+        Gate::authorize('quotations.create', $req);
+
+        $quoteId = (int)(is_array($id) ? ($id['id'] ?? 0) : ($id ?: ($req->post('id') ?? $req->param('id') ?? 0)));
+        $orderService = new \WTSBill\Services\SalesOrderService();
+
+        try {
+            $order = $orderService->convertQuotationToOrder($quoteId);
+
+            $msg = "Quotation successfully converted to Sales Order '{$order['order_number']}'.";
+
+            if ($this->expectsJson($req)) {
+                return Response::json([
+                    'success' => true,
+                    'message' => $msg,
+                    'order' => $order,
+                    'order_id' => $order['id'],
+                    'redirect' => '/sales/orders/' . $order['id'],
+                ], 201);
+            }
+
+            Session::flash('success', $msg);
+            return Response::redirect('/sales/orders/' . $order['id']);
+        } catch (\WTSBill\Core\Exceptions\ValidationException $e) {
+            if ($this->expectsJson($req)) {
+                return Response::json(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->getErrors()], 422);
+            }
+            Session::flash('error', $e->getMessage());
+            return Response::redirect('/sales/quotations');
+        } catch (\Throwable $e) {
+            if ($this->expectsJson($req)) {
+                return Response::json(['success' => false, 'message' => 'Conversion to sales order failed: ' . $e->getMessage()], 500);
+            }
+            Session::flash('error', 'Conversion to sales order failed: ' . $e->getMessage());
+            return Response::redirect('/sales/quotations');
+        }
+    }
+
+    /**
      * Duplicate an existing quotation.
      * Route: POST /sales/quotations/{id}/duplicate
      */

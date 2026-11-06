@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WTSBill\Controllers;
 
+use WTSBill\Auth\Gate;
 use WTSBill\Core\Exceptions\ValidationException;
 use WTSBill\Core\Request;
 use WTSBill\Core\Response;
@@ -161,10 +162,76 @@ class CustomerController
             'creditNotes' => $profileData['credit_notes'],
             'ledger' => $profileData['ledger'],
             'activities' => $profileData['activities'],
+            'addresses' => $profileData['addresses'] ?? [],
             'bankAccounts' => $bankAccounts,
         ], 'layouts/app');
 
         return Response::html($html);
+    }
+
+    /**
+     * Add multiple shipping / billing address to customer.
+     * Route: POST /customers/{id}/addresses
+     */
+    public function addAddress(Request $req, mixed $id = null): Response
+    {
+        Gate::authorize('customers.edit', $req);
+        $customerId = (int)(is_array($id) ? ($id['id'] ?? 0) : ($id ?: ($req->post('customer_id') ?? $req->param('id') ?? 0)));
+        $payload = !empty($req->json()) ? $req->json() : $req->post();
+
+        try {
+            $addrId = $this->customerService->addCustomerAddress($customerId, $payload);
+
+            if ($this->expectsJson($req)) {
+                return Response::json([
+                    'success' => true,
+                    'message' => 'Customer address added successfully.',
+                    'address_id' => $addrId,
+                ], 201);
+            }
+
+            Session::flash('success', 'Customer address added successfully.');
+            return Response::redirect('/customers/' . $customerId);
+        } catch (ValidationException $e) {
+            if ($this->expectsJson($req)) {
+                return Response::json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                    'errors' => $e->getErrors(),
+                ], 422);
+            }
+            Session::flash('error', $e->getMessage());
+            return Response::redirect('/customers/' . $customerId);
+        } catch (\Throwable $e) {
+            if ($this->expectsJson($req)) {
+                return Response::json(['success' => false, 'message' => 'Failed to save address: ' . $e->getMessage()], 500);
+            }
+            Session::flash('error', 'Failed to save address: ' . $e->getMessage());
+            return Response::redirect('/customers/' . $customerId);
+        }
+    }
+
+    /**
+     * Delete customer address.
+     * Route: POST /customers/{id}/addresses/{addressId}/delete
+     */
+    public function deleteAddress(Request $req, mixed $id = null, mixed $addressId = null): Response
+    {
+        Gate::authorize('customers.edit', $req);
+        $customerId = (int)(is_array($id) ? ($id['id'] ?? 0) : ($id ?: ($req->post('customer_id') ?? $req->param('id') ?? 0)));
+        $addrId = (int)(is_array($addressId) ? ($addressId['addressId'] ?? $addressId['id'] ?? 0) : ($addressId ?: ($req->post('address_id') ?? $req->param('addressId') ?? 0)));
+
+        $this->customerService->deleteCustomerAddress($customerId, $addrId);
+
+        if ($this->expectsJson($req)) {
+            return Response::json([
+                'success' => true,
+                'message' => 'Customer address removed successfully.',
+            ]);
+        }
+
+        Session::flash('success', 'Customer address removed successfully.');
+        return Response::redirect('/customers/' . $customerId);
     }
 
     /**

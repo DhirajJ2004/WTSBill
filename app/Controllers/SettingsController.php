@@ -39,8 +39,6 @@ class SettingsController
         $queryTab = $req->query('tab');
         if ($queryTab === 'audit' || str_ends_with($req->getPath(), '/audit-logs')) {
             $activeTab = 'audit';
-        } elseif ($queryTab === 'communication') {
-            $activeTab = 'communication';
         } elseif ($queryTab === 'backups') {
             $activeTab = 'backups';
         }

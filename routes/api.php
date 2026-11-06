@@ -103,6 +103,8 @@ $backupController = new \WTSBill\Controllers\BackupController();
 $router->post('/api/v1/settings/backups/create', [$backupController, 'create'], [$authMiddleware, $can('settings.edit')]);
 $router->get('/api/v1/settings/backups', [$backupController, 'listBackups'], [$authMiddleware, $can('settings.view')]);
 $router->post('/api/v1/settings/backups/{id}/restore', [$backupController, 'restore'], [$authMiddleware, $can('settings.edit')]);
+$router->post('/api/v1/settings/backups/{id}/delete', [$backupController, 'delete'], [$authMiddleware, $can('settings.edit')]);
+$router->post('/api/v1/settings/backups/scheduled-run', [$backupController, 'runScheduled'], [$authMiddleware, $can('settings.edit')]);
 $router->post('/api/v1/settings/audit-logs/cleanup', [$backupController, 'cleanupAudit'], [$authMiddleware, $can('settings.edit')]);
 
 // 9. Auto-Save In-Flight Form Drafts API

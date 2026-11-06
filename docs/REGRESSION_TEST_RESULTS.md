@@ -288,6 +288,13 @@ STATUS: ALL TEST SUITES PASSED (100%)
 - `BACKUP-09`: Atomic weekly cleanup archives logs first and purges records older than retention period. **PASSED**
 - `BACKUP-10`: Critical security events and recent logs within retention window are preserved. **PASSED**
 - `BACKUP-11`: Audit cleanup summary is persisted in audit_cleanup_logs with backup reference. **PASSED**
+- `BACKUP-12`: isBackupDue correctly returns false when a successful backup was created within 7 days (duplicate prevention). **PASSED**
+- `BACKUP-13`: runScheduledWeeklyBackup safely detects recent backup and skips duplicate creation. **PASSED**
+- `BACKUP-14`: BackupService supports AES-256 encrypted archive creation with password verification. **PASSED**
+- `BACKUP-15`: Backup failure preserves existing backups, logs error, and generates admin notification. **PASSED**
+- `BACKUP-16`: POST /settings/backups/{id}/delete removes file from disk and updates record status to DELETED. **PASSED**
+- `BACKUP-17`: Safety policy strictly prevents deleting the only remaining successful backup archive. **PASSED**
+- `BACKUP-18`: runScheduledWeeklyBackup with force flag generates verified SCHEDULED_WEEKLY archive. **PASSED**
 
 ---
 
@@ -365,9 +372,145 @@ STATUS: ALL TEST SUITES PASSED (100%)
 
 ---
 
+## 20. CRM Expansion & 360-Degree Supplier Profile (Section 53)
+
+- `CRM-01`: Guest request to supplier profile redirects to login page with HTTP 302. **PASSED**
+- `CRM-02`: GET /suppliers/1 returns HTTP 200 with complete supplier 360-degree profile. **PASSED**
+- `CRM-03`: Supplier profile renders all 4 financial KPI cards (Total Billed, Total Disbursed, Balance Due, Active Debit Notes). **PASSED**
+- `CRM-04`: Supplier profile renders all 5 functional tabbed sections. **PASSED**
+- `CRM-05`: Inward purchase bills table contains Purchase Bill numbers and payment status pills. **PASSED**
+- `CRM-06`: Supplier ledger transactions list renders credit, debit, and running balance columns. **PASSED**
+- `CRM-07`: GET /suppliers/1/statement/csv returns valid text/csv stream with vendor ledger lines. **PASSED**
+- `CRM-08`: Customer profile displays multi-address records from customer_addresses table. **PASSED**
+- `CRM-09`: Customer profile displays interaction notes from customer_notes table. **PASSED**
+- `CRM-10`: Customer profile shows primary contact person and direct order creation links. **PASSED**
+
+---
+
+## 21. Sales Order Workflow & Fulfillment Lifecycle (Section 54)
+
+- `SO-01`: Guest request to /sales/orders redirects to login page with HTTP 302. **PASSED**
+- `SO-02`: GET /sales/orders returns HTTP 200 with Sales Orders register and status pills bar. **PASSED**
+- `SO-03`: GET /sales/orders/create returns HTTP 200 with order form, customer selector, and line items. **PASSED**
+- `SO-04`: POST /sales/orders generates valid sales order with SO-YYYY-XXXX sequence format. **PASSED**
+- `SO-05`: GET /sales/orders/{id} displays order detail, line items, and fulfillment progress bar. **PASSED**
+- `SO-06`: GET /sales/orders/{id}/print renders professional printable Sales Order document. **PASSED**
+- `SO-07`: Accepted quotation can be converted to Sales Order via POST /sales/quotations/{id}/convert-order. **PASSED**
+- `SO-08`: Sales Order converts to Tax Invoice with line-item transfer and status updated to COMPLETED. **PASSED**
+- `SO-09`: Completed Sales Order is protected from duplicate invoice conversion. **PASSED**
+- `SO-10`: Completed Sales Order cannot be deleted and preserves document lineage. **PASSED**
+
+---
+
+## 22. Multi-Warehouse Inventory & Inter-Warehouse Transfers (Section 55)
+
+- `WH-01`: Guest request to /inventory/warehouses redirects to login with HTTP 302. **PASSED**
+- `WH-02`: GET /inventory/warehouses returns HTTP 200 with warehouse directory and stock valuation. **PASSED**
+- `WH-03`: POST /inventory/warehouses creates new warehouse location with validation and code generation. **PASSED**
+- `WH-04`: GET /inventory/transfers returns HTTP 200 with transfer orders register and status filters. **PASSED**
+- `WH-05`: GET /inventory/transfers/create returns transfer creation form with source and destination selectors. **PASSED**
+- `WH-06`: POST /inventory/transfers successfully records transfer with TRF-YYYY-XXXX sequence. **PASSED**
+- `WH-07`: Completing transfer decrements source stock and increments destination stock atomically. **PASSED**
+- `WH-08`: Transfer is rejected when source warehouse has insufficient stock (HTTP 422). **PASSED**
+- `WH-09`: GET /inventory/velocity returns HTTP 200 with Fast/Moderate/Slow/Dead moving inventory analysis. **PASSED**
+- `WH-10`: Completed stock transfer cannot be deleted and maintains audit movement trail. **PASSED**
+
+---
+
+## 23. Supplier Procurement Lifecycle (PO, GRN, Debit Notes) (Section 56)
+
+- `PROC-01`: Guest request to /purchases/orders redirects to login with HTTP 302. **PASSED**
+- `PROC-02`: GET /purchases/orders returns HTTP 200 with purchase order register and status pills. **PASSED**
+- `PROC-03`: GET /purchases/orders/create returns purchase order creator with supplier and item lines. **PASSED**
+- `PROC-04`: POST /purchases/orders generates sequential Purchase Order (PO-YYYY-XXXX). **PASSED**
+- `PROC-05`: GET /purchases/orders/{id} displays PO detail with GRN receiving inspection modal. **PASSED**
+- `PROC-06`: GET /purchases/orders/{id}/print renders professional printable Purchase Order document. **PASSED**
+- `PROC-07`: PO converts to inward purchase bill updating accounts payable. **PASSED**
+- `PROC-08`: GET /purchases/debit-notes returns HTTP 200 with vendor debit notes register. **PASSED**
+- `PROC-09`: POST /purchases/debit-notes creates debit note with CGST/SGST/IGST tax reversal. **PASSED**
+- `PROC-10`: Debit note reduces supplier balance due and posts reversing entry to general ledger. **PASSED**
+
+---
+
+## 24. Customer Advances & Accounts Receivable Aging (Section 57)
+
+- `ADV-01`: Guest request to /payments/advances redirects to login with HTTP 302. **PASSED**
+- `ADV-02`: GET /payments/advances returns HTTP 200 with advances register and unallocated totals. **PASSED**
+- `ADV-03`: GET /payments/advances/create returns customer advance receipt creation form. **PASSED**
+- `ADV-04`: POST /payments/advances creates unallocated customer advance with ADV-YYYY-XXXX sequence. **PASSED**
+- `ADV-05`: POST /payments/advances/{id}/allocate settles advance against outstanding customer invoice. **PASSED**
+- `ADV-06`: Over-allocation exceeding available advance balance is rejected (HTTP 422). **PASSED**
+- `ADV-07`: Advance allocation updates invoice amount_due and payment status to PARTIAL or PAID. **PASSED**
+- `ADV-08`: GET /reports/receivables-aging returns HTTP 200 with 0-30, 31-60, 61-90, 90+ aging buckets. **PASSED**
+- `ADV-09`: Receivables aging correctly classifies overdue invoices based on due_date. **PASSED**
+- `ADV-10`: GET /reports/receivables-aging/export returns text/csv stream with customer aging details. **PASSED**
+
+---
+
+## 25. Complete Double-Entry Accounting Reports (Section 58)
+
+- `ACC-01`: Guest request to /accounting/trial-balance redirects to login with HTTP 302. **PASSED**
+- `ACC-02`: GET /accounting/trial-balance returns HTTP 200 with balanced double-entry trial balance. **PASSED**
+- `ACC-03`: Trial balance satisfies fundamental accounting equality: Total Debits == Total Credits. **PASSED**
+- `ACC-04`: GET /accounting/trial-balance/export returns text/csv stream with account groups and balances. **PASSED**
+- `ACC-05`: GET /accounting/cash-book returns HTTP 200 with Cash in Hand ledger and running balance. **PASSED**
+- `ACC-06`: Cash book correctly calculates opening balance, daily receipts, payments, and closing balance. **PASSED**
+- `ACC-07`: GET /accounting/bank-book returns HTTP 200 with commercial bank accounts and deposits/withdrawals. **PASSED**
+- `ACC-08`: Bank book filters transactions by specific bank account and maintains chronological running balance. **PASSED**
+- `ACC-09`: GET /reports/cash-flow returns HTTP 200 with Cash Flow Statement. **PASSED**
+- `ACC-10`: Cash flow statement correctly categorizes Operating, Investing, and Financing cash flows. **PASSED**
+
+---
+
+## 26. GST Registers & GSTR-3B Statutory Tax Compliance (Section 59)
+
+- `GST-01`: Guest request to /reports/gstr-3b redirects to login with HTTP 302. **PASSED**
+- `GST-02`: GET /reports/gstr-3b returns HTTP 200 with GSTR-3B Tables 3.1, 4.0, and 6.1. **PASSED**
+- `GST-03`: GSTR-3B Table 3.1 accurately aggregates outward taxable supplies, CGST, SGST, and IGST. **PASSED**
+- `GST-04`: GSTR-3B Table 4.0 accurately aggregates eligible Input Tax Credit (ITC) from inward purchases. **PASSED**
+- `GST-05`: GSTR-3B Table 6.1 net tax payable correctly subtracts available ITC from tax liability. **PASSED**
+- `GST-06`: GET /reports/gstr-3b/export-json returns valid JSON conforming to GST portal return schema. **PASSED**
+- `GST-07`: GET /reports/gstr-3b/export-csv returns text/csv stream with GSTR-3B table breakdown. **PASSED**
+- `GST-08`: GET /reports/gst-sales-register returns HTTP 200 with B2B vs B2C outward supplies. **PASSED**
+- `GST-09`: GET /reports/gst-purchase-register returns HTTP 200 with inward purchase bills and supplier GSTINs. **PASSED**
+- `GST-10`: GST Sales and Purchase registers support CSV export for external tax audit reconciliation. **PASSED**
+
+---
+
+## 27. Business Analytics & Executive BI Dashboard (Section 60)
+
+- `BI-01`: Guest request to /analytics/bi redirects to login with HTTP 302. **PASSED**
+- `BI-02`: GET /analytics/bi returns HTTP 200 with executive dashboard KPIs and visual widgets. **PASSED**
+- `BI-03`: Gross and Net Profit equations hold: Taxable Sales - COGS == Gross Profit, and GP - Expenses == Net Profit. **PASSED**
+- `BI-04`: Gross and Net margin percentages are mathematically consistent with taxable sales turnover base. **PASSED**
+- `BI-05`: GET /api/analytics/bi returns structured JSON with success flag and executive data blocks. **PASSED**
+- `BI-06`: GET /analytics/bi/export returns text/csv stream with executive KPIs, time-series, and rankings. **PASSED**
+- `BI-07`: Top selling products list is ranked by gross sales turnover in descending order. **PASSED**
+- `BI-08`: Top customer accounts analysis structures customer name, invoice counts, and billed turnover. **PASSED**
+- `BI-09`: Monthly time-series provides exactly 6 consecutive data points with revenue and expense trends. **PASSED**
+- `BI-10`: Branch performance benchmarks active branches with invoice volume and sales attribution. **PASSED**
+
+---
+
+## 28. Central Notification Hub & AI Removal Verification (Section 61)
+
+- `NOTIF-01`: Guest request to /notifications redirects to login with HTTP 302. **PASSED**
+- `NOTIF-02`: GET /notifications returns HTTP 200 with notification center hub and category filters. **PASSED**
+- `NOTIF-03`: GET /api/notifications/unread-count returns structured JSON with integer unread_count. **PASSED**
+- `NOTIF-04`: createNotification successfully persists unread notification into in_app_notifications table. **PASSED**
+- `NOTIF-05`: POST /api/notifications/{id}/read marks notification as read and sets timestamp. **PASSED**
+- `NOTIF-06`: POST /api/notifications/mark-all-read clears unread queue to zero. **PASSED**
+- `NOTIF-07`: generateSystemAlerts automatically scans inventory and overdue debts without error. **PASSED**
+- `AIREM-01`: Request to removed /assistant route returns HTTP 404 Not Found. **PASSED**
+- `AIREM-02`: Request to removed /api/assistant/query API endpoint returns HTTP 404 Not Found. **PASSED**
+- `AIREM-03`: config/menu.php contains zero AI Assistant sidebar navigation entries. **PASSED**
+
+---
+
 ## Final Verification Summary
-- **Total Assertions Executed**: 690
-- **Passed**: 690
+- **Total Assertions Executed**: 787
+- **Passed**: 787
 - **Failed**: 0
 - **Pass Percentage**: 100%
 - **Status**: ALL TEST SUITES PASSED (100%)
+

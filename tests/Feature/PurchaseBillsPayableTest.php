@@ -120,7 +120,8 @@ class PurchaseBillsPayableTest
             $createdBill !== null &&
             (float)$createdBill['grand_total'] === 11800.00 &&
             (float)$createdBill['amount_due'] === 11800.00 &&
-            $createdBill['status'] === 'UNPAID'
+            $createdBill['status'] === 'UNPAID',
+            "Status: " . $storeRes->getStatusCode() . " Content: " . substr($storeRes->getContent(), 0, 150)
         );
 
         $billId = (int)$createdBill['id'];
@@ -166,7 +167,8 @@ class PurchaseBillsPayableTest
             (float)$payJson['balance_due'] === 6800.00 &&
             $journal !== null &&
             (float)$journal['total_debit'] === 5000.00 &&
-            (float)$journal['total_debit'] === (float)$journal['total_credit']
+            (float)$journal['total_debit'] === (float)$journal['total_credit'],
+            "Status: " . $payRes->getStatusCode() . " Content: " . substr($payRes->getContent(), 0, 150)
         );
 
         // 9. Full Payment Updates Status to PAID

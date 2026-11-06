@@ -199,8 +199,8 @@ class GlobalPopupFixTest
             // 4. CATEGORY CREATION WORKFLOW
             $inventoryController = new \WTSBill\Controllers\InventoryController();
             $catReq = new Request([], [
-                'name' => 'AutoTest Category ' . rand(100, 999),
-                'code' => 'CAT-TEST-' . rand(10, 99),
+                'name' => 'AutoTest Category ' . time() . '_' . rand(100, 999),
+                'code' => 'CAT-' . time() . '-' . rand(100, 999),
                 'description' => 'Automated test taxonomy group',
             ], [
                 'REQUEST_METHOD' => 'POST',

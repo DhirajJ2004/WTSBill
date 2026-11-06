@@ -27,8 +27,13 @@ class BackupController
         $user = Session::getUser() ?? Session::get('auth_user') ?? ['name' => 'Administrator'];
         $userName = (string)($user['name'] ?? 'Administrator');
 
+        $input = $req->isJson() ? $req->json() : $req->all();
+        $type = (string)($input['type'] ?? 'MANUAL');
+        $retentionDays = max(1, min(365, (int)($input['retention_days'] ?? 30)));
+        $encryptionPassword = !empty($input['encryption_password']) ? (string)$input['encryption_password'] : null;
+
         try {
-            $res = BackupService::createBackup($companyId, 'MANUAL', $userName, 30);
+            $res = BackupService::createBackup($companyId, $type, $userName, $retentionDays, $encryptionPassword);
             return Response::json([
                 'success' => true,
                 'backup' => $res,
@@ -38,6 +43,35 @@ class BackupController
             return Response::json([
                 'success' => false,
                 'message' => 'Backup creation failed: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Trigger automated weekly backup with duplicate run prevention.
+     * Route: POST /settings/backups/scheduled-run
+     */
+    public function runScheduled(Request $req): Response
+    {
+        $this->ensureAdmin();
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $user = Session::getUser() ?? Session::get('auth_user') ?? ['name' => 'Administrator'];
+        $userName = (string)($user['name'] ?? 'Administrator');
+
+        $input = $req->isJson() ? $req->json() : $req->all();
+        $force = !empty($input['force']);
+
+        try {
+            $res = BackupService::runScheduledWeeklyBackup($companyId, $force, $userName);
+            return Response::json([
+                'success' => true,
+                'data' => $res,
+                'message' => $res['message'] ?? 'Weekly backup processed successfully.',
+            ]);
+        } catch (\Throwable $e) {
+            return Response::json([
+                'success' => false,
+                'message' => 'Scheduled backup execution failed: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -76,7 +110,7 @@ class BackupController
      * Restore database from backup with pre-restore safety snapshot.
      * Route: POST /settings/backups/{id}/restore
      */
-    public function restore(Request $req): Response
+    public function restore(Request $req, mixed $id = null): Response
     {
         $this->ensureAdmin();
         $companyId = (int)(Session::getCompanyId() ?? 1);
@@ -84,10 +118,10 @@ class BackupController
         $userName = (string)($user['name'] ?? 'Administrator');
         $ip = $req->ip() ?? '127.0.0.1';
 
-        $id = (int)$req->routeParam('id', 0);
-        if ($id <= 0) {
+        $backupId = (int)($id ?? 0);
+        if ($backupId <= 0) {
             $input = $req->isJson() ? $req->json() : $req->all();
-            $id = (int)($input['backup_id'] ?? 0);
+            $backupId = (int)($input['backup_id'] ?? $input['id'] ?? 0);
         }
 
         $input = $req->isJson() ? $req->json() : $req->all();
@@ -99,8 +133,10 @@ class BackupController
             ], 422);
         }
 
+        $encryptionPassword = !empty($input['encryption_password']) ? (string)$input['encryption_password'] : null;
+
         try {
-            $result = BackupService::restoreBackup($id, $companyId, $userName, $ip);
+            $result = BackupService::restoreBackup($backupId, $companyId, $userName, $ip, $encryptionPassword);
             return Response::json([
                 'success' => true,
                 'result' => $result,
@@ -111,6 +147,37 @@ class BackupController
                 'success' => false,
                 'message' => 'Restore operation aborted: ' . $e->getMessage(),
             ], 500);
+        }
+    }
+
+    /**
+     * Delete backup archive with confirmation.
+     * Route: POST /settings/backups/{id}/delete
+     */
+    public function delete(Request $req, mixed $id = null): Response
+    {
+        $this->ensureAdmin();
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $user = Session::getUser() ?? Session::get('auth_user') ?? ['name' => 'Administrator'];
+        $userName = (string)($user['name'] ?? 'Administrator');
+
+        $backupId = (int)($id ?? 0);
+        if ($backupId <= 0) {
+            $input = $req->isJson() ? $req->json() : $req->all();
+            $backupId = (int)($input['backup_id'] ?? $input['id'] ?? 0);
+        }
+
+        try {
+            $result = BackupService::deleteBackup($backupId, $companyId, $userName);
+            return Response::json([
+                'success' => true,
+                'message' => $result['message'],
+            ]);
+        } catch (\Throwable $e) {
+            return Response::json([
+                'success' => false,
+                'message' => 'Failed to delete backup: ' . $e->getMessage(),
+            ], 422);
         }
     }
 
@@ -162,6 +229,7 @@ class BackupController
             'backups' => $backups,
             'last_successful' => $last,
             'next_scheduled' => $next,
+            'frequency' => 'Every 7 Days (Automatic)',
             'cleanup_reports' => $cleanups,
         ]);
     }
@@ -174,4 +242,3 @@ class BackupController
         }
     }
 }
-

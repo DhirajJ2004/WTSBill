@@ -147,3 +147,97 @@
 - **Statutory Accounting Rules:** Invoices with confirmed payments (`amount_paid > 0` or status `PAID`/`PARTIAL`) or inside closed accounting periods are strictly blocked from deletion (HTTP 422).
 - **GST Cancellation Separation:** Cancelled invoices (`POST /sales/invoices/{id}/cancel`) retain their numbers and log cancellation reasons for GST tax audit reconciliation; only authorized/permanent deletion releases numbers to the reusable pool.
 - **Master Test Suite:** 10 new feature assertions in Section 52 bringing the total to **690 / 690 passing assertions (100%)**.
+
+## Milestone 17: Complete ERP Module Expansion & Architectural Scaling (Completed 2026-11-06)
+- **Module 1 — Customer Relationship Management (CRM) & Supplier 360° Profile:**
+  - Expanded customer management with multi-address book (`customer_addresses` table for separate billing and shipping addresses).
+  - Customer interaction notes (`customer_notes` table) and primary contact person attribution.
+  - Complete 360-degree Supplier Profile (`/suppliers/{id}`) with identity header, 4 KPI cards (Total Billed, Total Disbursed, Balance Due, Active Debit Notes), 5 tabbed sections (Overview, Inward Bills, Disbursements, Debit Notes, Supplier Ledger), and ledger CSV export (`/suppliers/{id}/statement/csv`).
+- **Module 2 — Sales Order Management Workflow:**
+  - Complete commercial order fulfillment workflow: Customer Enquiry → Quotation → Sales Order → Delivery Challan → Tax Invoice.
+  - Autonomous sales order lifecycle with dedicated sequence generator (`SO-YYYY-XXXX`).
+  - Line-item tracking of ordered, delivered, and pending quantities with one-click conversion to Tax Invoice (`/sales/orders/{id}/convert-invoice`).
+  - Document lineage tracking preserving references between quotations, sales orders, delivery challans, and invoices without premature general ledger postings.
+- **Module 3 — Advanced Inventory, Warehouses & Stock Transfers:**
+  - Multi-warehouse directory (`/inventory/warehouses`) tracking warehouse locations, capacity, SKU counts, and total inventory value.
+  - Inter-warehouse stock transfers (`/inventory/transfers`) with sequential transfer codes (`TRF-YYYY-XXXX`).
+  - Atomic stock deductions from origin and increments at destination wrapped in transactional database locks.
+  - Inventory stock turnover and velocity analytics (`/inventory/velocity`) categorizing items into Fast, Moderate, Slow, and Dead Moving tiers.
+- **Module 4 — Supplier Procurement Lifecycle (PO → GRN → Inward Bill → Debit Note):**
+  - Complete procurement workflow with sequential Purchase Orders (`PO-YYYY-XXXX`).
+  - Goods Received Note (GRN) verification modal tracking received vs pending quantities.
+  - One-click inward purchase bill creation from POs (`POST /purchases/orders/{id}/convert-bill`).
+  - Supplier Debit Notes (`/purchases/debit-notes`) against purchase bills calculating tax reversals (CGST, SGST, IGST) and reducing accounts payable.
+- **Module 5 — Payments, Customer Advances & Receivables Aging:**
+  - Customer advance receipt management (`/payments/advances`) with unallocated advance balance pool.
+  - Advance settlement allocation modal against outstanding invoices with atomic balance adjustments.
+  - Comprehensive Accounts Receivable Aging report (`/reports/receivables-aging`) structuring debts into 0-30, 31-60, 61-90, and 90+ days overdue buckets with CSV export.
+- **Module 6 — Double-Entry Accounting Reports:**
+  - Accountant-grade Trial Balance (`/accounting/trial-balance`) grouping accounts into standard double-entry groups (ASSET, LIABILITY, EQUITY, INCOME, EXPENSE) with real-time balance check (`Total Debits == Total Credits`).
+  - Cash Book (`/accounting/cash-book`) recording Cash in Hand opening balance, receipts, payments, running balance, and closing cash.
+  - Commercial Bank Book (`/accounting/bank-book`) with multi-bank account selector, deposits, withdrawals, and verified running balance.
+  - Cash Flow Statement (`/reports/cash-flow`) categorizing cash movements into Operating, Investing, and Financing activities.
+- **Module 7 — GST Management & Tax Compliance:**
+  - Statutory GSTR-3B Summary report (`/reports/gstr-3b`) structuring Table 3.1 Outward Supplies, Table 4.0 Eligible ITC, and Table 6.1 Net Tax Payable in Cash.
+  - Official GST Portal JSON schema export (`/reports/gstr-3b/export-json`) and return table CSV export.
+  - B2B (15-character GSTIN) vs B2C Sales Register (`/reports/gst-sales-register`) with CGST/SGST/IGST breakdown and CSV export.
+  - Inward Purchase Register (`/reports/gst-purchase-register`) with supplier compliance verification and CSV export.
+- **Module 8 — Business Analytics & Executive BI Dashboard:**
+  - Executive BI Dashboard (`/analytics/bi`) tracking Revenue, COGS, Operating Overhead, Gross Profit, Gross Margin %, Net Profit, and Net Margin %.
+  - 6-month visual revenue vs expense trend time-series, branch performance benchmarking, top 5 selling products by turnover, and top 5 customer accounts.
+  - Executive management CSV export (`/analytics/bi/export`).
+- **Module 9 — Central In-App Notification Center:**
+  - In-app notification center (`/notifications`) with real-time unread counter API (`/api/notifications/unread-count`).
+  - Automated system alert generator for critical low-stock products (`current_stock <= min_stock_alert`) and overdue customer invoices (`due_date < CURDATE() AND amount_due > 0`).
+  - Read status toggles and bulk mark-all-read endpoint (`POST /api/notifications/mark-all-read`).
+- **Module 10 — Enterprise Notification Hub & Inactivity Defense:**
+  - Automated scanner for critical low-stock products (`current_stock <= min_stock_alert`) and overdue debts (`due_date < CURDATE()`).
+  - 15-minute idle session timeout with automatic draft preservation and login recovery banner.
+- **Master Test Suite Verification:**
+  - **780 Total Assertions across 61 test suites (100% pass rate, 0 failures)**.
+
+---
+
+## Milestone 18: Complete AI Assistant Removal, Customer Profile Filtering & Enterprise QA Audit (Completed 2026-11-06)
+- **AI Assistant Complete Decommissioning & Purge:**
+  - Removed all AI routes (`GET /assistant`, `POST /api/assistant/query`) from `routes/web.php`.
+  - Deleted `app/Controllers/AiAssistantController.php`, `app/Services/AiAssistantService.php`, and `views/ai/` directory.
+  - Removed AI Assistant sidebar navigation item from `config/menu.php`.
+  - Converted test suite Section 61 into `tests/Feature/NotificationCenterHubTest.php`, actively asserting HTTP 404 on removed routes and zero AI menu items (`AIREM-01` to `AIREM-03`).
+- **Customer Profile Live Payment Status Filters:**
+  - Implemented instant client-side filtering pills (`All`, `Unpaid`, `Partial Payment`, `Paid`) and search inputs on Customer Profile (`/customers/{id}`) in both summary card and Tab 2 (Invoices).
+  - Synchronized filter selection with URL query parameters for seamless bookmarking.
+- **Enterprise Settings UI Hardening:**
+  - Safely removed the unconfigured "Communication & Document Sharing" tab and form inputs from Enterprise Settings (`/settings`), eliminating user confusion while preserving WhatsApp Web click-to-chat sharing.
+- **Enterprise QA Audit & Quality Sign-Off:**
+  - Completed comprehensive QA inspection across all 20 functional modules (A to T).
+  - Validated ₹50,000 multi-installment partial payment scenario (₹10k, ₹15k, overpayment boundary guard, ₹25k final settlement with UPI QR suppression).
+  - Generated complete suite of 10 audit and quality assurance documents in `docs/`.
+  - Maintained **100% test pass rate: 780 / 780 assertions passing across 61 test suites**.
+
+---
+
+## Milestone 19: Automatic 7-Day Weekly Backup & Disaster Recovery Hardening (Completed 2026-11-06)
+- **Automatic 7-Day Weekly Scheduler:**
+  - Integrated `isBackupDue(companyId, 7)` and `runScheduledWeeklyBackup()` in `BackupService`.
+  - Prevents duplicate archive creation if scheduled tasks or cron jobs execute more than once within the 7-day window.
+  - Standalone CLI runner `bin/scheduler.php` with commands: `backup [--weekly] [--force]`, `status`, `cleanup-audit`, `run-all`.
+  - Ready-to-use setups documented for both Windows Task Scheduler and Linux Crontab.
+- **Enterprise Storage, Security & Encryption:**
+  - Backup archives written strictly to dedicated directory outside public web root (`storage/backups/`) protected with `.htaccess` `Deny from all`.
+  - Added native PKWARE AES-256 archive encryption support (`ZipArchive::EM_AES_256`).
+  - Added secondary storage destination synchronization support (`BACKUP_SECONDARY_PATH`).
+- **Comprehensive Verification & Admin Alerting:**
+  - Verifies database dumps, audit logs, configuration, metadata, and calculates SHA-256 integrity checksums.
+  - On failure: preserves previous backups, records error in `backup_records` (`status = 'FAILED'`), and dispatches critical in-app notification to administrators via `NotificationService`.
+  - Includes safe automated retry policy (`createBackupWithRetry()`).
+- **Backup Dashboard UI Enhancements:**
+  - Enhanced Backup Management dashboard (`/settings?tab=backups`):
+    - 3 prominent KPI cards: Last Successful Backup, Next Scheduled Run (Frequency: Every 7 Days), and SHA-256 Verified indicator.
+    - Verified Backup History table with Created At, Archive Name, Type, Size, SHA-256 Checksum, Status, and Actions.
+    - Authorized actions: + Create Backup Now, Download, Restore (with pre-restore safety snapshot), and Delete Backup with confirmation modal.
+    - Safety policy prevents deleting the only remaining successful backup archive.
+- **Test Suite Verification:**
+  - Added assertions `BACKUP-12` through `BACKUP-18` in `tests/Feature/BackupAndCleanupTest.php`.
+  - **787 Total Assertions across 61 test suites passing at 100% (0 failures)**.
+

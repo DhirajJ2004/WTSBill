@@ -65,6 +65,8 @@ $router->get('/customers/{id}', [$customerController, 'show'], [$auth, $can('cus
 $router->get('/customers/{id}/profile', [$customerController, 'profile'], [$auth, $can('customers.view')]);
 $router->get('/customers/{id}/statement', [$customerController, 'profile'], [$auth, $can('customers.view')]);
 $router->get('/customers/{id}/statement/csv', [$customerController, 'statementCsv'], [$auth, $can('customers.view')]);
+$router->post('/customers/{id}/addresses', [$customerController, 'addAddress'], [$auth, $csrf, $can('customers.edit')]);
+$router->post('/customers/{id}/addresses/{addressId}/delete', [$customerController, 'deleteAddress'], [$auth, $csrf, $can('customers.edit')]);
 $router->post('/customers/{id}/update', [$customerController, 'update'], [$auth, $csrf, $can('customers.edit')]);
 $router->post('/customers/{id}/delete', [$customerController, 'delete'], [$auth, $csrf, $can('customers.delete')]);
 $router->delete('/customers/{id}', [$customerController, 'delete'], [$auth, $csrf, $can('customers.delete')]);
@@ -74,6 +76,8 @@ $supplierController = new SupplierController();
 $router->get('/suppliers', [$supplierController, 'index'], [$auth, $can('suppliers.view')]);
 $router->post('/suppliers', [$supplierController, 'store'], [$auth, $csrf, $can('suppliers.create')]);
 $router->get('/suppliers/{id}', [$supplierController, 'show'], [$auth, $can('suppliers.view')]);
+$router->get('/suppliers/{id}/profile', [$supplierController, 'profile'], [$auth, $can('suppliers.view')]);
+$router->get('/suppliers/{id}/statement/csv', [$supplierController, 'statementCsv'], [$auth, $can('suppliers.view')]);
 $router->post('/suppliers/{id}/update', [$supplierController, 'update'], [$auth, $csrf, $can('suppliers.edit')]);
 $router->post('/suppliers/{id}/delete', [$supplierController, 'delete'], [$auth, $csrf, $can('suppliers.delete')]);
 $router->get('/suppliers/{id}/delete', [$supplierController, 'delete'], [$auth, $can('suppliers.delete')]);
@@ -119,6 +123,7 @@ $router->get('/sales/quotations/{id}', [$quotationController, 'show'], [$auth, $
 $router->get('/sales/quotations/{id}/edit', [$quotationController, 'editForm'], [$auth, $can('quotations.edit')]);
 $router->post('/sales/quotations/{id}/update', [$quotationController, 'update'], [$auth, $csrf, $can('quotations.edit')]);
 $router->post('/sales/quotations/{id}/convert', [$quotationController, 'convertToInvoice'], [$auth, $csrf, $can(['quotations.edit', 'invoices.create'])]);
+$router->post('/sales/quotations/{id}/convert-to-order', [$quotationController, 'convertToOrder'], [$auth, $csrf, $can(['quotations.edit', 'quotations.create'])]);
 $router->post('/sales/quotations/{id}/duplicate', [$quotationController, 'duplicate'], [$auth, $csrf, $can('quotations.create')]);
 $router->post('/sales/quotations/{id}/status', [$quotationController, 'updateStatus'], [$auth, $csrf, $can('quotations.edit')]);
 $router->post('/sales/quotations/{id}/delete', [$quotationController, 'delete'], [$auth, $csrf, $can('quotations.delete')]);
@@ -148,9 +153,42 @@ $router->get('/public/quotations/{id}/pdf', [$commController, 'publicQuotationPd
 $router->get('/public/invoices/{id}', [$commController, 'publicInvoiceView']);
 $router->get('/public/quotations/{id}', [$commController, 'publicQuotationView']);
 
+// 8d. Sales Orders (Commercial Commitments & Fulfillment Lifecycle)
+$salesOrderController = new \WTSBill\Controllers\SalesOrderController();
+$router->get('/sales/orders', [$salesOrderController, 'index'], [$auth, $can('quotations.view')]);
+$router->get('/sales/orders/create', [$salesOrderController, 'createForm'], [$auth, $can('quotations.create')]);
+$router->post('/sales/orders/create', [$salesOrderController, 'store'], [$auth, $csrf, $can('quotations.create')]);
+$router->post('/sales/orders', [$salesOrderController, 'store'], [$auth, $csrf, $can('quotations.create')]);
+$router->get('/sales/orders/{id}', [$salesOrderController, 'show'], [$auth, $can('quotations.view')]);
+$router->get('/sales/orders/{id}/print', [$salesOrderController, 'print'], [$auth, $can('quotations.print')]);
+$router->post('/sales/orders/{id}/convert-to-invoice', [$salesOrderController, 'convertToInvoice'], [$auth, $csrf, $can('invoices.create')]);
+$router->post('/sales/orders/{id}/convert-to-challan', [$salesOrderController, 'convertToChallan'], [$auth, $csrf, $can('challans.create')]);
+$router->post('/sales/orders/{id}/delete', [$salesOrderController, 'delete'], [$auth, $csrf, $can('quotations.delete')]);
+$router->delete('/sales/orders/{id}', [$salesOrderController, 'delete'], [$auth, $csrf, $can('quotations.delete')]);
+
 // 9. Delivery Challans (Admin / Sales)
 $router->get('/sales/challans', [$salesController, 'challansIndex'], [$auth, $can('challans.view')]);
 $router->post('/sales/challans', [$salesController, 'challanStore'], [$auth, $csrf, $can('challans.create')]);
+
+// Purchase Orders & Procurement (Purchase Manager / Admin)
+$purchaseOrderController = new \WTSBill\Controllers\PurchaseOrderController();
+$router->get('/purchases/orders', [$purchaseOrderController, 'index'], [$auth, $can('bills.view')]);
+$router->get('/purchases/orders/create', [$purchaseOrderController, 'create'], [$auth, $can('bills.create')]);
+$router->post('/purchases/orders/create', [$purchaseOrderController, 'store'], [$auth, $csrf, $can('bills.create')]);
+$router->post('/purchases/orders', [$purchaseOrderController, 'store'], [$auth, $csrf, $can('bills.create')]);
+$router->get('/purchases/orders/{id}', [$purchaseOrderController, 'show'], [$auth, $can('bills.view')]);
+$router->get('/purchases/orders/{id}/print', [$purchaseOrderController, 'print'], [$auth, $can('bills.view')]);
+$router->post('/purchases/orders/{id}/approve', [$purchaseOrderController, 'approve'], [$auth, $csrf, $can('bills.create')]);
+$router->post('/purchases/orders/{id}/receive-goods', [$purchaseOrderController, 'receiveGoods'], [$auth, $csrf, $can('bills.create')]);
+$router->post('/purchases/orders/{id}/convert-to-bill', [$purchaseOrderController, 'convertToBill'], [$auth, $csrf, $can('bills.create')]);
+$router->post('/purchases/orders/{id}/delete', [$purchaseOrderController, 'delete'], [$auth, $csrf, $can('bills.delete')]);
+$router->delete('/purchases/orders/{id}', [$purchaseOrderController, 'delete'], [$auth, $csrf, $can('bills.delete')]);
+
+// Debit Notes & Purchase Returns
+$router->get('/purchases/debit-notes', [$purchaseOrderController, 'debitNotesIndex'], [$auth, $can('bills.view')]);
+$router->get('/purchases/debit-notes/create', [$purchaseOrderController, 'debitNoteCreate'], [$auth, $can('bills.create')]);
+$router->post('/purchases/debit-notes/create', [$purchaseOrderController, 'debitNoteStore'], [$auth, $csrf, $can('bills.create')]);
+$router->post('/purchases/debit-notes', [$purchaseOrderController, 'debitNoteStore'], [$auth, $csrf, $can('bills.create')]);
 
 // 10. Purchases & Accounts Payable (Admin / Purchase Manager)
 $purchaseController = new PurchaseController();
@@ -181,6 +219,15 @@ $router->post('/payments/{id}/delete', [$paymentController, 'delete'], [$auth, $
 $router->get('/payments/{id}/delete', [$paymentController, 'delete'], [$auth, $can('payments.delete')]);
 $router->delete('/payments/{id}', [$paymentController, 'delete'], [$auth, $csrf, $can('payments.delete')]);
 
+// Customer Advances & Drawdowns
+$customerAdvanceController = new \WTSBill\Controllers\CustomerAdvanceController();
+$router->get('/payments/advances', [$customerAdvanceController, 'index'], [$auth, $can('payments.view')]);
+$router->get('/payments/advances/create', [$customerAdvanceController, 'create'], [$auth, $can('payments.create')]);
+$router->post('/payments/advances/create', [$customerAdvanceController, 'store'], [$auth, $csrf, $can('payments.create')]);
+$router->post('/payments/advances', [$customerAdvanceController, 'store'], [$auth, $csrf, $can('payments.create')]);
+$router->get('/payments/advances/{id}', [$customerAdvanceController, 'show'], [$auth, $can('payments.view')]);
+$router->post('/payments/advances/{id}/allocate', [$customerAdvanceController, 'allocate'], [$auth, $csrf, $can('payments.create')]);
+
 // 13. Inventory Controller (Stock & Categories - Inventory Manager / Admin)
 $inventoryController = new InventoryController();
 $router->get('/inventory/stock', [$inventoryController, 'stockIndex'], [$auth, $can('inventory.view')]);
@@ -206,6 +253,31 @@ $router->post('/categories/{id}/delete', [$inventoryController, 'categoryDelete'
 $router->get('/categories/{id}/delete', [$inventoryController, 'categoryDelete'], [$auth, $can('categories.delete')]);
 $router->delete('/categories/{id}', [$inventoryController, 'categoryDelete'], [$auth, $csrf, $can('categories.delete')]);
 $router->post('/categories/{id}/toggle-status', [$inventoryController, 'categoryToggleStatus'], [$auth, $csrf, $can('categories.edit')]);
+
+// Multi-Warehouse & Godowns (Inventory Manager / Admin)
+$warehouseController = new \WTSBill\Controllers\WarehouseController();
+$router->get('/inventory/warehouses', [$warehouseController, 'index'], [$auth, $can('inventory.view')]);
+$router->post('/inventory/warehouses', [$warehouseController, 'store'], [$auth, $csrf, $can('inventory.edit')]);
+$router->get('/inventory/warehouses/{id}', [$warehouseController, 'show'], [$auth, $can('inventory.view')]);
+$router->post('/inventory/warehouses/{id}/update', [$warehouseController, 'update'], [$auth, $csrf, $can('inventory.edit')]);
+$router->post('/inventory/warehouses/{id}/delete', [$warehouseController, 'delete'], [$auth, $csrf, $can('inventory.edit')]);
+$router->delete('/inventory/warehouses/{id}', [$warehouseController, 'delete'], [$auth, $csrf, $can('inventory.edit')]);
+
+// Stock Transfers & Inter-Branch Logistics
+$router->get('/inventory/transfers', [$warehouseController, 'transfersIndex'], [$auth, $can('inventory.view')]);
+$router->get('/inventory/transfers/create', [$warehouseController, 'transferCreate'], [$auth, $can('inventory.stock.add')]);
+$router->post('/inventory/transfers/create', [$warehouseController, 'transferStore'], [$auth, $csrf, $can('inventory.stock.add')]);
+$router->post('/inventory/transfers', [$warehouseController, 'transferStore'], [$auth, $csrf, $can('inventory.stock.add')]);
+$router->get('/inventory/transfers/{id}', [$warehouseController, 'transferShow'], [$auth, $can('inventory.view')]);
+$router->get('/inventory/transfers/{id}/print', [$warehouseController, 'transferPrint'], [$auth, $can('inventory.view')]);
+$router->post('/inventory/transfers/{id}/approve', [$warehouseController, 'transferApprove'], [$auth, $csrf, $can('inventory.stock.add')]);
+$router->post('/inventory/transfers/{id}/dispatch', [$warehouseController, 'transferDispatch'], [$auth, $csrf, $can('inventory.stock.add')]);
+$router->post('/inventory/transfers/{id}/receive', [$warehouseController, 'transferReceive'], [$auth, $csrf, $can('inventory.stock.add')]);
+$router->post('/inventory/transfers/{id}/cancel', [$warehouseController, 'transferCancel'], [$auth, $csrf, $can('inventory.stock.add')]);
+
+// Stock Velocity & Replenishment Analytics
+$router->get('/inventory/velocity', [$warehouseController, 'velocityReport'], [$auth, $can('inventory.view')]);
+$router->get('/inventory/low-stock', [$warehouseController, 'lowStockAlerts'], [$auth, $can('inventory.view')]);
 
 // 14. Double-Entry Accounting (Admin / Chief Accountant)
 $accountingController = new AccountingController();
@@ -238,6 +310,42 @@ $router->get('/api/reports/balance-sheet', [$reportController, 'balanceSheetApi'
 $router->get('/reports/balance-sheet/export', [$reportController, 'balanceSheetExport'], [$auth, $can('reports.export')]);
 $router->get('/reports/gst', [$reportController, 'gstIndex'], [$auth, $can('reports.view')]);
 $router->get('/reports/gst/export', [$reportController, 'gstExport'], [$auth, $can('reports.export')]);
+
+// GST Compliance & Tax Reporting (GSTR-3B, Sales & Purchase Registers)
+$gstComplianceController = new \WTSBill\Controllers\GstComplianceController();
+$router->get('/reports/gstr-3b', [$gstComplianceController, 'gstr3b'], [$auth, $can('reports.view')]);
+$router->get('/api/reports/gstr-3b', [$gstComplianceController, 'gstr3bApi'], [$auth, $can('reports.view')]);
+$router->get('/reports/gstr-3b/export', [$gstComplianceController, 'gstr3bExport'], [$auth, $can('reports.export')]);
+$router->get('/reports/gst-sales-register', [$gstComplianceController, 'salesRegister'], [$auth, $can('reports.view')]);
+$router->get('/reports/gst-sales-register/export', [$gstComplianceController, 'salesRegisterExport'], [$auth, $can('reports.export')]);
+$router->get('/reports/gst-purchase-register', [$gstComplianceController, 'purchaseRegister'], [$auth, $can('reports.view')]);
+$router->get('/reports/gst-purchase-register/export', [$gstComplianceController, 'purchaseRegisterExport'], [$auth, $can('reports.export')]);
+
+$router->get('/reports/receivables-aging', [$customerAdvanceController, 'receivablesAging'], [$auth, $can('reports.view')]);
+$router->get('/reports/receivables-aging/export', [$customerAdvanceController, 'receivablesAgingExport'], [$auth, $can('reports.export')]);
+$router->get('/api/reports/receivables-aging', [$customerAdvanceController, 'receivablesAgingApi'], [$auth, $can('reports.view')]);
+
+// Extended Double-Entry Accounting Reports (Trial Balance, Cash Book, Bank Book, Cash Flow)
+$extendedAccountingController = new \WTSBill\Controllers\ExtendedAccountingController();
+$router->get('/reports/trial-balance', [$extendedAccountingController, 'trialBalance'], [$auth, $can('reports.view')]);
+$router->get('/api/reports/trial-balance', [$extendedAccountingController, 'trialBalanceApi'], [$auth, $can('reports.view')]);
+$router->get('/reports/trial-balance/export', [$extendedAccountingController, 'trialBalanceExport'], [$auth, $can('reports.export')]);
+$router->get('/accounting/cash-book', [$extendedAccountingController, 'cashBook'], [$auth, $can('reports.view')]);
+$router->get('/accounting/bank-book', [$extendedAccountingController, 'bankBook'], [$auth, $can('reports.view')]);
+$router->get('/reports/cash-flow', [$extendedAccountingController, 'cashFlow'], [$auth, $can('reports.view')]);
+
+// Executive BI Analytics & Decision Support
+$analyticsController = new \WTSBill\Controllers\AnalyticsController();
+$router->get('/analytics/bi', [$analyticsController, 'index'], [$auth, $can('reports.view')]);
+$router->get('/api/analytics/bi', [$analyticsController, 'api'], [$auth, $can('reports.view')]);
+$router->get('/analytics/bi/export', [$analyticsController, 'export'], [$auth, $can('reports.export')]);
+
+// Central Notification Hub
+$notificationController = new \WTSBill\Controllers\NotificationController();
+$router->get('/notifications', [$notificationController, 'index'], [$auth, $can('dashboard.view')]);
+$router->get('/api/notifications/unread-count', [$notificationController, 'unreadCount'], [$auth, $can('dashboard.view')]);
+$router->post('/api/notifications/{id}/read', [$notificationController, 'markRead'], [$auth, $can('dashboard.view')]);
+$router->post('/api/notifications/mark-all-read', [$notificationController, 'markAllRead'], [$auth, $can('dashboard.view')]);
 
 // 16. User & Permissions Management (Administrator Only)
 $userController = new UserController();
@@ -272,6 +380,9 @@ $router->post('/settings/backups/create', [$backupController, 'create'], [$auth,
 $router->get('/settings/backups/{id}/download', [$backupController, 'download'], [$auth, $can('settings.edit')]);
 $router->post('/settings/backups/{id}/restore', [$backupController, 'restore'], [$auth, $csrf, $can('settings.edit')]);
 $router->post('/settings/backups/restore', [$backupController, 'restore'], [$auth, $csrf, $can('settings.edit')]);
+$router->post('/settings/backups/{id}/delete', [$backupController, 'delete'], [$auth, $csrf, $can('settings.edit')]);
+$router->post('/settings/backups/delete', [$backupController, 'delete'], [$auth, $csrf, $can('settings.edit')]);
+$router->post('/settings/backups/scheduled-run', [$backupController, 'runScheduled'], [$auth, $csrf, $can('settings.edit')]);
 $router->post('/settings/audit-logs/cleanup', [$backupController, 'cleanupAudit'], [$auth, $csrf, $can('settings.edit')]);
 $router->get('/api/settings/backups', [$backupController, 'listBackups'], [$auth, $can('settings.view')]);
 

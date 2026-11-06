@@ -41,7 +41,9 @@
                         <tr id="supplier-row-<?= (int)$s['id'] ?>">
                             <td><?= e((string)$s['id']) ?></td>
                             <td>
-                                <strong><?= e($s['name']) ?></strong>
+                                <a href="/suppliers/<?= (int)$s['id'] ?>" style="color: var(--color-primary, #0ea5e9); font-weight: 700; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">
+                                    <?= e($s['name']) ?>
+                                </a>
                                 <?php if (!empty($s['company_name'])): ?>
                                     <div style="font-size: 0.75rem; color: var(--text-muted);"><?= e($s['company_name']) ?></div>
                                 <?php endif; ?>
@@ -59,6 +61,7 @@
                             </td>
                             <td style="text-align: center; white-space: nowrap;">
                                 <div style="display: flex; gap: 0.35rem; justify-content: center; align-items: center;">
+                                    <a href="/suppliers/<?= (int)$s['id'] ?>" class="btn btn-secondary" style="padding: 0.25rem 0.55rem; font-size: 0.78rem; text-decoration: none;">View</a>
                                     <?php if (\WTSBill\Auth\Gate::can('suppliers.edit')): ?>
                                         <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.55rem; font-size: 0.78rem;" onclick="window.editSupplier(<?= (int)$s['id'] ?>)">Edit</button>
                                     <?php endif; ?>

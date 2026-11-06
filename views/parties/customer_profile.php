@@ -115,10 +115,22 @@ $cid = (int)$customer['id'];
                 <small style="color: var(--color-muted); display: block; font-size: 0.75rem; text-transform: uppercase;">Credit Terms &amp; Limit</small>
                 <span><?= (int)($customer['payment_terms_days'] ?? 30) ?> Days &bull; Limit: <?= format_currency((float)($customer['credit_limit'] ?? 0)) ?></span>
             </div>
+            <?php if (!empty($customer['contact_person'])): ?>
+            <div>
+                <small style="color: var(--color-muted); display: block; font-size: 0.75rem; text-transform: uppercase;">Contact Person</small>
+                <span><?= e($customer['contact_person']) ?></span>
+            </div>
+            <?php endif; ?>
             <div style="grid-column: span 2;">
                 <small style="color: var(--color-muted); display: block; font-size: 0.75rem; text-transform: uppercase;">Billing &amp; Shipping Address</small>
                 <span><?= e($customer['billing_address']) ?></span>
             </div>
+            <?php if (!empty($customer['notes'])): ?>
+            <div style="grid-column: span 2;">
+                <small style="color: var(--color-muted); display: block; font-size: 0.75rem; text-transform: uppercase;">Customer Notes</small>
+                <div style="font-size: 0.85rem; background: var(--bg-surface, #f8fafc); padding: 0.5rem 0.75rem; border-radius: 4px; border: 1px solid var(--border-color, #e2e8f0);"><?= nl2br(e($customer['notes'])) ?></div>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>
@@ -182,21 +194,81 @@ $cid = (int)$customer['id'];
     </div>
 </div>
 
-<!-- Section 2.4: Outstanding Balance Details Table -->
-<?php if (!empty($outstandingInvoices)): ?>
-    <div class="card" style="margin-bottom: 1.5rem; border: 1px solid rgba(239, 68, 68, 0.3);">
-        <div class="card-header" style="background: rgba(239, 68, 68, 0.05); border-bottom: 1px solid rgba(239, 68, 68, 0.2); display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1.25rem;">
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <span class="badge badge-danger">Unsettled</span>
-                <h3 class="card-title" style="margin: 0; color: var(--color-danger, #ef4444); font-size: 1rem;">
-                    Outstanding Invoices (<?= count($outstandingInvoices) ?> Invoices &bull; <?= e($stats['outstanding_balance_formatted']) ?>)
+<!-- Section 2.4: Customer Invoices & Receivables Register with Live Status Filters -->
+<?php
+// Compute status counts for customer invoices
+$unpaidCount = 0;
+$partialCount = 0;
+$paidCount = 0;
+
+foreach ($invoices as $cInv) {
+    $cSt = strtoupper($cInv['status'] ?? '');
+    $cDue = (float)($cInv['amount_due'] ?? 0);
+    $cPaid = (float)($cInv['amount_paid'] ?? 0);
+    if ($cSt === 'PAID' || $cDue <= 0.001) {
+        $paidCount++;
+    } elseif ($cSt === 'PARTIAL' || ($cPaid > 0.001 && $cDue > 0.001)) {
+        $partialCount++;
+    } else {
+        $unpaidCount++;
+    }
+}
+
+$initialFilter = strtoupper($_GET['status'] ?? $_GET['invoice_status'] ?? 'ALL');
+if (!in_array($initialFilter, ['ALL', 'UNPAID', 'PARTIAL', 'PAID'])) {
+    $initialFilter = 'ALL';
+}
+?>
+
+<?php if (!empty($invoices)): ?>
+    <div class="card" id="customer-invoices-card" style="margin-bottom: 1.5rem; border: 1px solid var(--border-color, #e2e8f0);">
+        <div class="card-header" style="background: var(--bg-surface, #f8fafc); border-bottom: 1px solid var(--border-color, #e2e8f0); display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <span class="badge badge-<?= $initialFilter === 'ALL' ? 'primary' : ($initialFilter === 'PAID' ? 'success' : ($initialFilter === 'PARTIAL' ? 'warning' : 'danger')) ?>" id="invoice-filter-badge">
+                    <?php if ($initialFilter === 'ALL'): ?>
+                        All Invoices (<?= count($invoices) ?>)
+                    <?php elseif ($initialFilter === 'UNPAID'): ?>
+                        Unpaid Invoices (<?= $unpaidCount ?>)
+                    <?php elseif ($initialFilter === 'PARTIAL'): ?>
+                        Partial Payment (<?= $partialCount ?>)
+                    <?php else: ?>
+                        Paid In Full (<?= $paidCount ?>)
+                    <?php endif; ?>
+                </span>
+                <h3 class="card-title" id="invoice-filter-title" style="margin: 0; font-size: 1rem;">
+                    Invoices &amp; Receivables (Outstanding Invoices: <?= count($outstandingInvoices) ?> &bull; <?= e($stats['outstanding_balance_formatted']) ?>)
                 </h3>
             </div>
-            <?php if (\WTSBill\Auth\Gate::can('payments.create')): ?>
-                <button type="button" class="btn btn-success" style="font-size: 0.8rem; padding: 0.35rem 0.65rem;" onclick="openProfilePaymentModal()">
-                    + Record Payment
-                </button>
-            <?php endif; ?>
+            
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <!-- Filter Pills: All, Unpaid, Partial Payment, Paid -->
+                <div class="status-pills-bar" style="display: inline-flex; gap: 0.35rem; align-items: center; background: var(--bg-body, #f1f5f9); padding: 0.25rem 0.35rem; border-radius: 9999px; border: 1px solid var(--border-color, #cbd5e1);">
+                    <button type="button" class="btn <?= $initialFilter === 'ALL' ? 'btn-primary active' : 'btn-secondary' ?> invoice-filter-btn" data-filter="ALL" onclick="filterCustomerInvoices('ALL', this)" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; border-radius: 9999px; border: none; font-weight: 600;">
+                        All <span class="badge" style="background: rgba(0,0,0,0.08); font-size: 0.72rem; padding: 0.1rem 0.4rem; border-radius: 9999px; margin-left: 0.25rem;"><?= count($invoices) ?></span>
+                    </button>
+                    <button type="button" class="btn <?= $initialFilter === 'UNPAID' ? 'btn-primary active' : 'btn-secondary' ?> invoice-filter-btn" data-filter="UNPAID" onclick="filterCustomerInvoices('UNPAID', this)" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; border-radius: 9999px; border: none; font-weight: 600;">
+                        Unpaid <span class="badge badge-danger" style="font-size: 0.72rem; padding: 0.1rem 0.4rem; border-radius: 9999px; margin-left: 0.25rem;"><?= $unpaidCount ?></span>
+                    </button>
+                    <button type="button" class="btn <?= $initialFilter === 'PARTIAL' ? 'btn-primary active' : 'btn-secondary' ?> invoice-filter-btn" data-filter="PARTIAL" onclick="filterCustomerInvoices('PARTIAL', this)" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; border-radius: 9999px; border: none; font-weight: 600;">
+                        Partial Payment <span class="badge badge-warning" style="font-size: 0.72rem; padding: 0.1rem 0.4rem; border-radius: 9999px; margin-left: 0.25rem;"><?= $partialCount ?></span>
+                    </button>
+                    <button type="button" class="btn <?= $initialFilter === 'PAID' ? 'btn-primary active' : 'btn-secondary' ?> invoice-filter-btn" data-filter="PAID" onclick="filterCustomerInvoices('PAID', this)" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; border-radius: 9999px; border: none; font-weight: 600;">
+                        Paid <span class="badge badge-success" style="font-size: 0.72rem; padding: 0.1rem 0.4rem; border-radius: 9999px; margin-left: 0.25rem;"><?= $paidCount ?></span>
+                    </button>
+                </div>
+
+                <!-- Quick Search Input -->
+                <div style="position: relative;">
+                    <input type="text" id="customer-invoice-search" placeholder="Search invoice #..." oninput="searchCustomerInvoices(this.value)" 
+                           style="padding: 0.28rem 0.65rem; font-size: 0.8rem; border: 1px solid var(--border-color, #cbd5e1); border-radius: 6px; width: 140px; background: var(--bg-card, #fff); color: var(--color-heading, #1e293b);">
+                </div>
+
+                <?php if (\WTSBill\Auth\Gate::can('payments.create') && (float)($stats['outstanding_balance'] ?? 0) > 0.001): ?>
+                    <button type="button" class="btn btn-success" style="font-size: 0.8rem; padding: 0.35rem 0.65rem;" onclick="openProfilePaymentModal()">
+                        + Record Payment
+                    </button>
+                <?php endif; ?>
+            </div>
         </div>
         <div class="table-container" style="overflow-x: auto;">
             <table class="table" style="width: 100%;">
@@ -213,9 +285,22 @@ $cid = (int)$customer['id'];
                         <th style="text-align: right;">Action</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <?php foreach ($outstandingInvoices as $oInv): ?>
-                        <tr>
+                <tbody id="customer-invoices-tbody">
+                    <?php foreach ($invoices as $oInv): ?>
+                        <?php
+                            $invStatus = strtoupper($oInv['status'] ?? '');
+                            $invDue = (float)($oInv['amount_due'] ?? 0);
+                            $invPaid = (float)($oInv['amount_paid'] ?? 0);
+                            if ($invStatus === 'PAID' || $invDue <= 0.001) {
+                                $filterCat = 'PAID';
+                            } elseif ($invStatus === 'PARTIAL' || ($invPaid > 0.001 && $invDue > 0.001)) {
+                                $filterCat = 'PARTIAL';
+                            } else {
+                                $filterCat = 'UNPAID';
+                            }
+                            $rowHidden = ($initialFilter !== 'ALL' && $initialFilter !== $filterCat);
+                        ?>
+                        <tr class="customer-invoice-row" data-status="<?= $filterCat ?>" data-invoice-num="<?= strtolower(e($oInv['invoice_number'])) ?>" data-due="<?= $invDue ?>" data-total="<?= (float)$oInv['grand_total'] ?>" style="<?= $rowHidden ? 'display: none;' : '' ?>">
                             <td>
                                 <a href="/sales/invoices/<?= (int)$oInv['id'] ?>/print" target="_blank" style="color: var(--color-primary); font-weight: 700; text-decoration: underline;">
                                     <?= e($oInv['invoice_number']) ?>
@@ -225,9 +310,13 @@ $cid = (int)$customer['id'];
                             <td><?= e(format_date($oInv['due_date'] ?: $oInv['invoice_date'])) ?></td>
                             <td style="text-align: right;" class="tabular-nums"><?= e($oInv['grand_total_formatted']) ?></td>
                             <td style="text-align: right; color: var(--color-success);" class="tabular-nums"><?= e($oInv['amount_paid_formatted']) ?></td>
-                            <td style="text-align: right; font-weight: 700; color: var(--color-danger);" class="tabular-nums"><?= e($oInv['amount_due_formatted']) ?></td>
+                            <td style="text-align: right; font-weight: 700; color: <?= $filterCat === 'PAID' ? 'var(--color-success)' : 'var(--color-danger)' ?>;" class="tabular-nums">
+                                <?= $filterCat === 'PAID' ? '₹ 0.00' : e($oInv['amount_due_formatted']) ?>
+                            </td>
                             <td style="text-align: center;">
-                                <?php if ($oInv['days_overdue'] > 0): ?>
+                                <?php if ($filterCat === 'PAID'): ?>
+                                    <span class="badge badge-success" style="font-size: 0.75rem;">Settled</span>
+                                <?php elseif ($oInv['days_overdue'] > 0): ?>
                                     <span class="badge badge-danger" style="font-size: 0.75rem;">
                                         <?= (int)$oInv['days_overdue'] ?> days overdue
                                     </span>
@@ -236,12 +325,12 @@ $cid = (int)$customer['id'];
                                 <?php endif; ?>
                             </td>
                             <td style="text-align: center;">
-                                <span class="badge badge-<?= $oInv['status'] === 'PARTIAL' ? 'warning' : 'danger' ?>">
-                                    <?= e($oInv['status']) ?>
+                                <span class="badge badge-<?= $filterCat === 'PAID' ? 'success' : ($filterCat === 'PARTIAL' ? 'warning' : 'danger') ?>">
+                                    <?= $filterCat === 'PARTIAL' ? 'PARTIAL' : ($filterCat === 'PAID' ? 'PAID' : 'UNPAID') ?>
                                 </span>
                             </td>
                             <td style="text-align: right; white-space: nowrap;">
-                                <?php if (\WTSBill\Auth\Gate::can('payments.create')): ?>
+                                <?php if (\WTSBill\Auth\Gate::can('payments.create') && $invDue > 0.001): ?>
                                     <button type="button" class="btn btn-success" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" 
                                             onclick="openInvoiceSpecificPayment(<?= (int)$oInv['id'] ?>, '<?= e(addslashes($oInv['invoice_number'])) ?>', <?= (float)$oInv['amount_due'] ?>)">
                                         + Pay
@@ -253,6 +342,11 @@ $cid = (int)$customer['id'];
                             </td>
                         </tr>
                     <?php endforeach; ?>
+                    <tr id="no-filter-invoices-row" style="display: none;">
+                        <td colspan="9" style="text-align: center; padding: 2rem; color: var(--color-muted);">
+                            No invoices match the selected filter.
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -284,6 +378,9 @@ $cid = (int)$customer['id'];
             </button>
             <button type="button" class="profile-tab-btn" data-tab="tab-activities" onclick="switchProfileTab('tab-activities')">
                 Activity History (<?= count($activities) ?>)
+            </button>
+            <button type="button" class="profile-tab-btn" data-tab="tab-addresses" onclick="switchProfileTab('tab-addresses')">
+                Address Book (<?= count($addresses ?? []) ?>)
             </button>
         </div>
     </div>
@@ -367,6 +464,29 @@ $cid = (int)$customer['id'];
 
     <!-- Tab 2: Invoices -->
     <div id="tab-invoices" class="profile-tab-pane" style="display: none; padding: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <div class="status-pills-bar" style="display: inline-flex; gap: 0.35rem; align-items: center; background: var(--bg-body, #f1f5f9); padding: 0.25rem 0.35rem; border-radius: 9999px; border: 1px solid var(--border-color, #cbd5e1);">
+                    <button type="button" class="btn btn-primary tab2-filter-btn active" data-filter="ALL" onclick="filterTabInvoices('ALL', this)" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; border-radius: 9999px; border: none; font-weight: 600;">
+                        All <span class="badge" style="background: rgba(0,0,0,0.08); font-size: 0.72rem; padding: 0.1rem 0.4rem; border-radius: 9999px; margin-left: 0.25rem;"><?= count($invoices) ?></span>
+                    </button>
+                    <button type="button" class="btn btn-secondary tab2-filter-btn" data-filter="UNPAID" onclick="filterTabInvoices('UNPAID', this)" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; border-radius: 9999px; border: none; font-weight: 600;">
+                        Unpaid <span class="badge badge-danger" style="font-size: 0.72rem; padding: 0.1rem 0.4rem; border-radius: 9999px; margin-left: 0.25rem;"><?= $unpaidCount ?></span>
+                    </button>
+                    <button type="button" class="btn btn-secondary tab2-filter-btn" data-filter="PARTIAL" onclick="filterTabInvoices('PARTIAL', this)" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; border-radius: 9999px; border: none; font-weight: 600;">
+                        Partial Payment <span class="badge badge-warning" style="font-size: 0.72rem; padding: 0.1rem 0.4rem; border-radius: 9999px; margin-left: 0.25rem;"><?= $partialCount ?></span>
+                    </button>
+                    <button type="button" class="btn btn-secondary tab2-filter-btn" data-filter="PAID" onclick="filterTabInvoices('PAID', this)" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; border-radius: 9999px; border: none; font-weight: 600;">
+                        Paid <span class="badge badge-success" style="font-size: 0.72rem; padding: 0.1rem 0.4rem; border-radius: 9999px; margin-left: 0.25rem;"><?= $paidCount ?></span>
+                    </button>
+                </div>
+                <input type="text" placeholder="Search invoice #..." oninput="searchTabInvoices(this.value)" 
+                       style="padding: 0.28rem 0.65rem; font-size: 0.8rem; border: 1px solid var(--border-color, #cbd5e1); border-radius: 6px; width: 140px; background: var(--bg-card, #fff); color: var(--color-heading, #1e293b);">
+            </div>
+            <a href="/sales/invoices/create?customer_id=<?= $cid ?>" class="btn btn-primary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; text-decoration: none;">
+                + Create Invoice
+            </a>
+        </div>
         <div class="table-container" style="overflow-x: auto;">
             <table class="table" style="width: 100%;">
                 <thead>
@@ -381,12 +501,24 @@ $cid = (int)$customer['id'];
                         <th style="text-align: right;">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="tab-invoices-tbody">
                     <?php if (empty($invoices)): ?>
                         <tr><td colspan="8" style="text-align: center; padding: 2rem; color: var(--color-muted);">No invoices generated for this customer.</td></tr>
                     <?php else: ?>
                         <?php foreach ($invoices as $inv): ?>
-                            <tr>
+                            <?php
+                                $tabInvStatus = strtoupper($inv['status'] ?? '');
+                                $tabInvDue = (float)($inv['amount_due'] ?? 0);
+                                $tabInvPaid = (float)($inv['amount_paid'] ?? 0);
+                                if ($tabInvStatus === 'PAID' || $tabInvDue <= 0.001) {
+                                    $tabFilterCat = 'PAID';
+                                } elseif ($tabInvStatus === 'PARTIAL' || ($tabInvPaid > 0.001 && $tabInvDue > 0.001)) {
+                                    $tabFilterCat = 'PARTIAL';
+                                } else {
+                                    $tabFilterCat = 'UNPAID';
+                                }
+                            ?>
+                            <tr class="tab-invoice-row" data-status="<?= $tabFilterCat ?>" data-invoice-num="<?= strtolower(e($inv['invoice_number'])) ?>">
                                 <td>
                                     <a href="/sales/invoices/<?= (int)$inv['id'] ?>/print" target="_blank" style="color: var(--color-primary); font-weight: 700;">
                                         <?= e($inv['invoice_number']) ?>
@@ -412,6 +544,11 @@ $cid = (int)$customer['id'];
                                 </td>
                             </tr>
                         <?php endforeach; ?>
+                        <tr id="no-tab2-invoices-row" style="display: none;">
+                            <td colspan="8" style="text-align: center; padding: 2rem; color: var(--color-muted);">
+                                No invoices match the selected filter.
+                            </td>
+                        </tr>
                     <?php endif; ?>
                 </tbody>
             </table>
@@ -633,6 +770,125 @@ $cid = (int)$customer['id'];
             </table>
         </div>
     </div>
+
+    <!-- Tab 8: Address Book -->
+    <div id="tab-addresses" class="profile-tab-pane" style="display: none; padding: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h4 style="margin: 0; font-size: 0.95rem; text-transform: uppercase; color: var(--color-muted);">
+                Registered Billing &amp; Shipping Addresses
+            </h4>
+            <?php if (\WTSBill\Auth\Gate::can('customers.edit')): ?>
+                <button type="button" class="btn btn-primary" style="font-size: 0.85rem;" onclick="openAddressModal()">
+                    + Add Address
+                </button>
+            <?php endif; ?>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
+            <?php if (empty($addresses)): ?>
+                <div style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: var(--color-muted); background: var(--bg-surface, #f8fafc); border-radius: 6px; border: 1px dashed var(--border-color, #e2e8f0);">
+                    No secondary addresses recorded yet. The primary billing/shipping address registered in the customer master is used by default.
+                </div>
+            <?php else: ?>
+                <?php foreach ($addresses as $addr): ?>
+                    <div class="card" style="padding: 1rem; position: relative; border-top: 3px solid <?= $addr['type'] === 'BILLING' ? '#0ea5e9' : '#10b981' ?>;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                            <span class="badge badge-<?= $addr['type'] === 'BILLING' ? 'primary' : 'success' ?>" style="font-size: 0.75rem;">
+                                <?= e($addr['type']) ?>
+                            </span>
+                            <?php if (!empty($addr['is_default'])): ?>
+                                <span class="badge badge-info" style="font-size: 0.7rem;">DEFAULT</span>
+                            <?php endif; ?>
+                        </div>
+                        <div style="font-size: 0.85rem; line-height: 1.5; color: var(--color-heading);">
+                            <strong><?= e($addr['address_line1']) ?></strong><br>
+                            <?php if (!empty($addr['address_line2'])): ?>
+                                <?= e($addr['address_line2']) ?><br>
+                            <?php endif; ?>
+                            <?= e($addr['city']) ?>, <?= e($addr['state']) ?> - <?= e($addr['pincode']) ?><br>
+                            <?= e($addr['country'] ?: 'India') ?>
+                            <?php if (!empty($addr['landmark'])): ?>
+                                <div style="font-size: 0.75rem; color: var(--color-muted); margin-top: 0.25rem;">
+                                    Landmark: <?= e($addr['landmark']) ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                        <?php if (\WTSBill\Auth\Gate::can('customers.edit')): ?>
+                            <div style="margin-top: 0.75rem; padding-top: 0.5rem; border-top: 1px solid var(--border-color, #e2e8f0); text-align: right;">
+                                <form method="POST" action="/customers/<?= $cid ?>/addresses/<?= (int)$addr['id'] ?>/delete" onsubmit="return confirm('Remove this address?');" style="display: inline;">
+                                    <?= csrf_field() ?>
+                                    <button type="submit" class="btn btn-danger" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">
+                                        Delete
+                                    </button>
+                                </form>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Add Customer Address -->
+<div id="customerAddressModal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); z-index: 9999; align-items: center; justify-content: center; padding: 1.5rem;" onclick="if(event.target === this) closeAddressModal()">
+    <div class="card" style="width: 100%; max-width: 520px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color, #e2e8f0); padding: 1rem 1.25rem;">
+            <h3 class="card-title" style="margin: 0; font-size: 1.1rem;">Add Customer Address</h3>
+            <button type="button" class="btn btn-secondary" onclick="closeAddressModal()" style="padding: 0.2rem 0.5rem;">&times;</button>
+        </div>
+        <form method="POST" action="/customers/<?= $cid ?>/addresses" id="customerAddressForm" style="padding: 1.25rem;">
+            <?= csrf_field() ?>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+                <div>
+                    <label class="form-label" style="font-size: 0.8rem; font-weight: 600;">Address Type *</label>
+                    <select name="type" class="form-control" required style="font-size: 0.85rem;">
+                        <option value="BILLING">Billing Address</option>
+                        <option value="SHIPPING">Shipping Address</option>
+                        <option value="BOTH">Both Billing &amp; Shipping</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label" style="font-size: 0.8rem; font-weight: 600;">Set as Default?</label>
+                    <select name="is_default" class="form-control" style="font-size: 0.85rem;">
+                        <option value="0">No</option>
+                        <option value="1">Yes (Default)</option>
+                    </select>
+                </div>
+            </div>
+            <div style="margin-bottom: 0.75rem;">
+                <label class="form-label" style="font-size: 0.8rem; font-weight: 600;">Address Line 1 *</label>
+                <input type="text" name="address_line1" class="form-control" required placeholder="Premises, Street, Area" style="font-size: 0.85rem;">
+            </div>
+            <div style="margin-bottom: 0.75rem;">
+                <label class="form-label" style="font-size: 0.8rem; font-weight: 600;">Address Line 2</label>
+                <input type="text" name="address_line2" class="form-control" placeholder="Suite, Flat, Floor (Optional)" style="font-size: 0.85rem;">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+                <div>
+                    <label class="form-label" style="font-size: 0.8rem; font-weight: 600;">City *</label>
+                    <input type="text" name="city" class="form-control" required placeholder="City / Town" style="font-size: 0.85rem;">
+                </div>
+                <div>
+                    <label class="form-label" style="font-size: 0.8rem; font-weight: 600;">Pincode *</label>
+                    <input type="text" name="pincode" class="form-control" required placeholder="6-digit PIN" style="font-size: 0.85rem;">
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+                <div>
+                    <label class="form-label" style="font-size: 0.8rem; font-weight: 600;">State *</label>
+                    <input type="text" name="state" class="form-control" required placeholder="e.g. Maharashtra" style="font-size: 0.85rem;">
+                </div>
+                <div>
+                    <label class="form-label" style="font-size: 0.8rem; font-weight: 600;">Landmark</label>
+                    <input type="text" name="landmark" class="form-control" placeholder="Near monument / crossroad" style="font-size: 0.85rem;">
+                </div>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--border-color, #e2e8f0); padding-top: 1rem;">
+                <button type="button" class="btn btn-secondary" onclick="closeAddressModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">+ Save Address</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <!-- Modal: Record Payment for Customer -->
@@ -839,6 +1095,145 @@ function openShareStatementModal() {
 function closeShareStatementModal() {
     const m = document.getElementById('shareStatementModal');
     if (m) m.style.display = 'none';
+}
+
+function openAddressModal() {
+    const m = document.getElementById('customerAddressModal');
+    if (m) m.style.display = 'flex';
+}
+function closeAddressModal() {
+    const m = document.getElementById('customerAddressModal');
+    if (m) m.style.display = 'none';
+}
+
+// Live Status Filter Logic for Customer Invoices
+let currentCustomerInvoiceFilter = '<?= $initialFilter ?>';
+let currentCustomerInvoiceSearch = '';
+
+function filterCustomerInvoices(status, btn) {
+    currentCustomerInvoiceFilter = status;
+
+    // Update active filter button styling in main card
+    document.querySelectorAll('#customer-invoices-card .invoice-filter-btn').forEach(b => {
+        if (b.getAttribute('data-filter') === status) {
+            b.classList.remove('btn-secondary');
+            b.classList.add('btn-primary', 'active');
+        } else {
+            b.classList.remove('btn-primary', 'active');
+            b.classList.add('btn-secondary');
+        }
+    });
+
+    applyCustomerInvoiceRowFilters();
+
+    // Update URL query string seamlessly without page reload
+    try {
+        const url = new URL(window.location.href);
+        if (status === 'ALL') {
+            url.searchParams.delete('status');
+            url.searchParams.delete('invoice_status');
+        } else {
+            url.searchParams.set('status', status);
+        }
+        window.history.replaceState({}, '', url.toString());
+    } catch (e) {}
+}
+
+function searchCustomerInvoices(query) {
+    currentCustomerInvoiceSearch = (query || '').toLowerCase().trim();
+    applyCustomerInvoiceRowFilters();
+}
+
+function applyCustomerInvoiceRowFilters() {
+    const rows = document.querySelectorAll('#customer-invoices-tbody .customer-invoice-row');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+        const rowStatus = row.getAttribute('data-status');
+        const rowNum = row.getAttribute('data-invoice-num') || '';
+
+        let matchesStatus = (currentCustomerInvoiceFilter === 'ALL') || (rowStatus === currentCustomerInvoiceFilter);
+        let matchesSearch = (!currentCustomerInvoiceSearch) || rowNum.includes(currentCustomerInvoiceSearch);
+
+        if (matchesStatus && matchesSearch) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    // Update badge text
+    const badge = document.getElementById('invoice-filter-badge');
+    if (badge) {
+        if (currentCustomerInvoiceFilter === 'ALL') {
+            badge.className = 'badge badge-primary';
+            badge.textContent = 'All Invoices (' + visibleCount + ')';
+        } else if (currentCustomerInvoiceFilter === 'UNPAID') {
+            badge.className = 'badge badge-danger';
+            badge.textContent = 'Unpaid Invoices (' + visibleCount + ')';
+        } else if (currentCustomerInvoiceFilter === 'PARTIAL') {
+            badge.className = 'badge badge-warning';
+            badge.textContent = 'Partial Payment (' + visibleCount + ')';
+        } else if (currentCustomerInvoiceFilter === 'PAID') {
+            badge.className = 'badge badge-success';
+            badge.textContent = 'Paid in Full (' + visibleCount + ')';
+        }
+    }
+
+    const emptyRow = document.getElementById('no-filter-invoices-row');
+    if (emptyRow) {
+        emptyRow.style.display = (visibleCount === 0) ? '' : 'none';
+    }
+}
+
+// Tab 2: Invoices Filter Logic
+let currentTabInvoiceFilter = 'ALL';
+let currentTabInvoiceSearch = '';
+
+function filterTabInvoices(status, btn) {
+    currentTabInvoiceFilter = status;
+    document.querySelectorAll('#tab-invoices .tab2-filter-btn').forEach(b => {
+        if (b.getAttribute('data-filter') === status) {
+            b.classList.remove('btn-secondary');
+            b.classList.add('btn-primary', 'active');
+        } else {
+            b.classList.remove('btn-primary', 'active');
+            b.classList.add('btn-secondary');
+        }
+    });
+
+    applyTabInvoiceRowFilters();
+}
+
+function searchTabInvoices(query) {
+    currentTabInvoiceSearch = (query || '').toLowerCase().trim();
+    applyTabInvoiceRowFilters();
+}
+
+function applyTabInvoiceRowFilters() {
+    const rows = document.querySelectorAll('#tab-invoices-tbody .tab-invoice-row');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+        const rowStatus = row.getAttribute('data-status');
+        const rowNum = row.getAttribute('data-invoice-num') || '';
+
+        let matchesStatus = (currentTabInvoiceFilter === 'ALL') || (rowStatus === currentTabInvoiceFilter);
+        let matchesSearch = (!currentTabInvoiceSearch) || rowNum.includes(currentTabInvoiceSearch);
+
+        if (matchesStatus && matchesSearch) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    const emptyRow = document.getElementById('no-tab2-invoices-row');
+    if (emptyRow) {
+        emptyRow.style.display = (visibleCount === 0) ? '' : 'none';
+    }
 }
 </script>
 

@@ -62,6 +62,15 @@ require_once ROOT_PATH . '/tests/Feature/LedgerStatementTest.php';
 require_once ROOT_PATH . '/tests/Feature/CustomerProfileTest.php';
 require_once ROOT_PATH . '/tests/Feature/DocumentFilterTest.php';
 require_once ROOT_PATH . '/tests/Feature/InvoiceNumberReuseTest.php';
+require_once ROOT_PATH . '/tests/Feature/CrmExpansionTest.php';
+require_once ROOT_PATH . '/tests/Feature/SalesOrderWorkflowTest.php';
+require_once ROOT_PATH . '/tests/Feature/WarehouseStockTransferTest.php';
+require_once ROOT_PATH . '/tests/Feature/ProcurementLifecycleTest.php';
+require_once ROOT_PATH . '/tests/Feature/CustomerAdvancesAgingTest.php';
+require_once ROOT_PATH . '/tests/Feature/ExtendedAccountingReportsTest.php';
+require_once ROOT_PATH . '/tests/Feature/GstRegistersComplianceTest.php';
+require_once ROOT_PATH . '/tests/Feature/BusinessAnalyticsTest.php';
+require_once ROOT_PATH . '/tests/Feature/NotificationCenterHubTest.php';
 
 
 
@@ -239,6 +248,33 @@ echo "\n--- SECTION 51: FEATURE TESTS — COMPREHENSIVE INVOICE & QUOTATION LIST
 
 echo "\n--- SECTION 52: FEATURE TESTS — INVOICE NUMBER REUSE & STATUTORY PRESERVATION ---\n";
 \Tests\Feature\InvoiceNumberReuseTest::run($assert);
+
+echo "\n--- SECTION 53: FEATURE TESTS — CRM & PARTY 360-DEGREE PROFILE UPGRADES ---\n";
+\Tests\Feature\CrmExpansionTest::run($assert);
+
+echo "\n--- SECTION 54: FEATURE TESTS — SALES ORDER WORKFLOW & FULFILLMENT LIFECYCLE ---\n";
+\Tests\Feature\SalesOrderWorkflowTest::run($assert);
+
+echo "\n--- SECTION 55: FEATURE TESTS — WAREHOUSES, LOGISTICS & STOCK TRANSFERS ---\n";
+\Tests\Feature\WarehouseStockTransferTest::run($assert);
+
+echo "\n--- SECTION 56: FEATURE TESTS — PROCUREMENT LIFECYCLE (PO, GRN, DEBIT NOTES) ---\n";
+\Tests\Feature\ProcurementLifecycleTest::run($assert);
+
+echo "\n--- SECTION 57: FEATURE TESTS — CUSTOMER ADVANCES & RECEIVABLES AGING ---\n";
+\Tests\Feature\CustomerAdvancesAgingTest::run($assert);
+
+echo "\n--- SECTION 58: FEATURE TESTS — COMPLETE DOUBLE-ENTRY ACCOUNTING REPORTS ---\n";
+\Tests\Feature\ExtendedAccountingReportsTest::run($assert);
+
+echo "\n--- SECTION 59: FEATURE TESTS — GST REGISTERS & GSTR-3B COMPLIANCE ---\n";
+\Tests\Feature\GstRegistersComplianceTest::run($assert);
+
+echo "\n--- SECTION 60: FEATURE TESTS — BUSINESS ANALYTICS & EXECUTIVE BI DASHBOARD ---\n";
+\Tests\Feature\BusinessAnalyticsTest::run($assert);
+
+echo "\n--- SECTION 61: FEATURE TESTS — CENTRAL NOTIFICATION HUB & AI REMOVAL VERIFICATION ---\n";
+\Tests\Feature\NotificationCenterHubTest::run($assert);
 
 
 
