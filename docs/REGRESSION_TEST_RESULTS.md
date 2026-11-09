@@ -1,7 +1,7 @@
 # WTSBill ERP — Regression Test Results Log
 
-**Document Version:** 4.5.0  
-**Last Verified:** 2026-11-04  
+**Document Version:** 5.0.0  
+**Last Verified:** 2026-11-06  
 **Test Runner:** `tests/run_tests.php`  
 **Execution Environment:** Native PHP 8.0 CLI + MariaDB 10.4.32 (`wtsbill_db`)
 
@@ -13,8 +13,8 @@
 ==================================================================================
                          TEST VERIFICATION SUMMARY                                
 ==================================================================================
-Total Assertions: 649
-Passed:           649
+Total Assertions: 787
+Passed:           787
 Failed:           0
 Pass Percentage:  100%
 
@@ -507,9 +507,24 @@ STATUS: ALL TEST SUITES PASSED (100%)
 
 ---
 
+## 29. Centralized Company Branding Management (Section 62)
+
+- `BRAND-01`: CompanyBrandingService returns default logo with cache buster query and empty custom signature/stamp. **PASSED**
+- `BRAND-02`: GET /settings/branding renders 3 upload cards: Company Logo, Authorized Signature, and Company Stamp. **PASSED**
+- `BRAND-03`: Valid PNG logo upload persists to uploads/branding, updates database and sets is_custom_logo=true. **PASSED**
+- `BRAND-04`: Malicious SVG containing <script> is strictly rejected with 422 error and does not overwrite logo. **PASSED**
+- `BRAND-05`: Sanitized clean SVG is accepted and saves successfully as company logo. **PASSED**
+- `BRAND-06`: Files with disallowed extensions or types (.exe) are rejected with HTTP 422. **PASSED**
+- `BRAND-07`: Authorized signature and company stamp upload succeed and populate respective branding URLs. **PASSED**
+- `BRAND-08`: POST /settings/branding/settings persists custom sizing and document visibility toggles. **PASSED**
+- `BRAND-09`: Branch-specific branding override takes precedence for that branch without altering company-wide defaults. **PASSED**
+- `BRAND-10`: POST /settings/branding/remove resets signature to null and deletes custom file safely from disk. **PASSED**
+
+---
+
 ## Final Verification Summary
-- **Total Assertions Executed**: 787
-- **Passed**: 787
+- **Total Assertions Executed**: 797
+- **Passed**: 797
 - **Failed**: 0
 - **Pass Percentage**: 100%
 - **Status**: ALL TEST SUITES PASSED (100%)

@@ -1,7 +1,18 @@
+<?php
+$poCompanyId = (int)($order['company_id'] ?? 1);
+$poBranchId = !empty($order['branch_id']) ? (int)$order['branch_id'] : null;
+$branding = \WTSBill\Services\CompanyBrandingService::getCompanyBranding($poCompanyId, $poBranchId);
+$companyLogoUrl = \WTSBill\Services\CompanyBrandingService::getCompanyLogo($poCompanyId, $poBranchId);
+$showPoSignature = (bool)($branding['show_signature_purchase'] ?? true);
+$showPoStamp = (bool)($branding['show_stamp_purchase'] ?? true);
+$poSigUrl = $branding['signature_url'];
+$poStampUrl = $branding['stamp_url'];
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="csrf-token" content="<?= csrf_token() ?>">
     <title>Purchase Order — <?= htmlspecialchars($order['po_number']) ?></title>
     <style>
         @page {
@@ -101,7 +112,10 @@
         <table>
             <tr>
                 <td style="vertical-align: top; width: 60%;">
-                    <div class="company-name"><?= htmlspecialchars($company['name'] ?? 'WTSBill Enterprise') ?></div>
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
+                        <img src="<?= htmlspecialchars($companyLogoUrl) ?>" alt="Logo" style="max-height: 48px; max-width: 140px; object-fit: contain;">
+                        <div class="company-name"><?= htmlspecialchars($company['name'] ?? 'WTSBill Enterprise') ?></div>
+                    </div>
                     <div style="font-size: 10px; color: #475569; margin-top: 3px;">
                         <?= htmlspecialchars($company['address'] ?? '') ?><br>
                         <?= htmlspecialchars($company['city'] ?? '') ?>, <?= htmlspecialchars($company['state'] ?? '') ?> - <?= htmlspecialchars($company['pincode'] ?? '') ?><br>
@@ -206,9 +220,19 @@
                     <div>Prepared By: <strong>Admin / Purchase Dept</strong></div>
                 </td>
                 <td style="width: 50%; text-align: right; font-size: 10px;">
-                    <div style="border-top: 1px solid #94a3b8; display: inline-block; padding-top: 5px; min-width: 180px; text-align: center;">
-                        <strong>Authorized Signatory</strong><br>
-                        <?= htmlspecialchars($company['name'] ?? 'WTSBill Enterprise') ?>
+                    <div style="display: inline-block; min-width: 180px; text-align: center;">
+                        <div style="min-height: 45px; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 4px;">
+                            <?php if ($showPoStamp && !empty($poStampUrl)): ?>
+                                <img src="<?= htmlspecialchars($poStampUrl) ?>" alt="Stamp" style="max-height: <?= (int)$branding['stamp_height'] ?>px; max-width: <?= (int)$branding['stamp_width'] ?>px; object-fit: contain;">
+                            <?php endif; ?>
+                            <?php if ($showPoSignature && !empty($poSigUrl)): ?>
+                                <img src="<?= htmlspecialchars($poSigUrl) ?>" alt="Signature" style="max-height: <?= (int)$branding['signature_height'] ?>px; max-width: <?= (int)$branding['signature_width'] ?>px; object-fit: contain;">
+                            <?php endif; ?>
+                        </div>
+                        <div style="border-top: 1px solid #94a3b8; padding-top: 5px;">
+                            <strong>Authorized Signatory</strong><br>
+                            <?= htmlspecialchars($company['name'] ?? 'WTSBill Enterprise') ?>
+                        </div>
                     </div>
                 </td>
             </tr>

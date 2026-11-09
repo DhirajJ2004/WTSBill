@@ -76,6 +76,56 @@ class PurchaseController
     }
 
     /**
+     * Create purchase bill view: GET /purchases/bills/create
+     */
+    public function billCreate(Request $req): Response
+    {
+        $companyId = Session::getCompanyId() ?? 1;
+        $branchId = Session::getBranchId() ?? 1;
+
+        // Fetch suppliers for the dropdown
+        $suppliers = Database::select(
+            "SELECT id, name, company_name, gstin FROM suppliers WHERE company_id = ? AND is_active = 1 ORDER BY name ASC",
+            [$companyId]
+        );
+
+        // Fetch active bank accounts for the payment modal
+        $bankAccounts = Database::select(
+            "SELECT id, bank_name, account_name, account_number, current_balance 
+             FROM bank_accounts 
+             WHERE company_id = ? AND is_active = 1 
+             ORDER BY bank_name ASC",
+            [$companyId]
+        );
+
+        $initialData = $this->purchaseService->getBills($companyId, $branchId, [
+            'page' => 1,
+            'per_page' => 25,
+            'search' => '',
+            'supplier_id' => 0,
+            'status' => 'ALL',
+            'from' => '',
+            'to' => '',
+            'sort' => 'id',
+            'dir' => 'desc'
+        ]);
+
+        $html = View::renderWithLayout('purchases/bills', [
+            'title' => 'Record Purchase Bill',
+            'currentUri' => '/purchases/bills/create',
+            'purchases' => $initialData['rows'],
+            'kpis' => $initialData['kpis'],
+            'totals' => $initialData['totals'],
+            'meta' => $initialData['meta'],
+            'suppliers' => $suppliers,
+            'bankAccounts' => $bankAccounts,
+            'autoOpenCreateModal' => true,
+        ], 'layouts/app');
+
+        return Response::html($html);
+    }
+
+    /**
      * API: GET /api/purchases/bills
      * Returns JSON list of bills, pagination metadata, totals, and updated KPIs.
      */

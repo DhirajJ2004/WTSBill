@@ -14,9 +14,11 @@ $csrfToken = Session::csrfToken();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="<?= e($csrfToken) ?>">
     <title><?= e($pageTitle) ?></title>
+    <link rel="icon" type="image/png" href="/assets/images/logo.png">
 
     <!-- Native Design System Stylesheet -->
     <link rel="stylesheet" href="/assets/css/app.css">
+    <link rel="stylesheet" href="/assets/css/theme.css">
     <style>
         body {
             display: flex;
@@ -24,7 +26,9 @@ $csrfToken = Session::csrfToken();
             justify-content: center;
             min-height: 100vh;
             padding: 1.5rem;
-            background: radial-gradient(circle at top, #1e293b 0%, #0b1120 100%);
+            background-color: #DAF1DE;
+            background: radial-gradient(circle at top, #DAF1DE 0%, #8EB69B 100%);
+            color: #051F20;
         }
         .auth-container {
             width: 100%;

@@ -1,0 +1,267 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 520" width="100%" height="100%" fill="none">
+    <defs>
+        <!-- Gradients using the mandatory 6-color green palette -->
+        <!-- 1: #DAF1DE, 2: #8EB69B, 3: #235347, 4: #163832, 5: #0B2B26, 6: #051F20 -->
+        <linearGradient id="greenBgBlob" x1="100" y1="50" x2="540" y2="480" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#DAF1DE" stop-opacity="0.95" />
+            <stop offset="60%" stop-color="#8EB69B" stop-opacity="0.35" />
+            <stop offset="100%" stop-color="#DAF1DE" stop-opacity="0.2" />
+        </linearGradient>
+
+        <linearGradient id="screenSurface" x1="160" y1="80" x2="480" y2="400" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#FFFFFF" />
+            <stop offset="100%" stop-color="#F4FAF6" />
+        </linearGradient>
+
+        <linearGradient id="primaryGreenGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#235347" />
+            <stop offset="100%" stop-color="#163832" />
+        </linearGradient>
+
+        <linearGradient id="accentGreenGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#8EB69B" />
+            <stop offset="100%" stop-color="#235347" />
+        </linearGradient>
+
+        <linearGradient id="chartAreaGreen" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#235347" stop-opacity="0.35" />
+            <stop offset="100%" stop-color="#235347" stop-opacity="0.0" />
+        </linearGradient>
+
+        <linearGradient id="block3DTopGreen" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#DAF1DE" />
+            <stop offset="100%" stop-color="#8EB69B" />
+        </linearGradient>
+
+        <linearGradient id="block3DFrontGreen" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#235347" />
+            <stop offset="100%" stop-color="#163832" />
+        </linearGradient>
+
+        <linearGradient id="block3DSideGreen" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#0B2B26" />
+            <stop offset="100%" stop-color="#051F20" />
+        </linearGradient>
+
+        <!-- Shadow Filters -->
+        <filter id="softGreenShadow" x="-10%" y="-10%" width="125%" height="125%" filterUnits="userSpaceOnUse">
+            <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#0B2B26" flood-opacity="0.12" />
+        </filter>
+        <filter id="cardGreenShadow" x="-15%" y="-15%" width="130%" height="130%" filterUnits="userSpaceOnUse">
+            <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#051F20" flood-opacity="0.08" />
+        </filter>
+    </defs>
+
+    <!-- 1. Background Organic Shapes & Ambient Blobs -->
+    <path d="M120,240 C90,140 180,60 300,50 C440,38 560,110 570,230 C582,360 480,470 340,480 C200,490 140,400 110,340 C90,300 130,280 120,240 Z" fill="url(#greenBgBlob)" />
+    <circle cx="510" cy="90" r="32" fill="#DAF1DE" opacity="0.75" />
+    <circle cx="110" cy="390" r="24" fill="#8EB69B" opacity="0.3" />
+
+    <!-- 2. Decorative Foliage & Botanical Elements -->
+    <g id="decor-leaf-left" opacity="0.9">
+        <path d="M70,440 Q85,380 120,360 Q110,400 85,445 Z" fill="#8EB69B" />
+        <path d="M85,445 Q110,395 145,390 Q125,425 95,450 Z" fill="#235347" />
+        <path d="M60,450 Q50,400 80,385 Q80,420 65,455 Z" fill="#163832" />
+    </g>
+    <g id="decor-leaf-right" opacity="0.9">
+        <path d="M570,440 Q555,380 520,360 Q530,400 555,445 Z" fill="#8EB69B" />
+        <path d="M555,445 Q530,395 495,390 Q515,425 545,450 Z" fill="#235347" />
+        <path d="M580,450 Q590,400 560,385 Q560,420 575,455 Z" fill="#163832" />
+    </g>
+
+    <!-- 3. Ground Plane / Platform -->
+    <ellipse cx="320" cy="460" rx="260" ry="22" fill="#8EB69B" opacity="0.25" />
+
+    <!-- 4. Main Financial Analytics Dashboard Screen -->
+    <g filter="url(#softGreenShadow)">
+        <!-- Monitor Frame -->
+        <rect x="150" y="80" width="340" height="235" rx="16" fill="url(#screenSurface)" stroke="#8EB69B" stroke-width="2" />
+        
+        <!-- Header Bar -->
+        <path d="M150,80 Q150,80 150,96 L150,115 L490,115 L490,96 Q490,80 474,80 Z" fill="#DAF1DE" />
+        <line x1="150" y1="115" x2="490" y2="115" stroke="#8EB69B" stroke-width="1.5" />
+        <!-- Window Controls -->
+        <circle cx="170" cy="98" r="4.5" fill="#235347" />
+        <circle cx="184" cy="98" r="4.5" fill="#8EB69B" />
+        <circle cx="198" cy="98" r="4.5" fill="#163832" />
+        <!-- Search / Navigation Mock -->
+        <rect x="220" y="91" width="130" height="14" rx="7" fill="#FFFFFF" stroke="#8EB69B" stroke-width="0.8" />
+        <rect x="425" y="91" width="48" height="14" rx="7" fill="#235347" />
+        <text x="449" y="101" font-family="'Inter', sans-serif" font-size="7.5" font-weight="700" fill="#DAF1DE" text-anchor="middle">LIVE</text>
+
+        <!-- LEFT SUB-PANEL: KPI & Line Chart -->
+        <g transform="translate(166, 128)">
+            <!-- Mini KPI Card -->
+            <rect x="0" y="0" width="144" height="64" rx="8" fill="#FFFFFF" stroke="#8EB69B" stroke-width="1" />
+            <text x="10" y="18" font-family="'Inter', sans-serif" font-size="8.5" font-weight="700" fill="#163832" letter-spacing="0.05em">NET REVENUE</text>
+            <text x="10" y="38" font-family="'Inter', sans-serif" font-size="15" font-weight="800" fill="#051F20">₹48,76,500</text>
+            <rect x="10" y="44" width="56" height="13" rx="4" fill="#DAF1DE" />
+            <text x="14" y="53.5" font-family="'Inter', sans-serif" font-size="8" font-weight="700" fill="#235347">+28.4% ↑</text>
+
+            <!-- Line/Area Chart -->
+            <path d="M8,110 Q40,92 70,100 T136,72 L136,115 L8,115 Z" fill="url(#chartAreaGreen)" />
+            <path d="M8,110 Q40,92 70,100 T136,72" fill="none" stroke="#235347" stroke-width="2.5" stroke-linecap="round" />
+            <circle cx="136" cy="72" r="4" fill="#235347" stroke="#DAF1DE" stroke-width="2" />
+            <!-- Axis lines -->
+            <line x1="8" y1="115" x2="136" y2="115" stroke="#8EB69B" stroke-width="1" />
+        </g>
+
+        <!-- RIGHT SUB-PANEL: Donut & Multi-Bar Chart -->
+        <g transform="translate(325, 128)">
+            <!-- Donut / Pie Chart -->
+            <g transform="translate(42, 34)">
+                <!-- Donut Segments -->
+                <circle cx="0" cy="0" r="26" fill="none" stroke="#DAF1DE" stroke-width="14" />
+                <circle cx="0" cy="0" r="26" fill="none" stroke="#235347" stroke-width="14" stroke-dasharray="100 163" stroke-dashoffset="0" />
+                <circle cx="0" cy="0" r="26" fill="none" stroke="#8EB69B" stroke-width="14" stroke-dasharray="45 163" stroke-dashoffset="-100" />
+                <circle cx="0" cy="0" r="26" fill="none" stroke="#163832" stroke-width="14" stroke-dasharray="18 163" stroke-dashoffset="-145" />
+                <text x="0" y="4" font-family="'Inter', sans-serif" font-size="10" font-weight="800" fill="#051F20" text-anchor="middle">74%</text>
+            </g>
+            <text x="82" y="24" font-family="'Inter', sans-serif" font-size="8" font-weight="700" fill="#051F20">Paid Invoices</text>
+            <text x="82" y="38" font-family="'Inter', sans-serif" font-size="8" font-weight="500" fill="#235347">Pending: 18%</text>
+            <text x="82" y="52" font-family="'Inter', sans-serif" font-size="8" font-weight="500" fill="#163832">Overdue: 8%</text>
+
+            <!-- Bar Chart Comparison -->
+            <g transform="translate(10, 72)">
+                <line x1="0" y1="46" x2="135" y2="46" stroke="#8EB69B" stroke-width="1" />
+                <!-- Bar Set 1 -->
+                <rect x="12" y="26" width="10" height="20" rx="3" fill="#8EB69B" />
+                <rect x="24" y="14" width="10" height="32" rx="3" fill="#235347" />
+                <!-- Bar Set 2 -->
+                <rect x="48" y="20" width="10" height="26" rx="3" fill="#8EB69B" />
+                <rect x="60" y="6" width="10" height="40" rx="3" fill="#235347" />
+                <!-- Bar Set 3 -->
+                <rect x="84" y="15" width="10" height="31" rx="3" fill="#8EB69B" />
+                <rect x="96" y="2" width="10" height="44" rx="3" fill="#235347" />
+            </g>
+        </g>
+
+        <!-- Monitor Base Stand -->
+        <path d="M300,315 L292,350 L348,350 L340,315 Z" fill="#163832" />
+        <ellipse cx="320" cy="352" rx="44" ry="7" fill="#0B2B26" />
+    </g>
+
+    <!-- 5. Floating Glass Cards Around Screen -->
+    <!-- Top-Right Floating Card: Cash Flow Metric -->
+    <g filter="url(#cardGreenShadow)" transform="translate(435, 60)">
+        <rect x="0" y="0" width="120" height="52" rx="10" fill="#FFFFFF" stroke="#8EB69B" stroke-width="1.5" />
+        <circle cx="24" cy="26" r="14" fill="#DAF1DE" />
+        <path d="M18,28 L23,21 L27,25 L31,19" fill="none" stroke="#235347" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+        <text x="46" y="22" font-family="'Inter', sans-serif" font-size="9" font-weight="700" fill="#163832">Cash Flow</text>
+        <text x="46" y="38" font-family="'Inter', sans-serif" font-size="12" font-weight="800" fill="#051F20">+ ₹14.2L</text>
+    </g>
+
+    <!-- Bottom-Left Floating Card: GST Verification -->
+    <g filter="url(#cardGreenShadow)" transform="translate(95, 260)">
+        <rect x="0" y="0" width="128" height="48" rx="10" fill="#FFFFFF" stroke="#8EB69B" stroke-width="1.5" />
+        <circle cx="22" cy="24" r="12" fill="#DAF1DE" />
+        <path d="M17,24 L21,28 L28,20" fill="none" stroke="#235347" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+        <text x="42" y="20" font-family="'Inter', sans-serif" font-size="8.5" font-weight="800" fill="#235347" letter-spacing="0.04em">GST COMPLIANT</text>
+        <text x="42" y="34" font-family="'Inter', sans-serif" font-size="8" font-weight="600" fill="#163832">Auto E-Invoice</text>
+    </g>
+
+    <!-- 6. 3D Isometric Bar Blocks & Coin Stacks On Ground -->
+    <g id="isometric-blocks" transform="translate(230, 395)">
+        <!-- Block 1 (Small) -->
+        <g transform="translate(0, 20)">
+            <polygon points="20,0 40,10 20,20 0,10" fill="url(#block3DTopGreen)" />
+            <polygon points="0,10 20,20 20,45 0,35" fill="url(#block3DFrontGreen)" />
+            <polygon points="20,20 40,10 40,35 20,45" fill="url(#block3DSideGreen)" />
+        </g>
+        <!-- Block 2 (Medium) -->
+        <g transform="translate(32, 5)">
+            <polygon points="20,0 40,10 20,20 0,10" fill="url(#block3DTopGreen)" />
+            <polygon points="0,10 20,20 20,60 0,50" fill="url(#block3DFrontGreen)" />
+            <polygon points="20,20 40,10 40,50 20,60" fill="url(#block3DSideGreen)" />
+        </g>
+        <!-- Block 3 (Tall) -->
+        <g transform="translate(64, -12)">
+            <polygon points="20,0 40,10 20,20 0,10" fill="url(#block3DTopGreen)" />
+            <polygon points="0,10 20,20 20,77 0,67" fill="url(#block3DFrontGreen)" />
+            <polygon points="20,20 40,10 40,67 20,77" fill="url(#block3DSideGreen)" />
+        </g>
+        <!-- Metallic Accent Cylinder Stacks -->
+        <g transform="translate(125, 30)">
+            <ellipse cx="14" cy="30" rx="14" ry="6" fill="#163832" />
+            <rect x="0" y="24" width="28" height="6" fill="#235347" />
+            <ellipse cx="14" cy="24" rx="14" ry="6" fill="#8EB69B" />
+            <rect x="0" y="16" width="28" height="6" fill="#235347" />
+            <ellipse cx="14" cy="16" rx="14" ry="6" fill="#8EB69B" />
+            <rect x="0" y="8" width="28" height="6" fill="#235347" />
+            <ellipse cx="14" cy="8" rx="14" ry="6" fill="#DAF1DE" />
+        </g>
+    </g>
+
+    <!-- 7. LEFT CHARACTER: Financial Analyst Holding Report Board -->
+    <g id="character-left" transform="translate(90, 290)">
+        <!-- Shadow -->
+        <ellipse cx="45" cy="172" rx="28" ry="7" fill="#0B2B26" opacity="0.25" />
+
+        <!-- Legs & Trousers -->
+        <path d="M34,105 L30,168 L42,168 L44,105 Z" fill="#163832" />
+        <path d="M48,105 L52,168 L64,168 L58,105 Z" fill="#0B2B26" />
+        <!-- Shoes -->
+        <path d="M26,166 Q38,164 43,172 L26,172 Z" fill="#051F20" />
+        <path d="M48,166 Q60,164 66,172 L48,172 Z" fill="#051F20" />
+
+        <!-- Torso & Suit Jacket in #235347 -->
+        <path d="M26,45 L62,45 L68,105 L22,105 Z" fill="#235347" />
+        <!-- Inner Shirt in #DAF1DE -->
+        <polygon points="40,45 48,45 46,75 42,75" fill="#DAF1DE" />
+        <polygon points="43,48 45,48 46,65 44,70 42,65" fill="#163832" />
+
+        <!-- Head & Hair -->
+        <ellipse cx="44" cy="28" rx="11" ry="14" fill="#DAF1DE" stroke="#8EB69B" stroke-width="1" />
+        <!-- Hair in #051F20 -->
+        <path d="M33,25 Q44,10 55,22 Q52,14 42,15 Q34,16 33,25 Z" fill="#051F20" />
+
+        <!-- Left Arm Holding Report Board -->
+        <path d="M26,50 L12,85 L32,85 Z" fill="#163832" />
+        <ellipse cx="32" cy="85" rx="4" ry="4" fill="#DAF1DE" />
+        <!-- Clipboard / Bar Chart Board -->
+        <g transform="translate(18, 65) rotate(-10)">
+            <rect x="0" y="0" width="34" height="42" rx="4" fill="#FFFFFF" stroke="#235347" stroke-width="1.5" />
+            <!-- Mini Bars on Board -->
+            <rect x="5" y="24" width="4" height="12" rx="1" fill="#8EB69B" />
+            <rect x="12" y="16" width="4" height="20" rx="1" fill="#235347" />
+            <rect x="19" y="10" width="4" height="26" rx="1" fill="#163832" />
+            <rect x="25" y="6" width="4" height="30" rx="1" fill="#235347" />
+        </g>
+
+        <!-- Right Arm Pointing Toward Financial Screen -->
+        <path d="M58,50 Q75,65 95,55" fill="none" stroke="#235347" stroke-width="8" stroke-linecap="round" />
+        <circle cx="97" cy="54" r="4.5" fill="#DAF1DE" />
+    </g>
+
+    <!-- 8. RIGHT CHARACTER: Executive Interacting With Screen -->
+    <g id="character-right" transform="translate(465, 280)">
+        <!-- Shadow -->
+        <ellipse cx="42" cy="182" rx="28" ry="7" fill="#0B2B26" opacity="0.25" />
+
+        <!-- Legs & Trousers -->
+        <path d="M32,112 L28,178 L39,178 L42,112 Z" fill="#163832" />
+        <path d="M46,112 L50,178 L61,178 L56,112 Z" fill="#0B2B26" />
+        <!-- Shoes -->
+        <path d="M24,176 Q36,174 41,182 L24,182 Z" fill="#051F20" />
+        <path d="M46,176 Q58,174 63,182 L46,182 Z" fill="#051F20" />
+
+        <!-- Torso & Smart Blazer in #235347 -->
+        <path d="M24,52 L60,52 L65,112 L20,112 Z" fill="#235347" />
+        <polygon points="38,52 46,52 44,82 40,82" fill="#DAF1DE" />
+
+        <!-- Head, Face & Hairstyle -->
+        <ellipse cx="42" cy="34" rx="10.5" ry="13.5" fill="#DAF1DE" stroke="#8EB69B" stroke-width="1" />
+        <path d="M32,32 Q40,16 54,26 Q50,18 40,19 Q33,22 32,32 Z" fill="#051F20" />
+
+        <!-- Left Arm Raised & Touching Screen Display -->
+        <path d="M26,56 Q10,40 -20,18" fill="none" stroke="#235347" stroke-width="8" stroke-linecap="round" />
+        <circle cx="-22" cy="17" r="4.5" fill="#DAF1DE" />
+        <!-- Touch Glow Ripples on Dashboard in #8EB69B & #DAF1DE -->
+        <circle cx="-22" cy="17" r="10" fill="none" stroke="#8EB69B" stroke-width="1.5" opacity="0.75" />
+        <circle cx="-22" cy="17" r="16" fill="none" stroke="#DAF1DE" stroke-width="1" opacity="0.6" />
+
+        <!-- Right Arm Relaxed at Side -->
+        <path d="M58,56 Q66,85 58,105" fill="none" stroke="#163832" stroke-width="7" stroke-linecap="round" />
+        <circle cx="58" cy="107" r="4" fill="#DAF1DE" />
+    </g>
+</svg>

@@ -96,6 +96,8 @@ $router->post('/api/v1/invoices/{id}/share', [$commController, 'shareInvoice'], 
 $router->get('/api/v1/invoices/{id}/communication-history', [$commController, 'invoiceHistory'], [$authMiddleware, $can('invoices.view')]);
 $router->post('/api/v1/quotations/{id}/share', [$commController, 'shareQuotation'], [$authMiddleware, $can('quotations.view')]);
 $router->get('/api/v1/quotations/{id}/communication-history', [$commController, 'quotationHistory'], [$authMiddleware, $can('quotations.view')]);
+$router->post('/api/v1/purchases/{id}/share', [$commController, 'sharePurchaseBill'], [$authMiddleware, $can('purchases.view')]);
+$router->get('/api/v1/purchases/{id}/communication-history', [$commController, 'purchaseBillCommunicationHistory'], [$authMiddleware, $can('purchases.view')]);
 $router->post('/api/v1/settings/communication', [$commController, 'saveSettings'], [$authMiddleware, $can('settings.edit')]);
 $router->post('/api/v1/settings/communication/test-email', [$commController, 'testEmail'], [$authMiddleware, $can('settings.edit')]);
 // 8. Backup Management & Disaster Recovery API

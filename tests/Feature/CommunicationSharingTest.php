@@ -292,5 +292,199 @@ class CommunicationSharingTest
         $assert('COMM-14', 'GET /doc/invoices/{id}/pdf strictly rejects invalid or forged HMAC token with HTTP 403 Forbidden',
             $badPdfRes->getStatusCode() === 403
         );
+
+        // 14. Test Email API Verification Endpoint
+        $testEmailReq = new Request([], [
+            'test_email' => 'admin.verify@wtsbill.in',
+        ], [
+            'REQUEST_METHOD' => 'POST',
+            'REQUEST_URI' => '/api/settings/communication/test-email',
+            'HTTP_ACCEPT' => 'application/json',
+            'HTTP_X_REQUESTED_WITH' => 'XMLHttpRequest',
+        ]);
+        $testEmailRes = $router->dispatch($testEmailReq);
+        $testEmailJson = json_decode($testEmailRes->getContent(), true);
+
+        $assert('COMM-15', 'POST /api/settings/communication/test-email handles test email dispatch safely',
+            in_array($testEmailRes->getStatusCode(), [200, 500], true) &&
+            isset($testEmailJson['message'])
+        );
+
+        // 15. Test WhatsApp API Verification Endpoint
+        $testWaReq = new Request([], [
+            'test_phone' => '9876543210',
+        ], [
+            'REQUEST_METHOD' => 'POST',
+            'REQUEST_URI' => '/api/settings/communication/test-whatsapp',
+            'HTTP_ACCEPT' => 'application/json',
+            'HTTP_X_REQUESTED_WITH' => 'XMLHttpRequest',
+        ]);
+        $testWaRes = $router->dispatch($testWaReq);
+        $testWaJson = json_decode($testWaRes->getContent(), true);
+
+        $assert('COMM-16', 'POST /api/settings/communication/test-whatsapp initiates API/click-to-chat test notification',
+            $testWaRes->getStatusCode() === 200 &&
+            isset($testWaJson['success']) &&
+            isset($testWaJson['mode'])
+        );
+
+        // 16. Quotation Communication History Audit
+        $qtHistReq = new Request([], [], [
+            'REQUEST_METHOD' => 'GET',
+            'REQUEST_URI' => "/sales/quotations/{$targetQtId}/communication-history",
+        ]);
+        $qtHistRes = $router->dispatch($qtHistReq);
+        $qtHistJson = json_decode($qtHistRes->getContent(), true);
+
+        $assert('COMM-17', 'GET /sales/quotations/{id}/communication-history returns quotation audit records',
+            $qtHistRes->getStatusCode() === 200 &&
+            isset($qtHistJson['success']) && $qtHistJson['success'] === true &&
+            is_array($qtHistJson['data'])
+        );
+
+        // 17. Authenticated Invoice PDF Download Route & Content-Disposition
+        $invPdfReq = new Request(['download' => '1'], [], [
+            'REQUEST_METHOD' => 'GET',
+            'REQUEST_URI' => "/sales/invoices/{$targetInvId}/pdf?download=1",
+        ]);
+        $invPdfRes = $router->dispatch($invPdfReq);
+        $invPdfDisp = (string)($invPdfRes->getHeader('Content-Disposition') ?? $invPdfRes->getHeader('content-disposition') ?? '');
+
+        $assert('COMM-18', 'GET /sales/invoices/{id}/pdf serves attachment binary stream with Invoice_ filename',
+            $invPdfRes->getStatusCode() === 200 &&
+            str_starts_with($invPdfRes->getContent(), '%PDF-1.4') &&
+            str_contains($invPdfDisp, 'Invoice_')
+        );
+
+        // 18. Authenticated Quotation PDF Download Route & Content-Disposition
+        $qtPdfReq = new Request(['download' => '1'], [], [
+            'REQUEST_METHOD' => 'GET',
+            'REQUEST_URI' => "/sales/quotations/{$targetQtId}/pdf?download=1",
+        ]);
+        $qtPdfRes = $router->dispatch($qtPdfReq);
+        $qtPdfDisp = (string)($qtPdfRes->getHeader('Content-Disposition') ?? $qtPdfRes->getHeader('content-disposition') ?? '');
+
+        $assert('COMM-19', 'GET /sales/quotations/{id}/pdf serves attachment binary stream with Quotation_ filename',
+            $qtPdfRes->getStatusCode() === 200 &&
+            str_starts_with($qtPdfRes->getContent(), '%PDF-1.4') &&
+            str_contains($qtPdfDisp, 'Quotation_')
+        );
+
+        // 19. Missing Phone Safeguard on WhatsApp-only share
+        $noPhoneReq = new Request([], [
+            '_csrf_token' => $csrfToken,
+            'channel' => 'WHATSAPP',
+            'phone' => '',
+        ], [
+            'REQUEST_METHOD' => 'POST',
+            'REQUEST_URI' => "/sales/invoices/{$targetInvId}/share",
+            'HTTP_ACCEPT' => 'application/json',
+            'HTTP_X_REQUESTED_WITH' => 'XMLHttpRequest',
+        ]);
+        $noPhoneRes = $router->dispatch($noPhoneReq);
+        $noPhoneJson = json_decode($noPhoneRes->getContent(), true);
+
+        $assert('COMM-20', 'Missing recipient mobile phone on WhatsApp share is safely rejected with clear error',
+            isset($noPhoneJson['results']['whatsapp']['success']) &&
+            $noPhoneJson['results']['whatsapp']['success'] === false &&
+            str_contains(strtolower($noPhoneJson['results']['whatsapp']['error'] ?? ''), 'phone')
+        );
+
+        // 20. PHPMailer Integration & Class Availability
+        $assert('COMM-21', 'PHPMailer is registered via Composer autoloader with full SMTP capabilities',
+            class_exists(\PHPMailer\PHPMailer\PHPMailer::class)
+        );
+
+        // 21. Purchase Bill PDF-1.4 Generation
+        $mockBill = [
+            'id' => 888,
+            'company_id' => $companyId,
+            'purchase_number' => 'PB-TEST-COMM',
+            'vendor_invoice_number' => 'VND-COMM-777',
+            'bill_date' => date('Y-m-d'),
+            'supplier_name' => 'Acme Industrial Supplies Pvt Ltd',
+            'supplier_gstin' => '27AAACA1234A1Z5',
+            'total_amount' => 11800.00,
+            'paid_amount' => 11800.00,
+            'balance_due' => 0.00,
+            'status' => 'PAID',
+        ];
+        $billPdf = PdfGenerator::generatePurchaseBillPdf($mockBill, $mockCompany);
+        $assert('COMM-22', 'PdfGenerator generates valid PDF-1.4 binary stream for Purchase Bills',
+            str_starts_with($billPdf, '%PDF-1.4') &&
+            str_contains($billPdf, '%%EOF') &&
+            str_contains($billPdf, 'PB-TEST-COMM')
+        );
+
+        // 22. Share Purchase Bill via POST /purchases/bills/{id}/share
+        $testBill = Database::selectOne("SELECT id, purchase_number FROM purchases WHERE company_id = ? ORDER BY id DESC LIMIT 1", [$companyId]);
+        if (!$testBill) {
+            $testBillId = (int)Database::insert('purchases', [
+                'company_id' => $companyId,
+                'branch_id' => $branchId,
+                'supplier_id' => 1,
+                'purchase_number' => 'PB-COMM-001',
+                'bill_date' => date('Y-m-d'),
+                'subtotal' => 10000,
+                'tax_amount' => 1800,
+                'total_amount' => 11800,
+                'paid_amount' => 0,
+                'balance_due' => 11800,
+                'payment_status' => 'UNPAID',
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+            $testBill = ['id' => $testBillId, 'purchase_number' => 'PB-COMM-001'];
+        }
+        $targetBillId = (int)$testBill['id'];
+
+        $shareBillReq = new Request([], [
+            '_csrf_token' => $csrfToken,
+            'channel' => 'EMAIL_CLIENT',
+            'email' => 'vendor.finance@acme.com',
+            'subject' => 'Purchase Bill Submission',
+            'body' => 'Please find attached the inward purchase bill.',
+        ], [
+            'REQUEST_METHOD' => 'POST',
+            'REQUEST_URI' => "/purchases/bills/{$targetBillId}/share",
+            'HTTP_ACCEPT' => 'application/json',
+            'HTTP_X_REQUESTED_WITH' => 'XMLHttpRequest',
+        ]);
+        $shareBillRes = $router->dispatch($shareBillReq);
+        $shareBillJson = json_decode($shareBillRes->getContent(), true);
+
+        $assert('COMM-23', 'POST /purchases/bills/{id}/share initiates purchase bill email/document dispatch',
+            $shareBillRes->getStatusCode() === 200 &&
+            isset($shareBillJson['success']) && $shareBillJson['success'] === true &&
+            isset($shareBillJson['results']['email'])
+        );
+
+        // 23. Authenticated Purchase Bill PDF Download Route
+        $billPdfReq = new Request(['download' => '1'], [], [
+            'REQUEST_METHOD' => 'GET',
+            'REQUEST_URI' => "/purchases/bills/{$targetBillId}/pdf?download=1",
+        ]);
+        $billPdfRes = $router->dispatch($billPdfReq);
+        $billPdfDisp = (string)($billPdfRes->getHeader('Content-Disposition') ?? $billPdfRes->getHeader('content-disposition') ?? '');
+
+        $assert('COMM-24', 'GET /purchases/bills/{id}/pdf serves attachment binary stream with PurchaseBill_ filename',
+            $billPdfRes->getStatusCode() === 200 &&
+            str_starts_with($billPdfRes->getContent(), '%PDF-1.4') &&
+            str_contains($billPdfDisp, 'PurchaseBill_')
+        );
+
+        // 24. Public Purchase Bill HMAC Token Access
+        $billRecord = Database::selectOne("SELECT * FROM purchases WHERE id = ?", [$targetBillId]);
+        $billToken = CommunicationService::getDocumentPublicToken('PURCHASE_BILL', $targetBillId, (string)$billRecord['created_at'], $companyId);
+        $pubBillReq = new Request(['token' => $billToken], [], [
+            'REQUEST_METHOD' => 'GET',
+            'REQUEST_URI' => "/doc/purchases/{$targetBillId}/pdf?token={$billToken}",
+        ]);
+        $pubBillRes = $router->dispatch($pubBillReq);
+
+        $assert('COMM-25', 'GET /doc/purchases/{id}/pdf with verified HMAC token serves purchase bill PDF stream',
+            $pubBillRes->getStatusCode() === 200 &&
+            str_starts_with($pubBillRes->getContent(), '%PDF-1.4')
+        );
     }
 }

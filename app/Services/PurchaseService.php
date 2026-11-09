@@ -27,7 +27,12 @@ class PurchaseService
         $sort = strtolower(trim((string)($filters['sort'] ?? 'id')));
         $dir = strtolower(trim((string)($filters['dir'] ?? 'desc'))) === 'asc' ? 'ASC' : 'DESC';
         $page = max(1, (int)($filters['page'] ?? 1));
-        $perPage = in_array((int)($filters['per_page'] ?? 25), [10, 25, 50, 100], true) ? (int)$filters['per_page'] : 25;
+        $rawPerPage = (int)($filters['per_page'] ?? 25);
+        if ($rawPerPage >= 1000) {
+            $perPage = min(100000, $rawPerPage);
+        } else {
+            $perPage = in_array($rawPerPage, [10, 25, 50, 100], true) ? $rawPerPage : 25;
+        }
         $offset = ($page - 1) * $perPage;
 
         // Base where conditions
@@ -596,7 +601,7 @@ class PurchaseService
     public function exportBills(int $companyId, int $branchId, array $filters, string $format = 'csv'): array
     {
         $filters['page'] = 1;
-        $filters['per_page'] = 1000;
+        $filters['per_page'] = 100000;
         $result = $this->getBills($companyId, $branchId, $filters);
         $rows = $result['rows'];
 
@@ -629,18 +634,25 @@ class PurchaseService
 
         // HTML Export for Excel / PDF
         $html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Purchase Bills</title><style>
-            body { font-family: sans-serif; font-size: 12px; }
-            table { width: 100%; border-collapse: collapse; }
-            th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; }
-            th { background: #EAF1FF; color: #1D4ED8; font-weight: bold; }
-            .num { text-align: right; }
+            @page { size: landscape; margin: 10mm; }
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 11px; color: #1e293b; padding: 15px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; }
+            th { background: #f1f5f9; color: #0f172a; font-weight: 700; text-transform: uppercase; font-size: 10px; }
+            .num { text-align: right; font-variant-numeric: tabular-nums; }
+            .print-btn-bar { margin-bottom: 15px; }
+            .btn-print { background: #235347; color: #fff; padding: 6px 14px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px; }
+            @media print { .no-print { display: none !important; } }
         </style></head><body>';
-        $html .= '<h2>WTSBill ERP - Purchase Bills & Accounts Payable</h2>';
-        $html .= '<p>Generated on ' . date('d-m-Y H:i') . '</p>';
-        $html .= '<table><thead><tr><th>Bill #</th><th>Supplier</th><th>Vendor Invoice #</th><th>Bill Date</th><th>Due Date</th><th>Total Amount</th><th>Paid Amount</th><th>Balance Due</th><th>Status</th></tr></thead><tbody>';
+        if ($format !== 'excel') {
+            $html .= '<div class="print-btn-bar no-print"><button class="btn-print" onclick="window.print()">🖨️ Print Complete Register (' . count($rows) . ' Bills)</button></div>';
+        }
+        $html .= '<h2 style="margin: 0 0 4px 0; color: #0f172a;">WTSBill ERP — Purchase Bills & Accounts Payable</h2>';
+        $html .= '<p style="margin: 0 0 10px 0; color: #64748b; font-size: 11px;">Generated on ' . date('d-m-Y H:i') . ' | Total Records: ' . count($rows) . '</p>';
+        $html .= '<table><thead><tr><th>Bill #</th><th>Supplier</th><th>Vendor Invoice #</th><th>Bill Date</th><th>Due Date</th><th style="text-align: right;">Total Amount</th><th style="text-align: right;">Paid Amount</th><th style="text-align: right;">Balance Due</th><th>Status</th></tr></thead><tbody>';
         foreach ($rows as $r) {
             $html .= '<tr>' .
-                '<td>' . htmlspecialchars((string)($r['purchase_number'] ?? '')) . '</td>' .
+                '<td><strong>' . htmlspecialchars((string)($r['purchase_number'] ?? '')) . '</strong></td>' .
                 '<td>' . htmlspecialchars((string)($r['supplier_name'] ?? '')) . '</td>' .
                 '<td>' . htmlspecialchars((string)($r['vendor_invoice_number'] ?? '')) . '</td>' .
                 '<td>' . htmlspecialchars((string)($r['purchase_date'] ?? '')) . '</td>' .

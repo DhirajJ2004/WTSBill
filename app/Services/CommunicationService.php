@@ -6,6 +6,8 @@ namespace WTSBill\Services;
 
 use WTSBill\Core\Database;
 use WTSBill\Core\Session;
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception as MailerException;
 
 /**
  * Enterprise Communication Service for WhatsApp and Email Document Sharing.
@@ -35,17 +37,30 @@ class CommunicationService
                 'whatsapp_business_account_id' => '',
                 'whatsapp_api_version' => 'v19.0',
                 'whatsapp_template_name' => 'document_share',
-                'smtp_host' => '',
+                'smtp_host' => 'smtp.gmail.com',
                 'smtp_port' => 587,
-                'smtp_username' => '',
-                'smtp_password' => '',
+                'smtp_username' => 'systemmail132@gmail.com',
+                'smtp_password' => 'eubojueuxgsfptit',
                 'smtp_encryption' => 'tls',
-                'smtp_from_address' => 'billing@wtsbill.in',
+                'smtp_from_address' => 'systemmail132@gmail.com',
                 'smtp_from_name' => 'WTSBill Enterprise',
-                'email_configured' => 0,
+                'email_configured' => 1,
                 'whatsapp_configured' => 0,
+                'whatsapp_enabled' => 1,
+                'email_enabled' => 1,
+                'default_email_message' => "Please find attached your document from {company_name}.",
+                'default_whatsapp_message' => "Dear {customer_name},\nPlease find your document attached.",
             ];
         }
+
+        $extra = [];
+        if (!empty($settings['settings_json'])) {
+            $extra = json_decode((string)$settings['settings_json'], true) ?: [];
+        }
+        $settings['whatsapp_enabled'] = isset($extra['whatsapp_enabled']) ? (int)$extra['whatsapp_enabled'] : 1;
+        $settings['email_enabled'] = isset($extra['email_enabled']) ? (int)$extra['email_enabled'] : 1;
+        $settings['default_email_message'] = $extra['default_email_message'] ?? "Please find attached your document from {company_name}.";
+        $settings['default_whatsapp_message'] = $extra['default_whatsapp_message'] ?? "Dear {customer_name},\nPlease find your document attached.";
 
         return $settings;
     }
@@ -56,7 +71,7 @@ class CommunicationService
     public static function saveSettings(int $companyId, array $data): bool
     {
         $existing = Database::selectOne(
-            "SELECT id, smtp_password, whatsapp_access_token FROM business_communication_settings WHERE company_id = ? LIMIT 1",
+            "SELECT id, smtp_password, whatsapp_access_token, settings_json FROM business_communication_settings WHERE company_id = ? LIMIT 1",
             [$companyId]
         );
 
@@ -65,6 +80,14 @@ class CommunicationService
 
         $emailConfigured = (!empty($data['smtp_host']) && !empty($data['smtp_from_address'])) ? 1 : 0;
         $whatsappConfigured = (!empty($data['whatsapp_phone_number_id']) && !empty($whatsappToken)) ? 1 : 0;
+
+        $existingExtra = !empty($existing['settings_json']) ? (json_decode((string)$existing['settings_json'], true) ?: []) : [];
+        $extra = [
+            'whatsapp_enabled' => isset($data['whatsapp_enabled']) ? (int)$data['whatsapp_enabled'] : ($existingExtra['whatsapp_enabled'] ?? 1),
+            'email_enabled' => isset($data['email_enabled']) ? (int)$data['email_enabled'] : ($existingExtra['email_enabled'] ?? 1),
+            'default_email_message' => isset($data['default_email_message']) ? trim((string)$data['default_email_message']) : ($existingExtra['default_email_message'] ?? ''),
+            'default_whatsapp_message' => isset($data['default_whatsapp_message']) ? trim((string)$data['default_whatsapp_message']) : ($existingExtra['default_whatsapp_message'] ?? ''),
+        ];
 
         $fields = [
             'default_invoice_channel' => strtoupper(trim((string)($data['default_invoice_channel'] ?? 'BOTH'))),
@@ -84,6 +107,7 @@ class CommunicationService
             'smtp_from_name' => trim((string)($data['smtp_from_name'] ?? 'WTSBill Enterprise')),
             'email_configured' => $emailConfigured,
             'whatsapp_configured' => $whatsappConfigured,
+            'settings_json' => json_encode($extra),
             'updated_at' => date('Y-m-d H:i:s'),
         ];
 
@@ -194,6 +218,36 @@ class CommunicationService
     }
 
     /**
+     * Build standard, professional text message for a Purchase Vendor Bill.
+     */
+    public static function buildPurchaseBillMessage(array $bill, array $company, string $documentUrl = ''): string
+    {
+        $supplierName = trim((string)($bill['supplier_name'] ?? 'Supplier / Vendor'));
+        $billNumber = $bill['purchase_number'] ?? ('PB-' . ($bill['id'] ?? ''));
+        $vendorInv = !empty($bill['vendor_invoice_number']) ? " (Vendor Ref: {$bill['vendor_invoice_number']})" : '';
+        $billDate = $bill['bill_date'] ?? date('Y-m-d');
+        $grandTotal = number_format((float)($bill['total_amount'] ?? 0), 2);
+        $amountPaid = number_format((float)($bill['paid_amount'] ?? 0), 2);
+        $balance = number_format((float)($bill['balance_due'] ?? ($bill['total_amount'] ?? 0)), 2);
+        $companyName = trim((string)($company['name'] ?? 'WTSBill Enterprise'));
+
+        $msg = "Dear {$supplierName},\n\n";
+        $msg .= "Please find the recorded Purchase Bill details from {$companyName}:\n\n";
+        $msg .= "• Purchase Bill #: {$billNumber}{$vendorInv}\n";
+        $msg .= "• Bill Date: {$billDate}\n";
+        $msg .= "• Total Bill Amount: INR {$grandTotal}\n";
+        $msg .= "• Amount Paid: INR {$amountPaid}\n";
+        $msg .= "• Outstanding Balance: INR {$balance}\n";
+
+        if (!empty($documentUrl)) {
+            $msg .= "\n📄 Download / View Purchase Bill PDF: {$documentUrl}\n";
+        }
+
+        $msg .= "\nThank you for your partnership.\n{$companyName}";
+        return $msg;
+    }
+
+    /**
      * Generate Click-to-Chat URL for WhatsApp.
      */
     public static function getClickToChatUrl(string $phone, string $message): string
@@ -234,7 +288,14 @@ class CommunicationService
         $token = self::getDocumentPublicToken($type, $id, $createdAt, $companyId);
         
         $baseUrl = self::getBaseUrl();
-        $segment = strtolower($type) === 'quotation' ? 'quotations' : 'invoices';
+        $lower = strtolower($type);
+        if ($lower === 'quotation') {
+            $segment = 'quotations';
+        } elseif (in_array($lower, ['bill', 'purchase_bill', 'purchase', 'purchases'], true)) {
+            $segment = 'purchases';
+        } else {
+            $segment = 'invoices';
+        }
         return "{$baseUrl}/doc/{$segment}/{$id}/pdf?token={$token}";
     }
 
@@ -249,7 +310,14 @@ class CommunicationService
         $token = self::getDocumentPublicToken($type, $id, $createdAt, $companyId);
         
         $baseUrl = self::getBaseUrl();
-        $segment = strtolower($type) === 'quotation' ? 'quotations' : 'invoices';
+        $lower = strtolower($type);
+        if ($lower === 'quotation') {
+            $segment = 'quotations';
+        } elseif (in_array($lower, ['bill', 'purchase_bill', 'purchase', 'purchases'], true)) {
+            $segment = 'purchases';
+        } else {
+            $segment = 'invoices';
+        }
         return "{$baseUrl}/doc/{$segment}/{$id}?token={$token}";
     }
 
@@ -444,7 +512,8 @@ class CommunicationService
         ?string $attachmentFilename = null,
         ?string $entityType = null,
         ?int $entityId = null,
-        ?int $userId = null
+        ?int $userId = null,
+        ?string $ccEmail = null
     ): array {
         $toEmail = trim($toEmail);
         if (!filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
@@ -456,52 +525,39 @@ class CommunicationService
         }
 
         $settings = self::getSettings($companyId);
-        $fromEmail = $settings['smtp_from_address'] ?: 'billing@wtsbill.in';
-        $fromName = $settings['smtp_from_name'] ?: 'WTSBill Enterprise';
+        $host = !empty($settings['smtp_host']) ? (string)$settings['smtp_host'] : 'smtp.gmail.com';
+        $port = (int)(!empty($settings['smtp_port']) ? $settings['smtp_port'] : 587);
+        $username = !empty($settings['smtp_username']) ? (string)$settings['smtp_username'] : 'systemmail132@gmail.com';
+        $password = !empty($settings['smtp_password']) ? (string)$settings['smtp_password'] : 'eubojueuxgsfptit';
+        $encryption = !empty($settings['smtp_encryption']) ? (string)$settings['smtp_encryption'] : 'tls';
+        $fromEmail = !empty($settings['smtp_from_address']) ? (string)$settings['smtp_from_address'] : 'systemmail132@gmail.com';
+        $fromName = !empty($settings['smtp_from_name']) ? (string)$settings['smtp_from_name'] : 'WTSBill Enterprise';
 
         $status = 'FAILED';
         $errorMessage = null;
 
-        // Attempt SMTP socket if configured
-        if (!empty($settings['smtp_host'])) {
-            $smtpRes = self::sendSmtpMail(
-                $settings['smtp_host'],
-                (int)($settings['smtp_port'] ?: 587),
-                $settings['smtp_username'] ?? '',
-                $settings['smtp_password'] ?? '',
-                $settings['smtp_encryption'] ?? 'tls',
-                $fromEmail,
-                $fromName,
-                $toEmail,
-                $toName,
-                $subject,
-                $htmlBody,
-                $attachmentData,
-                $attachmentFilename
-            );
+        // Dispatch via PHPMailer SMTP client
+        $smtpRes = self::sendSmtpMail(
+            $host,
+            $port,
+            $username,
+            $password,
+            $encryption,
+            $fromEmail,
+            $fromName,
+            $toEmail,
+            $toName,
+            $subject,
+            $htmlBody,
+            $attachmentData,
+            $attachmentFilename,
+            $ccEmail
+        );
 
-            if ($smtpRes['success']) {
-                $status = 'SENT';
-            } else {
-                $errorMessage = $smtpRes['error'];
-            }
+        if ($smtpRes['success']) {
+            $status = 'SENT';
         } else {
-            // Native PHP mail() fallback
-            $mailRes = self::sendNativeMail(
-                $fromEmail,
-                $fromName,
-                $toEmail,
-                $subject,
-                $htmlBody,
-                $attachmentData,
-                $attachmentFilename
-            );
-
-            if ($mailRes['success']) {
-                $status = 'SENT';
-            } else {
-                $errorMessage = $mailRes['error'];
-            }
+            $errorMessage = $smtpRes['error'];
         }
 
         self::logMessage([
@@ -514,7 +570,7 @@ class CommunicationService
             'subject' => $subject,
             'body' => $htmlBody,
             'attachment_path' => $attachmentFilename,
-            'provider_name' => !empty($settings['smtp_host']) ? 'CUSTOM_SMTP' : 'NATIVE_MAIL',
+            'provider_name' => 'PHPMAILER_SMTP',
             'provider_reference' => null,
             'status' => $status,
             'error_message' => $errorMessage,
@@ -528,9 +584,158 @@ class CommunicationService
     }
 
     /**
-     * Socket-based pure PHP SMTP Client.
+     * Enterprise SMTP Client using PHPMailer with IPv4 DNS resolution,
+     * TLS/SSL encryption, custom SSL options, and inline PDF attachments.
      */
-    private static function sendSmtpMail(
+    public static function sendSmtpMail(
+        string $host,
+        int $port,
+        string $username,
+        string $password,
+        string $encryption,
+        string $fromEmail,
+        string $fromName,
+        string $toEmail,
+        string $toName,
+        string $subject,
+        string $htmlBody,
+        ?string $attachmentData = null,
+        ?string $attachmentFilename = null,
+        ?string $ccEmail = null
+    ): array {
+        $host       = trim($host) ?: 'smtp.gmail.com';
+        $port       = (int)($port ?: 587);
+        $username   = trim($username) ?: 'systemmail132@gmail.com';
+        $password   = str_replace(' ', '', (string)($password ?: 'eubojueuxgsfptit'));
+        $encryption = strtolower(trim($encryption ?: 'tls'));
+        $fromEmail  = trim($fromEmail) ?: 'systemmail132@gmail.com';
+        $fromName   = trim($fromName) ?: 'WTSBill Enterprise';
+
+        // Resolve IPv4 to prevent dead IPv6 connection timeouts on Windows
+        $connectHost = ($host === 'localhost' || filter_var($host, FILTER_VALIDATE_IP)) ? $host : gethostbyname($host);
+
+        if (class_exists(PHPMailer::class)) {
+            $mail = new PHPMailer(true);
+            try {
+                $mail->CharSet = 'UTF-8';
+                $mail->isSMTP();
+                $mail->Host       = $connectHost;
+                $mail->SMTPAuth   = (!empty($username) && !empty($password));
+                $mail->Username   = $username;
+                $mail->Password   = $password;
+
+                if ($encryption === 'ssl') {
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+                } elseif ($encryption === 'tls') {
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                } else {
+                    $mail->SMTPSecure = false;
+                    $mail->SMTPAutoTLS = false;
+                }
+
+                $mail->Port = $port;
+                $mail->Timeout = 15;
+
+                // Allow internal company mail servers with private/self-signed SSL certs and SNI matching
+                $mail->SMTPOptions = [
+                    'ssl' => [
+                        'verify_peer' => false,
+                        'verify_peer_name' => false,
+                        'allow_self_signed' => true,
+                        'peer_name' => $host,
+                    ]
+                ];
+
+                // Sender & Recipient
+                $mail->setFrom($fromEmail, $fromName);
+                $mail->addAddress($toEmail, $toName ?: $toEmail);
+
+                if (!empty($ccEmail) && filter_var($ccEmail, FILTER_VALIDATE_EMAIL)) {
+                    $mail->addCC($ccEmail);
+                }
+
+                // PDF Attachment
+                if (!empty($attachmentData) && !empty($attachmentFilename)) {
+                    $mail->addStringAttachment($attachmentData, $attachmentFilename, 'base64', 'application/pdf');
+                }
+
+                // Content
+                $mail->isHTML(true);
+                $mail->Subject = $subject;
+                $mail->Body    = $htmlBody;
+                $mail->AltBody = strip_tags(str_replace(['<br>', '<br/>', '<br />', '<p>', '</p>'], ["\n", "\n", "\n", "\n", "\n\n"], $htmlBody));
+
+                $mail->send();
+                return ['success' => true, 'status' => 'sent', 'error' => null];
+            } catch (MailerException $e) {
+                $errorMsg = $mail->ErrorInfo ?: $e->getMessage();
+                error_log("PHPMailer send failure to {$toEmail}: " . $errorMsg);
+                return ['success' => false, 'status' => 'failed', 'error' => $errorMsg];
+            } catch (\Throwable $t) {
+                $errorMsg = $t->getMessage();
+                error_log("PHPMailer exception to {$toEmail}: " . $errorMsg);
+                return ['success' => false, 'status' => 'failed', 'error' => $errorMsg];
+            }
+        }
+
+        // Socket fallback
+        return self::sendSocketFallbackMail(
+            $connectHost,
+            $port,
+            $username,
+            $password,
+            $encryption,
+            $fromEmail,
+            $fromName,
+            $toEmail,
+            $toName,
+            $subject,
+            $htmlBody,
+            $attachmentData,
+            $attachmentFilename,
+            $ccEmail
+        );
+    }
+
+    /**
+     * Transmit email immediately via SMTP with PHPMailer matching user reference pattern.
+     * Returns array: ['status' => 'sent'|'failed', 'error' => ?string]
+     */
+    public static function sendImmediateSmtpMail(
+        string $recipient,
+        string $subject,
+        string $bodyHtml,
+        ?string $attachmentData = null,
+        ?string $attachmentFilename = null,
+        ?string $ccEmail = null
+    ): array {
+        $res = self::sendSmtpMail(
+            'smtp.gmail.com',
+            587,
+            'systemmail132@gmail.com',
+            'eubojueuxgsfptit',
+            'tls',
+            'systemmail132@gmail.com',
+            'WTSBill Enterprise',
+            $recipient,
+            $recipient,
+            $subject,
+            $bodyHtml,
+            $attachmentData,
+            $attachmentFilename,
+            $ccEmail
+        );
+
+        return [
+            'status' => $res['success'] ? 'sent' : 'failed',
+            'error' => $res['error'],
+        ];
+    }
+
+    /**
+     * Socket-based pure PHP SMTP fallback.
+     */
+    private static function sendSocketFallbackMail(
         string $host,
         int $port,
         string $username,
@@ -543,7 +748,8 @@ class CommunicationService
         string $subject,
         string $htmlBody,
         ?string $attachmentData,
-        ?string $attachmentFilename
+        ?string $attachmentFilename,
+        ?string $ccEmail = null
     ): array {
         $prefix = (strtolower($encryption) === 'ssl') ? 'ssl://' : '';
         $timeout = 10;
@@ -578,7 +784,7 @@ class CommunicationService
         if (strtolower($encryption) === 'tls') {
             $tlsRes = $sendCommand('STARTTLS');
             if (str_starts_with($tlsRes, '220')) {
-                stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+                @stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
                 $sendCommand('EHLO localhost');
             }
         }
@@ -604,6 +810,10 @@ class CommunicationService
             return ['success' => false, 'error' => 'SMTP Recipient rejected: ' . trim($rcptRes)];
         }
 
+        if (!empty($ccEmail) && filter_var($ccEmail, FILTER_VALIDATE_EMAIL)) {
+            $sendCommand("RCPT TO:<{$ccEmail}>");
+        }
+
         $dataRes = $sendCommand("DATA");
         if (!str_starts_with($dataRes, '354')) {
             fclose($socket);
@@ -613,6 +823,9 @@ class CommunicationService
         $boundary = '=_wtsbill_' . md5((string)microtime());
         $headers = "From: {$fromName} <{$fromEmail}>\r\n";
         $headers .= "To: {$toName} <{$toEmail}>\r\n";
+        if (!empty($ccEmail) && filter_var($ccEmail, FILTER_VALIDATE_EMAIL)) {
+            $headers .= "Cc: {$ccEmail}\r\n";
+        }
         $headers .= "Subject: {$subject}\r\n";
         $headers .= "MIME-Version: 1.0\r\n";
         $headers .= "Content-Type: multipart/mixed; boundary=\"{$boundary}\"\r\n\r\n";
@@ -654,10 +867,14 @@ class CommunicationService
         string $subject,
         string $htmlBody,
         ?string $attachmentData,
-        ?string $attachmentFilename
+        ?string $attachmentFilename,
+        ?string $ccEmail = null
     ): array {
         $boundary = '=_wtsbill_' . md5((string)microtime());
         $headers = "From: {$fromName} <{$fromEmail}>\r\n";
+        if (!empty($ccEmail) && filter_var($ccEmail, FILTER_VALIDATE_EMAIL)) {
+            $headers .= "Cc: {$ccEmail}\r\n";
+        }
         $headers .= "MIME-Version: 1.0\r\n";
         $headers .= "Content-Type: multipart/mixed; boundary=\"{$boundary}\"\r\n";
 
@@ -678,7 +895,7 @@ class CommunicationService
         $sent = @mail($toEmail, $subject, $body, $headers);
         return [
             'success' => $sent,
-            'error' => $sent ? null : 'Native PHP mail() transfer failed or is unconfigured on local environment.',
+            'error' => $sent ? null : 'SMTP email server is not configured in Settings. Please set up your SMTP server (e.g. Gmail / Outlook / Custom SMTP) in Settings → Communication & Sharing, or use "Download PDF & Open Email App".',
         ];
     }
 

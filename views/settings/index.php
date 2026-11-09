@@ -67,6 +67,10 @@ $compTerms = $comp['terms_and_conditions'] ?? '';
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
             <span>Backup & Disaster Recovery</span>
         </button>
+        <button type="button" id="tab-btn-communication" class="btn <?= ($activeTab ?? 'general') === 'communication' ? 'btn-primary active' : 'btn-secondary' ?>" onclick="switchSettingsTab('communication')" style="font-size: 0.85rem; padding: 0.45rem 0.9rem; display: flex; align-items: center; gap: 0.4rem;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+            <span>Communication & Sharing</span>
+        </button>
         <button type="button" id="tab-btn-audit" class="btn <?= ($activeTab ?? 'general') === 'audit' ? 'btn-primary active' : 'btn-secondary' ?>" onclick="switchSettingsTab('audit')" style="font-size: 0.85rem; padding: 0.45rem 0.9rem; display: flex; align-items: center; gap: 0.4rem;">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
             <span>Audit Trail & System Logs</span>
@@ -526,6 +530,227 @@ $compTerms = $comp['terms_and_conditions'] ?? '';
         </div>
     </div>
 </div>
+
+<!-- ========================================== -->
+<!-- 4. COMMUNICATION & SHARING SETTINGS TAB    -->
+<!-- ========================================== -->
+<?php if ($isAdmin): ?>
+<div id="settings-sec-communication" style="<?= ($activeTab ?? 'general') === 'communication' ? 'display: block;' : 'display: none;' ?> margin-bottom: 2rem;">
+    <form method="POST" action="/settings/communication" id="commSettingsForm">
+        <input type="hidden" name="_csrf_token" value="<?= $csrfToken ?>">
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+            <!-- 1. Email SMTP Configuration Card -->
+            <div class="card" style="display: flex; flex-direction: column;">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
+                    <div style="display: flex; align-items: center; gap: 0.6rem;">
+                        <span style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                        </span>
+                        <div>
+                            <h3 style="margin: 0; font-size: 1rem; font-weight: 700;">Email SMTP Configuration</h3>
+                            <span style="font-size: 0.75rem; color: var(--text-muted);">Direct socket SMTP transmission with PDF attachments</span>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="badge <?= !empty($commSettings['email_configured']) ? 'badge-success' : 'badge-secondary' ?>">
+                            <?= !empty($commSettings['email_configured']) ? 'Configured' : 'Unconfigured' ?>
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body" style="padding-top: 1rem;">
+                    <!-- Quick Setup Presets -->
+                    <div style="margin-bottom: 0.85rem; padding: 0.5rem 0.75rem; background: var(--bg-surface); border-radius: 6px; border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+                        <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Quick Presets:</span>
+                        <div style="display: flex; gap: 0.4rem;">
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="applySmtpPreset('gmail')" style="font-size: 0.72rem; padding: 0.2rem 0.5rem;">
+                                Google Gmail
+                            </button>
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="applySmtpPreset('outlook')" style="font-size: 0.72rem; padding: 0.2rem 0.5rem;">
+                                Microsoft 365 / Outlook
+                            </button>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem; margin-bottom: 0.75rem;">
+                        <div style="flex: 2;">
+                            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">SMTP Host</label>
+                            <input type="text" name="smtp_host" value="<?= e($commSettings['smtp_host'] ?? '') ?>" class="form-control" placeholder="e.g. smtp.gmail.com or smtp.mailtrap.io" style="font-size: 0.85rem; width: 100%;">
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Port</label>
+                            <input type="number" name="smtp_port" value="<?= (int)($commSettings['smtp_port'] ?? 587) ?>" class="form-control" placeholder="587" style="font-size: 0.85rem; width: 100%;">
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 1rem; margin-bottom: 0.75rem;">
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Encryption</label>
+                            <select name="smtp_encryption" class="form-control" style="font-size: 0.85rem; width: 100%;">
+                                <option value="tls" <?= strtolower($commSettings['smtp_encryption'] ?? '') === 'tls' ? 'selected' : '' ?>>TLS (Port 587 - Recommended)</option>
+                                <option value="ssl" <?= strtolower($commSettings['smtp_encryption'] ?? '') === 'ssl' ? 'selected' : '' ?>>SSL (Port 465)</option>
+                                <option value="none" <?= strtolower($commSettings['smtp_encryption'] ?? '') === 'none' ? 'selected' : '' ?>>None (Port 25)</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">SMTP Username</label>
+                            <input type="text" name="smtp_username" value="<?= e($commSettings['smtp_username'] ?? '') ?>" class="form-control" placeholder="smtp_username" style="font-size: 0.85rem; width: 100%;">
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 0.75rem;">
+                        <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">SMTP Password</label>
+                        <input type="password" name="smtp_password" placeholder="<?= !empty($commSettings['smtp_password']) ? '•••••••••••• (Leave blank to keep unchanged)' : 'Enter SMTP password' ?>" class="form-control" style="font-size: 0.85rem; width: 100%;">
+                        <small id="smtp-preset-tip" style="display: none; color: #b45309; font-size: 0.72rem; margin-top: 0.35rem; padding: 0.35rem 0.5rem; background: rgba(245, 158, 11, 0.1); border-radius: 4px;"></small>
+                    </div>
+                    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">From Email</label>
+                            <input type="email" name="smtp_from_address" value="<?= e($commSettings['smtp_from_address'] ?? 'billing@wtsbill.in') ?>" class="form-control" placeholder="billing@wtsbill.in" style="font-size: 0.85rem; width: 100%;">
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">From Name</label>
+                            <input type="text" name="smtp_from_name" value="<?= e($commSettings['smtp_from_name'] ?? 'WTSBill Enterprise') ?>" class="form-control" placeholder="WTSBill Enterprise" style="font-size: 0.85rem; width: 100%;">
+                        </div>
+                    </div>
+                    <!-- Test Email Block -->
+                    <div style="background: var(--bg-surface); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color);">
+                        <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 0.35rem;">Test SMTP Delivery</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="email" id="test-email-address" placeholder="recipient@example.com" class="form-control" style="font-size: 0.8rem; flex: 1;">
+                            <button type="button" class="btn btn-secondary" onclick="sendTestEmail()" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; white-space: nowrap;">Send Test Email</button>
+                        </div>
+                        <div id="test-email-feedback" style="font-size: 0.75rem; margin-top: 0.35rem; display: none;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. WhatsApp Business API Configuration Card -->
+            <div class="card" style="display: flex; flex-direction: column;">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
+                    <div style="display: flex; align-items: center; gap: 0.6rem;">
+                        <span style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; background: rgba(37, 211, 102, 0.1); color: #25D366;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                        </span>
+                        <div>
+                            <h3 style="margin: 0; font-size: 1rem; font-weight: 700;">WhatsApp Business Cloud API</h3>
+                            <span style="font-size: 0.75rem; color: var(--text-muted);">Meta Cloud API automated delivery & Web Share fallback</span>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="badge <?= !empty($commSettings['whatsapp_configured']) ? 'badge-success' : 'badge-secondary' ?>">
+                            <?= !empty($commSettings['whatsapp_configured']) ? 'API Active' : 'Fallback Mode' ?>
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body" style="padding-top: 1rem;">
+                    <div style="margin-bottom: 0.75rem;">
+                        <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">WhatsApp Provider Integration</label>
+                        <select name="whatsapp_provider" class="form-control" style="font-size: 0.85rem; width: 100%;">
+                            <option value="CLOUD_API" <?= ($commSettings['whatsapp_provider'] ?? '') === 'CLOUD_API' ? 'selected' : '' ?>>Meta WhatsApp Business Cloud API (Automated Server Dispatch)</option>
+                            <option value="CLICK_TO_CHAT" <?= ($commSettings['whatsapp_provider'] ?? '') === 'CLICK_TO_CHAT' ? 'selected' : '' ?>>Web Share API & WhatsApp Direct Click-to-Chat (Zero Meta Setup)</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; gap: 1rem; margin-bottom: 0.75rem;">
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Phone Number ID</label>
+                            <input type="text" name="whatsapp_phone_number_id" value="<?= e($commSettings['whatsapp_phone_number_id'] ?? '') ?>" class="form-control" placeholder="e.g. 109876543210987" style="font-size: 0.85rem; width: 100%;">
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">WABA Account ID</label>
+                            <input type="text" name="whatsapp_business_account_id" value="<?= e($commSettings['whatsapp_business_account_id'] ?? '') ?>" class="form-control" placeholder="e.g. 293847291039485" style="font-size: 0.85rem; width: 100%;">
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 0.75rem;">
+                        <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">System User Permanent Access Token</label>
+                        <input type="password" name="whatsapp_access_token" placeholder="<?= !empty($commSettings['whatsapp_access_token']) ? '•••••••••••••••• (Leave blank to keep unchanged)' : 'EAABw...' ?>" class="form-control" style="font-size: 0.85rem; width: 100%;">
+                    </div>
+                    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">API Version</label>
+                            <input type="text" name="whatsapp_api_version" value="<?= e($commSettings['whatsapp_api_version'] ?? 'v19.0') ?>" class="form-control" placeholder="v19.0" style="font-size: 0.85rem; width: 100%;">
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Template Name</label>
+                            <input type="text" name="whatsapp_template_name" value="<?= e($commSettings['whatsapp_template_name'] ?? 'document_share') ?>" class="form-control" placeholder="document_share" style="font-size: 0.85rem; width: 100%;">
+                        </div>
+                    </div>
+                    <!-- Test WhatsApp Block -->
+                    <div style="background: var(--bg-surface); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color);">
+                        <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 0.35rem;">Test WhatsApp Connection</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="text" id="test-wa-phone" placeholder="Mobile Number (e.g. 9876543210)" class="form-control" style="font-size: 0.8rem; flex: 1;">
+                            <button type="button" class="btn btn-secondary" onclick="sendTestWhatsApp()" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; white-space: nowrap;">Test WhatsApp</button>
+                        </div>
+                        <div id="test-wa-feedback" style="font-size: 0.75rem; margin-top: 0.35rem; display: none;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Preferences & Templates Card -->
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <div class="card-header" style="padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
+                <h3 style="margin: 0; font-size: 1rem; font-weight: 700;">Sharing Channels, Defaults & Message Templates</h3>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">Enable/disable specific channels and customize default messaging</span>
+            </div>
+            <div class="card-body" style="padding-top: 1rem;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 1.25rem;">
+                    <div>
+                        <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.5rem;">Channel Toggles</label>
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; cursor: pointer;">
+                                <input type="checkbox" name="whatsapp_enabled" value="1" <?= !empty($commSettings['whatsapp_enabled']) ? 'checked' : '' ?>>
+                                <span>Enable WhatsApp PDF Sharing</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; cursor: pointer;">
+                                <input type="checkbox" name="email_enabled" value="1" <?= !empty($commSettings['email_enabled']) ? 'checked' : '' ?>>
+                                <span>Enable Email PDF Sharing</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.5rem;">Default Channels</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                            <div>
+                                <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Tax Invoices</label>
+                                <select name="default_invoice_channel" class="form-control" style="font-size: 0.85rem; width: 100%;">
+                                    <option value="BOTH" <?= ($commSettings['default_invoice_channel'] ?? '') === 'BOTH' ? 'selected' : '' ?>>Both (WhatsApp + Email)</option>
+                                    <option value="WHATSAPP" <?= ($commSettings['default_invoice_channel'] ?? '') === 'WHATSAPP' ? 'selected' : '' ?>>WhatsApp Only</option>
+                                    <option value="EMAIL" <?= ($commSettings['default_invoice_channel'] ?? '') === 'EMAIL' ? 'selected' : '' ?>>Email Only</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Quotations</label>
+                                <select name="default_quotation_channel" class="form-control" style="font-size: 0.85rem; width: 100%;">
+                                    <option value="BOTH" <?= ($commSettings['default_quotation_channel'] ?? '') === 'BOTH' ? 'selected' : '' ?>>Both (WhatsApp + Email)</option>
+                                    <option value="WHATSAPP" <?= ($commSettings['default_quotation_channel'] ?? '') === 'WHATSAPP' ? 'selected' : '' ?>>WhatsApp Only</option>
+                                    <option value="EMAIL" <?= ($commSettings['default_quotation_channel'] ?? '') === 'EMAIL' ? 'selected' : '' ?>>Email Only</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Default Email Note / Message</label>
+                        <textarea name="default_email_message" rows="3" class="form-control" style="font-size: 0.85rem; width: 100%;" placeholder="e.g. Please find attached your document."><?= e($commSettings['default_email_message'] ?? '') ?></textarea>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Default WhatsApp Note / Message</label>
+                        <textarea name="default_whatsapp_message" rows="3" class="form-control" style="font-size: 0.85rem; width: 100%;" placeholder="e.g. Please review the attached document."><?= e($commSettings['default_whatsapp_message'] ?? '') ?></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer" style="display: flex; justify-content: flex-end; padding: 0.75rem 1.25rem; border-top: 1px solid var(--border-color); background: var(--bg-surface);">
+                <button type="submit" class="btn btn-primary" style="display: flex; align-items: center; gap: 0.4rem;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    <span>Save Communication Settings</span>
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+<?php endif; ?>
 
 <!-- RESTORE DATABASE SAFETY CONFIRMATION MODAL -->
 <div id="restore-backup-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.75); z-index: 99999; align-items: center; justify-content: center;">
@@ -1027,17 +1252,20 @@ function switchSettingsTab(tab) {
     var generalSec = document.getElementById('settings-sec-general');
     var auditSec = document.getElementById('settings-sec-audit');
     var backupsSec = document.getElementById('settings-sec-backups');
+    var commSec = document.getElementById('settings-sec-communication');
 
     var genBtn = document.getElementById('tab-btn-general');
     var audBtn = document.getElementById('tab-btn-audit');
     var backupsBtn = document.getElementById('tab-btn-backups');
+    var commBtn = document.getElementById('tab-btn-communication');
 
     // Hide all
     if (generalSec) generalSec.style.display = 'none';
     if (auditSec) auditSec.style.display = 'none';
     if (backupsSec) backupsSec.style.display = 'none';
+    if (commSec) commSec.style.display = 'none';
 
-    [genBtn, audBtn, backupsBtn].forEach(function(btn) {
+    [genBtn, audBtn, backupsBtn, commBtn].forEach(function(btn) {
         if (btn) {
             btn.classList.remove('active', 'btn-primary');
             btn.classList.add('btn-secondary');
@@ -1053,11 +1281,107 @@ function switchSettingsTab(tab) {
         if (backupsSec) backupsSec.style.display = 'block';
         if (backupsBtn) { backupsBtn.classList.remove('btn-secondary'); backupsBtn.classList.add('active', 'btn-primary'); }
         if (window.history && window.history.replaceState) window.history.replaceState({}, '', '/settings?tab=backups');
+    } else if (tab === 'communication') {
+        if (commSec) commSec.style.display = 'block';
+        if (commBtn) { commBtn.classList.remove('btn-secondary'); commBtn.classList.add('active', 'btn-primary'); }
+        if (window.history && window.history.replaceState) window.history.replaceState({}, '', '/settings?tab=communication');
     } else {
         if (generalSec) generalSec.style.display = 'block';
         if (genBtn) { genBtn.classList.remove('btn-secondary'); genBtn.classList.add('active', 'btn-primary'); }
         if (window.history && window.history.replaceState) window.history.replaceState({}, '', '/settings');
     }
+}
+
+function applySmtpPreset(provider) {
+    var hostInput = document.querySelector('input[name="smtp_host"]');
+    var portInput = document.querySelector('input[name="smtp_port"]');
+    var encSelect = document.querySelector('select[name="smtp_encryption"]');
+    var tip = document.getElementById('smtp-preset-tip');
+
+    if (provider === 'gmail') {
+        if (hostInput) hostInput.value = 'smtp.gmail.com';
+        if (portInput) portInput.value = '587';
+        if (encSelect) encSelect.value = 'tls';
+        if (tip) {
+            tip.style.display = 'block';
+            tip.innerHTML = '<strong>Gmail Configuration:</strong> Set <em>Username</em> to your full Gmail address (e.g. <code>you@gmail.com</code>). For <em>Password</em>, use a 16-character <strong>Google App Password</strong> (from Google Account &gt; Security &gt; 2-Step Verification &gt; App Passwords), NOT your normal Gmail password.';
+        }
+    } else if (provider === 'outlook') {
+        if (hostInput) hostInput.value = 'smtp.office365.com';
+        if (portInput) portInput.value = '587';
+        if (encSelect) encSelect.value = 'tls';
+        if (tip) {
+            tip.style.display = 'block';
+            tip.innerHTML = '<strong>Microsoft 365 / Outlook:</strong> Set <em>Username</em> to your full Outlook/365 email and enter your password or App Password.';
+        }
+    }
+}
+
+function sendTestEmail() {
+    var email = document.getElementById('test-email-address').value.trim();
+    var fb = document.getElementById('test-email-feedback');
+    if (!email) {
+        fb.style.display = 'block';
+        fb.style.color = 'var(--danger, #ef4444)';
+        fb.textContent = 'Please enter a test email address.';
+        return;
+    }
+    fb.style.display = 'block';
+    fb.style.color = 'var(--text-muted)';
+    fb.textContent = 'Connecting to SMTP server and dispatching test email...';
+
+    var csrf = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
+    fetch('/api/settings/communication/test-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+        body: JSON.stringify({ test_email: email })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+        if (res.success) {
+            fb.style.color = 'var(--success, #10b981)';
+            fb.textContent = '✓ ' + (res.message || 'Test email dispatched successfully.');
+        } else {
+            fb.style.color = 'var(--danger, #ef4444)';
+            fb.textContent = '✗ ' + (res.message || 'SMTP delivery failed.');
+        }
+    }).catch(function(err) {
+        fb.style.color = 'var(--danger, #ef4444)';
+        fb.textContent = '✗ Error: ' + err.message;
+    });
+}
+
+function sendTestWhatsApp() {
+    var phone = document.getElementById('test-wa-phone').value.trim();
+    var fb = document.getElementById('test-wa-feedback');
+    if (!phone) {
+        fb.style.display = 'block';
+        fb.style.color = 'var(--danger, #ef4444)';
+        fb.textContent = 'Please enter a test mobile phone number.';
+        return;
+    }
+    fb.style.display = 'block';
+    fb.style.color = 'var(--text-muted)';
+    fb.textContent = 'Connecting to WhatsApp API...';
+
+    var csrf = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
+    fetch('/api/settings/communication/test-whatsapp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+        body: JSON.stringify({ test_phone: phone })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+        if (res.success) {
+            fb.style.color = 'var(--success, #10b981)';
+            fb.textContent = '✓ ' + (res.message || 'WhatsApp notification initiated.');
+            if (res.url) {
+                window.open(res.url, '_blank');
+            }
+        } else {
+            fb.style.color = 'var(--danger, #ef4444)';
+            fb.textContent = '✗ ' + (res.message || 'WhatsApp dispatch failed.');
+        }
+    }).catch(function(err) {
+        fb.style.color = 'var(--danger, #ef4444)';
+        fb.textContent = '✗ Error: ' + err.message;
+    });
 }
 
 // -------------------------------------------------------------

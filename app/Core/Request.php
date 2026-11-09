@@ -212,7 +212,13 @@ class Request
     public function expectsJson(): bool
     {
         $accept = $this->getHeader('accept') ?? '';
-        return str_contains($accept, 'application/json') || str_starts_with($this->path, '/api/');
+        $contentType = $this->getHeader('content-type') ?? '';
+        $xReq = strtolower((string)($this->getHeader('x-requested-with') ?? ''));
+
+        return str_contains($accept, 'application/json')
+            || str_contains($contentType, 'application/json')
+            || $xReq === 'xmlhttprequest'
+            || str_starts_with($this->path, '/api/');
     }
 }
 

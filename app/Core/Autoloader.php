@@ -23,6 +23,10 @@ class Autoloader
         }
 
         $baseDir = dirname(__DIR__); // points to app/
+        $vendorAutoload = dirname(__DIR__, 2) . '/vendor/autoload.php';
+        if (file_exists($vendorAutoload)) {
+            require_once $vendorAutoload;
+        }
 
         self::addNamespace('WTSBill\\', $baseDir);
         self::addNamespace('App\\', $baseDir);

@@ -246,4 +246,35 @@
 | `docs/AI_ASSISTANT_REMOVAL_REPORT.md` | Documentation | Complete decommissioning report for AI Assistant routes, controllers, services, views, and navigation menus |
 | `docs/REGRESSION_TEST_RESULTS.md` | Documentation | Complete regression test results across 61 test sections and 787 passing assertions |
 | `docs/REBUILD_PROGRESS.md` | Documentation | Complete rebuild progress milestones up to Milestone 19 (Automatic 7-Day Weekly Backup Automation) |
+| `database/migrations/2026_11_07_000001_create_company_brandings_table.sql` | Migration | Schema creation for company_brandings table with multi-tenant, branch override, dimensions, and document toggle columns |
+| `app/Services/CompanyBrandingService.php` | Service | Centralized branding service managing logo, signature, and stamp storage, sanitization, cache busting, and branch scoping |
+| `app/Controllers/BrandingController.php` | Controller | Centralized branding management endpoints for logo, signature, and stamp uploads, resizing, and removal |
+| `views/settings/branding.php` | View | Settings > Company Branding page with three upload cards, dimension guides, previews, and toggle settings |
+| `tests/Feature/CompanyBrandingTest.php` | Feature | 10 assertions: Logo/signature/stamp upload, SVG sanitization, size settings, branch overrides, cache-busting URLs |
+| `database/migrations/2026_11_07_000002_create_parties_table.sql` | Migration | Schema creation for unified parties table with party_type, customer_id, supplier_id, and statutory columns |
+| `app/Repositories/PartyRepository.php` | Repository | Multi-role querying, sequential code generator (PRT-XXXX), server-side filtering, and pagination |
+| `app/Services/PartyService.php` | Service | Unified party business logic, dual-role synchronization, 360° profile aggregation, and statement export |
+| `app/Controllers/PartyController.php` | Controller | Endpoints for unified parties list, create, profile, update, status toggle, and CSV statements |
+| `views/parties/index.php` | View | Unified parties directory with role tabs (All, Customers, Suppliers, Both), search bar, and add/edit modal |
+| `views/parties/profile.php` | View | 360° party profile with KPI cards, role-aware transaction tabs (Invoices, Bills, Orders), and ledger |
+| `tests/Feature/UnifiedPartiesTest.php` | Feature | 15 assertions: Single parties sidebar entry, role sync, dual-role identity, filters, 360° profile, statement export |
+| `docs/UNIFIED_PARTIES_MODULE.md` | Documentation | Architectural specification and implementation details for the Unified Parties Module |
+| `app/Controllers/BrandingController.php` | Controller | Controller managing company branding settings view, secure file uploads, asset deletion, and document display configurations |
+| `views/settings/branding.php` | View | Settings UI view with 3 upload cards (Logo, Signature, Stamp), live previews, display dimensions, and removal confirmation |
+| `tests/Feature/CompanyBrandingTest.php` | Feature | 10 assertions: default branding, settings UI, PNG/SVG upload, malicious SVG rejection, disallowed extensions, display settings, multi-branch override, and asset removal |
+| `docs/COMPANY_BRANDING.md` | Documentation | Comprehensive architecture manual, database specification, security rules, and integration guide for Company Branding |
+| `docs/BRANDING_QA_REPORT.md` | Documentation | Complete QA test report covering all 12 verification criteria with 100% pass rate |
+| `views/partials/share_modal.php` | View | Universal sharing modal with preview, WhatsApp direct attach/Cloud API/wa.me fallback, SMTP Email delivery, and audit history |
+| `tests/Feature/CommunicationSharingTest.php` | Feature | 20 assertions: Settings persistence, E.164 normalization, PDF generation, invoice/quote sharing, SMTP dispatch, HMAC tokens, security controls |
+| `docs/INVOICE_QUOTATION_SHARING.md` | Documentation | Architectural specification and integration guide for Invoice and Quotation WhatsApp & Email sharing |
+| `docs/WHATSAPP_INTEGRATION.md` | Documentation | Meta WhatsApp Business Cloud API, Web Share API Method A, and click-to-chat fallback integration manual |
+| `docs/EMAIL_INTEGRATION.md` | Documentation | Native socket SMTP client, TLS/SSL encryption, multipart/mixed MIME PDF attachment, and delivery verification manual |
+| `docs/SHARING_QA_REPORT.md` | Documentation | Comprehensive QA test matrix and verification results for Communication & Sharing across 20 test assertions (100% pass) |
+| `docs/DYNAMIC_SIDEBAR_IMPLEMENTATION.md` | Documentation | Architecture, single-state accordion controller, test verification results for sidebar navigation |
+| `app/Services/InvoicePaymentStatusReportService.php` | Service | Comprehensive financial reconciliation service for unpaid, partially paid, and settled invoices with native OpenXML (.xlsx) generation |
+| `views/reports/invoice_payment_status.php` | View | Invoice Payment Status Report with 4 KPI summary cards, multi-dimensional filters, data table, and Excel export trigger |
+| `tests/Feature/InvoicePaymentStatusReportTest.php` | Feature | 15 assertions: Unpaid/partial/paid categorization, overdue detection, cancelled exclusions, multi-filter, genuine .xlsx OpenXML export |
+| `docs/INVOICE_PAYMENT_STATUS_REPORT.md` | Documentation | Architectural specification, calculation rules, formula definitions, and user manual for Invoice Payment Status Report |
+| `docs/INVOICE_EXCEL_EXPORT.md` | Documentation | Technical specification for genuine Office Open XML (.xlsx) workbook packaging, 9-column schema, and formula injection defense |
+| `docs/INVOICE_REPORT_QA.md` | Documentation | Comprehensive QA test matrix and verification results for Invoice Payment Status Report across 15 assertions (100% pass) |
 | `docs/FILE_REGISTRY.md` | Documentation | Authoritative inventory and registry of all application codebase and documentation files |

@@ -59,6 +59,26 @@
 </div>
 
 <!-- 3. KPI Cards (4 White Cards with Blue Accent Icon) -->
+<!-- Status Pill Tabs -->
+<div class="status-pills-bar" style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; align-items: center;">
+    <?php
+    $statusParam = $_GET['status'] ?? '';
+    $tabs = [
+        '' => 'All Bills',
+        'UNPAID' => 'Unpaid',
+        'PARTIALLY PAID' => 'Partially Paid',
+        'OVERDUE' => 'Overdue',
+        'PAID' => 'Paid',
+    ];
+    foreach ($tabs as $value => $label):
+        $active = ($statusParam === $value || ($value === '' && empty($statusParam)));
+    ?>
+    <button type="button" onclick="window.applyKpiFilter('<?= $value ?: 'ALL' ?>')" class="btn <?= $active ? 'btn-primary' : 'btn-light' ?>" style="padding: 0.4rem 1rem; border-radius: 9999px; font-size: 0.825rem; font-weight: 600; cursor: pointer; border: 1px solid <?= $active ? 'var(--primary)' : 'var(--border)' ?>; transition: all 0.2s;">
+        <?= $label ?>
+    </button>
+    <?php endforeach; ?>
+</div>
+
 <div class="kpi-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
     <!-- 1. Total Payable -->
     <div class="card kpi-card" onclick="window.applyKpiFilter('UNPAID')" style="cursor: pointer; padding: 1.25rem; transition: transform 0.15s ease, box-shadow 0.15s ease; border-left: 4px solid var(--primary);">
@@ -142,54 +162,56 @@
     </div>
 </div>
 
-<!-- 4. Filter Bar (Above Table) -->
-<div class="card filter-bar" style="padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
-    <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: space-between;">
-        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; flex: 1;">
-            <!-- Search -->
-            <div style="position: relative; min-width: 220px; flex: 1; max-width: 320px;">
-                <span style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                    </svg>
-                </span>
-                <input type="text" id="filter-search" class="form-control" placeholder="Search bill #, vendor invoice, supplier..." style="padding-left: 2.2rem; width: 100%;">
-            </div>
+<!-- 4. Filter Bar (Clean 2-Row Design) -->
+<div class="card filter-bar" style="padding: 1.25rem; margin-bottom: 1.25rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+    <!-- Row 1: Search & Clear Filters -->
+    <div style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.85rem;">
+        <div style="position: relative; flex: 1;">
+            <span style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); display: flex; align-items: center;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            </span>
+            <input type="text" id="filter-search" class="form-control" placeholder="Search bill #, vendor invoice, supplier..." style="padding: 0.55rem 0.85rem 0.55rem 2.4rem; width: 100%; border-radius: 8px; border: 1px solid var(--border); font-size: 0.875rem; background: #fff;">
+        </div>
+        <button type="button" class="btn btn-light" onclick="window.clearFilters()" style="border-radius: 8px; padding: 0.55rem 1rem; font-size: 0.8125rem; display: inline-flex; align-items: center; gap: 0.4rem; border: 1px solid var(--border); white-space: nowrap; height: 38px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+            Clear Filters
+        </button>
+    </div>
 
-            <!-- Supplier Filter -->
-            <select id="filter-supplier" class="form-select" style="min-width: 180px;">
+    <!-- Row 2: Dropdowns & Date Filters -->
+    <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
+        <!-- Supplier Filter -->
+        <div style="flex: 1.5; min-width: 200px;">
+            <select id="filter-supplier" class="form-select" style="width: 100%; border-radius: 8px; border: 1px solid var(--border); padding: 0.5rem 0.75rem; font-size: 0.875rem; background: #fff;">
                 <option value="">All Suppliers</option>
                 <?php foreach ($suppliers ?? [] as $s): ?>
                     <option value="<?= e((string)$s['id']) ?>"><?= e($s['name']) ?></option>
                 <?php endforeach; ?>
             </select>
+        </div>
 
-            <!-- Status Filter -->
-            <select id="filter-status" class="form-select" style="min-width: 150px;">
+        <!-- Status Filter -->
+        <div style="flex: 1; min-width: 160px;">
+            <select id="filter-status" class="form-select" style="width: 100%; border-radius: 8px; border: 1px solid var(--border); padding: 0.5rem 0.75rem; font-size: 0.875rem; background: #fff;">
                 <option value="ALL">All Statuses</option>
                 <option value="UNPAID">Unpaid</option>
                 <option value="PARTIALLY PAID">Partially Paid</option>
                 <option value="PAID">Paid</option>
                 <option value="OVERDUE">Overdue</option>
             </select>
-
-            <!-- Date Range -->
-            <div style="display: flex; align-items: center; gap: 0.35rem;">
-                <input type="date" id="filter-from" class="form-control" title="From Date" style="width: 140px; font-size: 0.8125rem;">
-                <span style="color: var(--text-muted); font-size: 0.8125rem;">to</span>
-                <input type="date" id="filter-to" class="form-control" title="To Date" style="width: 140px; font-size: 0.8125rem;">
-            </div>
         </div>
 
-        <div>
-            <button type="button" class="btn btn-light" onclick="window.clearFilters()" style="border-radius: 8px; font-size: 0.8125rem;">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-                Clear Filters
-            </button>
+        <!-- Date Range -->
+        <div style="display: flex; align-items: center; gap: 0.5rem; background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 0.2rem 0.65rem;">
+            <input type="date" id="filter-from" class="form-control" title="From Date" style="border: none; padding: 0.3rem 0.2rem; font-size: 0.8125rem; outline: none; background: transparent;">
+            <span style="color: var(--text-muted); font-size: 0.8125rem; font-weight: 500;">to</span>
+            <input type="date" id="filter-to" class="form-control" title="To Date" style="border: none; padding: 0.3rem 0.2rem; font-size: 0.8125rem; outline: none; background: transparent;">
         </div>
     </div>
 </div>
@@ -329,6 +351,7 @@
                                             <?php if ($balance > 0.001): ?>
                                                 <a href="#" onclick="window.openPaymentModal(<?= (int)$p['id'] ?>, '<?= e($p['purchase_number']) ?>', <?= $balance ?>); return false;" style="display: block; padding: 0.45rem 1rem; color: var(--primary); font-size: 0.8125rem; text-decoration: none; font-weight: 500;">Record Payment</a>
                                             <?php endif; ?>
+                                            <a href="#" onclick="window.openShareBillModal(<?= (int)$p['id'] ?>); return false;" style="display: block; padding: 0.45rem 1rem; color: var(--text-main); font-size: 0.8125rem; text-decoration: none;">Share (Email / WhatsApp)</a>
                                             <a href="#" onclick="window.duplicateBill(<?= (int)$p['id'] ?>); return false;" style="display: block; padding: 0.45rem 1rem; color: var(--text-main); font-size: 0.8125rem; text-decoration: none;">Duplicate</a>
                                             <a href="#" onclick="window.printSingleBill(<?= (int)$p['id'] ?>); return false;" style="display: block; padding: 0.45rem 1rem; color: var(--text-main); font-size: 0.8125rem; text-decoration: none;">Download PDF</a>
                                             <div style="height: 1px; background: var(--border); margin: 0.25rem 0;"></div>
@@ -599,6 +622,10 @@
         <button type="button" class="btn btn-secondary" onclick="window.printSingleBill(activeDrawerBillId)">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
             Print
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="window.openShareBillModal(activeDrawerBillId)" style="display: flex; align-items: center; gap: 0.35rem;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+            Share (Email / WhatsApp)
         </button>
         <button type="button" id="drawer-pay-btn" class="btn btn-primary" onclick="window.payFromDrawer()">
             Record Payment
@@ -875,6 +902,7 @@
                         <div id="row-menu-${p.id}" class="row-menu-dropdown" style="display: none; position: absolute; right: 0; top: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 14px rgba(15,23,42,0.1); z-index: 50; min-width: 170px; padding: 0.35rem 0; text-align: left;">
                             <a href="#" onclick="window.openBillDrawer(${p.id}); return false;" style="display: block; padding: 0.45rem 1rem; color: var(--text-main); font-size: 0.8125rem; text-decoration: none;">View Details</a>
                             ${bal > 0.001 ? `<a href="#" onclick="window.openPaymentModal(${p.id}, '${p.purchase_number}', ${bal}); return false;" style="display: block; padding: 0.45rem 1rem; color: var(--primary); font-size: 0.8125rem; text-decoration: none; font-weight: 500;">Record Payment</a>` : ''}
+                            <a href="#" onclick="window.openShareBillModal(${p.id}); return false;" style="display: block; padding: 0.45rem 1rem; color: var(--text-main); font-size: 0.8125rem; text-decoration: none;">Share (Email / WhatsApp)</a>
                             <a href="#" onclick="window.duplicateBill(${p.id}); return false;" style="display: block; padding: 0.45rem 1rem; color: var(--text-main); font-size: 0.8125rem; text-decoration: none;">Duplicate</a>
                             <a href="#" onclick="window.printSingleBill(${p.id}); return false;" style="display: block; padding: 0.45rem 1rem; color: var(--text-main); font-size: 0.8125rem; text-decoration: none;">Download PDF</a>
                             <div style="height: 1px; background: var(--border); margin: 0.25rem 0;"></div>
@@ -1051,7 +1079,21 @@
 
     window.printBills = function() {
         document.getElementById('export-dropdown-menu').style.display = 'none';
-        window.print();
+        const search = document.getElementById('filter-search').value.trim();
+        const sup = document.getElementById('filter-supplier').value;
+        const status = document.getElementById('filter-status').value;
+        const from = document.getElementById('filter-from').value;
+        const to = document.getElementById('filter-to').value;
+
+        const params = new URLSearchParams({
+            format: 'html',
+            search: search,
+            supplier_id: sup,
+            status: status,
+            from: from,
+            to: to
+        });
+        window.open('/purchases/bills/export?' + params.toString(), '_blank');
     };
 
     // Row Actions Dropdown Toggle
@@ -1405,6 +1447,23 @@
     };
 
     // Init Event Listeners on DOM Ready
+    // Open Share Modal for Purchase Bill
+    window.openShareBillModal = function(billId) {
+        billId = parseInt(billId) || 0;
+        if (!billId) return;
+
+        var bill = (typeof billsData !== 'undefined') ? billsData.find(b => parseInt(b.id) === billId) : null;
+        var billNum = bill ? bill.purchase_number : ('PB-' + billId);
+        var supplierName = bill ? (bill.supplier_name || 'Vendor / Supplier') : 'Vendor / Supplier';
+        var totalAmount = bill ? (parseFloat(bill.total_amount) || 0) : 0;
+        var supplierPhone = (bill && bill.supplier_phone) ? bill.supplier_phone : '';
+        var supplierEmail = (bill && bill.supplier_email) ? bill.supplier_email : '';
+
+        if (typeof window.openShareModal === 'function') {
+            window.openShareModal('PURCHASE_BILL', billId, billNum, supplierName, supplierPhone, supplierEmail, totalAmount, 'WIS TECHNOSAVVY PVT LTD');
+        }
+    };
+
     document.addEventListener('DOMContentLoaded', function() {
         // Debounced Filter inputs
         document.getElementById('filter-search').addEventListener('input', triggerFetchDebounced);
@@ -1421,5 +1480,16 @@
                 window.closeBillDrawer();
             }
         });
+
+        // Auto-open purchase bill modal if navigating to /purchases/bills/create or action=create
+        if (<?= json_encode(!empty($autoOpenCreateModal)) ?> || window.location.pathname.endsWith('/create') || new URLSearchParams(window.location.search).get('action') === 'create') {
+            setTimeout(function() {
+                if (typeof window.openPurchaseModal === 'function') {
+                    window.openPurchaseModal();
+                }
+            }, 100);
+        }
     });
 </script>
+
+<?php include \WTSBill\Core\View::resolvePath('partials/share_modal'); ?>

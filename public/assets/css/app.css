@@ -5,42 +5,48 @@
  */
 
 :root {
-    /* Color Palette - Slate / Indigo / Emerald / Rose / Amber */
-    --color-primary: #3b82f6;
-    --color-primary-hover: #2563eb;
-    --color-primary-light: rgba(59, 130, 246, 0.12);
+    /* Global Forest-Green Design Token Palette */
+    --color-background: #DAF1DE;
+    --color-secondary: #8EB69B;
+    --color-primary: #235347;
+    --color-primary-dark: #163832;
+    --color-dark-surface: #0B2B26;
+    --color-deepest: #051F20;
+
+    --color-primary-hover: #163832;
+    --color-primary-light: #DAF1DE;
     --color-primary-contrast: #ffffff;
 
-    --color-success: #10b981;
-    --color-success-bg: rgba(16, 185, 129, 0.12);
-    --color-success-border: #059669;
+    --color-success: #235347;
+    --color-success-bg: rgba(35, 83, 71, 0.12);
+    --color-success-border: #8EB69B;
 
-    --color-danger: #ef4444;
-    --color-danger-bg: rgba(239, 68, 68, 0.12);
-    --color-danger-border: #dc2626;
+    --color-danger: #B91C1C;
+    --color-danger-bg: rgba(185, 28, 28, 0.12);
+    --color-danger-border: #EF4444;
 
-    --color-warning: #f59e0b;
-    --color-warning-bg: rgba(245, 158, 11, 0.12);
-    --color-warning-border: #d97706;
+    --color-warning: #B45309;
+    --color-warning-bg: rgba(180, 83, 9, 0.12);
+    --color-warning-border: #F59E0B;
 
-    --color-info: #06b6d4;
-    --color-info-bg: rgba(6, 182, 212, 0.12);
-    --color-info-border: #0891b2;
+    --color-info: #163832;
+    --color-info-bg: #E8F5EB;
+    --color-info-border: #8EB69B;
 
-    /* Theme - Dark Default (Enterprise Slate) */
+    /* Theme - Default Dark Mode Baseline */
     --bg-body: #0b1120;
-    --bg-surface: #1e293b;
-    --bg-surface-elevated: #334155;
-    --bg-sidebar: #0f172a;
-    --bg-sidebar-active: rgba(59, 130, 246, 0.15);
-    --border-color: #334155;
-    --border-subtle: #1e293b;
+    --bg-surface: #ffffff;
+    --bg-surface-elevated: #F4FAF6;
+    --bg-sidebar: #051F20;
+    --bg-sidebar-active: #235347;
+    --border-color: #8EB69B;
+    --border-subtle: #DAF1DE;
 
     /* Text Colors */
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
-    --text-muted: #64748b;
-    --text-inverse: #0f172a;
+    --text-primary: #051F20;
+    --text-secondary: #163832;
+    --text-muted: #235347;
+    --text-inverse: #ffffff;
 
     /* Layout Metrics */
     --sidebar-width: 260px;

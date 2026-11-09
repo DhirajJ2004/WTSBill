@@ -133,6 +133,17 @@
             if (typeof window.toggleNavGroup === 'function') {
                 window.toggleNavGroup(groupId, forceState);
             }
+        },
+        getOpenNavGroup: function () {
+            if (typeof window.getOpenNavGroup === 'function') {
+                return window.getOpenNavGroup();
+            }
+            return null;
+        },
+        setOpenNavGroup: function (groupId) {
+            if (typeof window.setOpenNavGroup === 'function') {
+                window.setOpenNavGroup(groupId);
+            }
         }
     };
 

@@ -50,6 +50,10 @@ if (strlen($initials) === 1) {
             </svg>
         </button>
 
+        <div class="header-dashboard-title" style="margin: 0 0.75rem; font-size: 1.18rem; font-weight: 700; color: var(--text-main, #0F172A); letter-spacing: -0.01em;">
+            <?= e($title ?? 'Dashboard') ?>
+        </div>
+
         <!-- Active Tenant Context (accessible to automation/DOM without visual noise) -->
         <span class="tenant-meta" data-company-id="<?= e((string)$companyId) ?>" data-branch-id="<?= e((string)$activeBranchId) ?>" style="display: none;" aria-hidden="true">Company #<?= e((string)$companyId) ?> &bull; Branch #<?= e((string)$activeBranchId) ?></span>
 
@@ -165,6 +169,14 @@ if (strlen($initials) === 1) {
     </div>
 
     <div class="header-right" style="display: flex; align-items: center; gap: 0.75rem;">
+        <!-- Notification Hub Bell Icon -->
+        <a href="/notifications" class="header-icon-btn" title="View Notifications" style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-muted); text-decoration: none; position: relative;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+        </a>
+
         <!-- Light / Dark Theme Switcher -->
         <button type="button" id="theme-toggle-btn" class="theme-toggle-btn" title="Toggle Light / Dark Mode" onclick="window.toggleTheme(event)">
             <svg id="theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">

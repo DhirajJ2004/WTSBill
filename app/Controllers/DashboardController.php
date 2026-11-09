@@ -209,12 +209,45 @@ class DashboardController
             [$companyId, $branchId]
         );
 
+        $bankRow = Database::selectOne(
+            "SELECT COALESCE(SUM(current_balance), 0) AS cash_bank_balance 
+             FROM `bank_accounts` 
+             WHERE company_id = ?",
+            [$companyId]
+        );
+
+        // Today's Sales
+        $todayRow = Database::selectOne(
+            "SELECT COUNT(*) AS count, COALESCE(SUM(grand_total), 0) AS amount 
+             FROM `invoices` 
+             WHERE company_id = ? AND invoice_date = CURDATE() AND deleted_at IS NULL AND status != 'CANCELLED'",
+            [$companyId]
+        );
+
+        // Pending Payments
+        $pendingRow = Database::selectOne(
+            "SELECT COUNT(*) AS count, COALESCE(SUM(amount_due), 0) AS amount 
+             FROM `invoices` 
+             WHERE company_id = ? AND deleted_at IS NULL AND amount_due > 0 AND status != 'CANCELLED'",
+            [$companyId]
+        );
+
+        // Low-Stock Alerts (Velocity & Alerts replacement)
+        $lowStockItems = Database::select(
+            "SELECT id, name, sku, current_stock, COALESCE(reorder_level, min_stock_alert, 5) AS reorder_level, unit 
+             FROM `products` 
+             WHERE company_id = ? AND deleted_at IS NULL 
+                   AND (current_stock <= COALESCE(reorder_level, min_stock_alert, 5) OR current_stock <= 0)
+             ORDER BY current_stock ASC LIMIT 5",
+            [$companyId]
+        );
+
         $recentInvoices = Database::select(
             "SELECT i.id, i.invoice_number, COALESCE(c.name, i.customer_name, 'Direct Customer') AS customer_name, i.invoice_date, i.grand_total, i.status 
              FROM `invoices` i
              LEFT JOIN `customers` c ON i.customer_id = c.id
              WHERE i.company_id = ? AND (i.branch_id = ? OR i.branch_id IS NULL) AND i.deleted_at IS NULL AND i.status != 'CANCELLED'
-             ORDER BY i.id DESC LIMIT 5",
+             ORDER BY i.id DESC LIMIT 8",
             [$companyId, $branchId]
         );
 
@@ -226,7 +259,13 @@ class DashboardController
                 'total_tax' => (float)($salesMetrics['total_tax'] ?? 0),
                 'receivables' => (float)($salesMetrics['receivables'] ?? 0),
                 'payables' => (float)($purchaseMetrics['payables'] ?? 0),
+                'cash_bank_balance' => (float)($bankRow['cash_bank_balance'] ?? 0),
+                'today_sales' => (float)($todayRow['amount'] ?? 0),
+                'today_invoices_count' => (int)($todayRow['count'] ?? 0),
+                'pending_payments' => (float)($pendingRow['amount'] ?? 0),
+                'pending_invoices_count' => (int)($pendingRow['count'] ?? 0),
             ],
+            'lowStockItems' => $lowStockItems,
             'recentInvoices' => $recentInvoices,
         ], 'layouts/app');
 

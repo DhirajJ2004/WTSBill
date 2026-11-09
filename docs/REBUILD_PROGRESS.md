@@ -241,3 +241,88 @@
   - Added assertions `BACKUP-12` through `BACKUP-18` in `tests/Feature/BackupAndCleanupTest.php`.
   - **787 Total Assertions across 61 test suites passing at 100% (0 failures)**.
 
+---
+
+### Milestone 20: Centralized Company Branding Management (Settings → Company Branding)
+- **Centralized Branding Architecture:**
+  - Dedicated multi-tenant database table `company_brandings` with branch-level overrides, dimension controls, and document visibility switches.
+  - Bidirectional backward-compatible synchronization with `companies.logo_url` and `companies.stamp_signature_url`.
+- **Three Separate Asset Upload Cards:**
+  - **Company Logo**: High-res preview with transparency checkerboard, 2MB size cap, supported PNG, WebP, SVG with strict anti-XSS XML sanitization.
+  - **Authorized Signature**: Transparent PNG preview, replace/remove buttons, custom document dimensions (width, height, alignment).
+  - **Company Stamp / Seal**: Transparent PNG preview, replace/remove buttons, custom document dimensions (width, height, alignment).
+- **Global Automatic Propagation:**
+  - Updates propagate dynamically across Header, Sidebar (`views/partials/sidebar.php`), Login (`views/auth/login.php`), Forgot/Reset Password, Sales Invoices (`views/sales/print.php`), Quotations (`views/sales/quotation_print.php`), Purchase Orders (`views/purchases/orders/print.php`), and PDFs.
+  - Automated timestamp cache-busting (`?v={timestamp}`) prevents browser and proxy caching issues.
+- **Security & Authorization Controls:**
+  - File verification with `getimagesize()` and MIME inspection; malicious `<script>` SVG payloads rejected with HTTP 422.
+  - Isolated file storage under `public/uploads/branding/` with unique cryptographically random names.
+  - Removal confirmation modal and automated deletion of replaced/removed custom assets from disk.
+- **Test Suite Verification:**
+  - Added 10 assertions in Section 62 (`tests/Feature/CompanyBrandingTest.php`).
+  - **797 Total Assertions across 62 test suites passing at 100% (0 failures)**.
+
+---
+
+### Milestone 21: WhatsApp & Email Document Sharing System
+- **Universal Share Modal (`views/partials/share_modal.php`):**
+  - Integrated across Invoice listing table, Quotation listing table, Invoice print preview, and Quotation print preview.
+  - Document summary with document number, customer name, grand total, and balance.
+  - Quick action buttons for on-screen document preview and direct PDF download.
+  - WTSBill enterprise Forest Green theme (`#051F20`, `#0B2B26`, `#235347`, `#8EB69B`, `#DAF1DE`).
+- **Multi-Modal WhatsApp Sharing:**
+  - **Method A (Web Share API)**: Passes generated `Invoice_{number}.pdf` or `Quotation_{number}.pdf` directly into native WhatsApp file sharing on supported mobile and modern browsers.
+  - **Method B (WhatsApp Business Cloud API)**: Meta Graph API integration with secure document links and official WhatsApp Business delivery.
+  - **Fallback**: Automated PDF download combined with prefilled click-to-chat (`wa.me`) link with sanitized E.164 phone numbers.
+- **Enterprise SMTP Email Delivery:**
+  - Direct socket-based SMTP client with TLS/SSL encryption and `AUTH LOGIN` support.
+  - Auto-fetches saved customer email, allows custom CC recipients, customizable subject, and body text.
+  - Standards-compliant `multipart/mixed` MIME architecture attaching true generated PDF binaries.
+  - Strict provider response verification (`250 OK`), avoiding false delivery claims.
+- **PDF Generation & Security:**
+  - Enriched `PdfGenerator.php` producing PDF-1.4 documents with company branding, tax tables, bank details, dynamic UPI QR codes, and terms.
+  - Anti-tampering HMAC SHA-256 tokens for secure public PDF downloads.
+  - Full audit logging in `communication_messages` table tracking entity, recipient, channel, status, and error details.
+- **Settings Integration:**
+  - Dedicated Communication & Sharing tab under Settings (`/settings?tab=communication`) for SMTP and WhatsApp API credentials, default toggles, message templates, and diagnostic test senders.
+- **Test Suite Verification:**
+  - Added 20 assertions in Section 45 (`tests/Feature/CommunicationSharingTest.php`).
+
+## Milestone 21: Centralized Company Branding Management (Completed 2026-11-07)
+- **Settings UI (`/settings/branding`):**
+  - Three dedicated upload cards: Company Logo, Authorized Signature, and Company Stamp.
+  - Dimension guidelines, supported format badges (PNG, SVG, JPG, WEBP), and live asset previews.
+  - Document display size controls (Width/Height) and document visibility toggles (Show on Invoices, Quotations, Purchase Bills).
+- **Centralized Database Storage (`company_brandings` table):**
+  - Multi-tenant and branch-scoped storage with fallback to company defaults.
+  - Secure uploads directory (`public/uploads/branding`) with file type verification and malicious SVG script sanitization.
+- **Global Asset Propagation:**
+  - `CompanyBrandingService` automatically provides cache-busting URLs across Website Header, Sidebar, Dashboard, Tax Invoices, Quotations, and Purchase Orders.
+
+## Milestone 23: Invoice Payment Status Report & Office Open XML (.xlsx) Export (Completed 2026-11-07)
+- **Report Location & Single-Expanded Accordion Navigation:**
+  - Dedicated financial report at `/reports/invoice-payment-status`, nested under Reports in `includes/menu.php` and `config/menu.php`.
+  - Seamlessly integrates with the single-expanded sidebar accordion navigation, automatically highlighting and expanding Reports on load.
+- **Real-Time KPI Summary Cards:**
+  - **Pending Invoices (Unpaid)**: Count, Original Invoiced Amount, Total Outstanding.
+  - **Paid Invoices (Fully Settled)**: Count, Original Invoiced Amount, Total Amount Received.
+  - **Partially Paid Invoices**: Count, Original Invoiced Amount, Amount Received, Remaining Balance.
+  - **Total Outstanding**: Combined accounts receivable exposure across all open invoices.
+- **Accrual Reconciliation & Integrity Guards:**
+  - Reconciles finalized invoice `grand_total` against confirmed payment allocations (`allocated_amount` where payment is not cancelled and not deleted).
+  - Strictly excludes cancelled/voided invoices and reversed payments.
+  - Handles single and multiple partial payment installments without double counting.
+- **Multi-Dimensional Filter Suite:**
+  - Date ranges (`date_from`, `date_to`), Due date ranges (`due_date_from`, `due_date_to`), Invoice Number, Customer Name, Mobile Number, Operating Branch, Payment Status, Overdue Status, and keyword search with Clear Filters button.
+- **Detailed 9-Column Report Table:**
+  - Invoice Number (hyperlinked to `/sales/invoices/{id}`), Invoice Date, Customer Name, Mobile Number, Invoice Amount, Paid Amount, Remaining Balance, Due Date (with Overdue indicator), and Payment Status badge.
+- **Genuine Office Open XML (.xlsx) Export:**
+  - Server-side binary generation using native PHP `ZipArchive` (not CSV renamed to .xlsx).
+  - Strict 9-column schema, frozen headers, KPI block, styled currency number cells (`#,##0.00`), and formula injection sanitization.
+- **Architectural Test Verification:**
+  - 15 new assertions in Section 64 (`tests/Feature/InvoicePaymentStatusReportTest.php`).
+  - **833 Total Assertions across 64 test suites passing at 100% (0 failures)**.
+
+
+
+

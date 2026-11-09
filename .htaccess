@@ -1,8 +1,21 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # Directly serve static assets from public/assets
+    # Directly serve static assets from public/assets and public/uploads
     RewriteRule ^assets/(.*)$ public/assets/$1 [L]
+    RewriteRule ^uploads/(.*)$ public/uploads/$1 [L]
+
+    # Legacy Navigation 301 Redirects to Unified Locations & Tabs
+    RewriteRule ^inventory/velocity/?$ /?alert=low_stock [R=301,L,QSA]
+    RewriteRule ^inventory/warehouses/?$ /settings/warehouses [R=301,L,QSA]
+    RewriteRule ^products/?$ /items?tab=items [R=301,L,QSA]
+    RewriteRule ^categories/?$ /items?tab=categories [R=301,L,QSA]
+    RewriteRule ^inventory/transfers/?$ /items?tab=transfers [R=301,L,QSA]
+    RewriteRule ^accounting/cash-book/?$ /accounting/cash-bank?tab=cash [R=301,L,QSA]
+    RewriteRule ^accounting/bank-book/?$ /accounting/cash-bank?tab=bank [R=301,L,QSA]
+    RewriteRule ^reports/gst-sales-register/?$ /reports/gst-registers?tab=sales [R=301,L,QSA]
+    RewriteRule ^reports/gst-purchase-register/?$ /reports/gst-registers?tab=purchases [R=301,L,QSA]
+    RewriteRule ^payments/advances/?$ /payments?type=advance [R=301,L,QSA]
 
     # Handle all other requests via public/index.php
     RewriteCond %{REQUEST_FILENAME} !-f

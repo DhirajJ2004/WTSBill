@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 define('ROOT_PATH', dirname(__DIR__));
 
+if (file_exists(ROOT_PATH . '/vendor/autoload.php')) {
+    require_once ROOT_PATH . '/vendor/autoload.php';
+}
+
 // Bootstrap Autoloader and helpers
 require_once ROOT_PATH . '/app/Core/Autoloader.php';
 \WTSBill\Core\Autoloader::register();
@@ -71,6 +75,9 @@ require_once ROOT_PATH . '/tests/Feature/ExtendedAccountingReportsTest.php';
 require_once ROOT_PATH . '/tests/Feature/GstRegistersComplianceTest.php';
 require_once ROOT_PATH . '/tests/Feature/BusinessAnalyticsTest.php';
 require_once ROOT_PATH . '/tests/Feature/NotificationCenterHubTest.php';
+require_once ROOT_PATH . '/tests/Feature/CompanyBrandingTest.php';
+require_once ROOT_PATH . '/tests/Feature/UnifiedPartiesTest.php';
+require_once ROOT_PATH . '/tests/Feature/InvoicePaymentStatusReportTest.php';
 
 
 
@@ -275,6 +282,15 @@ echo "\n--- SECTION 60: FEATURE TESTS — BUSINESS ANALYTICS & EXECUTIVE BI DASH
 
 echo "\n--- SECTION 61: FEATURE TESTS — CENTRAL NOTIFICATION HUB & AI REMOVAL VERIFICATION ---\n";
 \Tests\Feature\NotificationCenterHubTest::run($assert);
+
+echo "\n--- SECTION 62: FEATURE TESTS — CENTRALIZED COMPANY BRANDING MANAGEMENT ---\n";
+\Tests\Feature\CompanyBrandingTest::run($assert);
+
+echo "\n--- SECTION 63: FEATURE TESTS — UNIFIED PARTIES MANAGEMENT HUB ---\n";
+\Tests\Feature\UnifiedPartiesTest::run($assert);
+
+echo "\n--- SECTION 64: FEATURE TESTS — INVOICE PAYMENT STATUS REPORT & EXCEL EXPORT ---\n";
+\Tests\Feature\InvoicePaymentStatusReportTest::run($assert);
 
 
 

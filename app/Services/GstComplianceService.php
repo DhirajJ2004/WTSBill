@@ -51,7 +51,17 @@ class GstComplianceService
         $outCgst = (float)($outward['cgst_amount'] ?? 0);
         $outSgst = (float)($outward['sgst_amount'] ?? 0);
         $outIgst = (float)($outward['igst_amount'] ?? 0);
-        $outTax = (float)($outward['total_tax'] ?? 0);
+        $rawOutTax = (float)($outward['total_tax'] ?? 0);
+
+        // Reconcile any unallocated total_tax (e.g. from imported or test invoices without explicit split) as intra-state standard (50% CGST, 50% SGST)
+        $compTax = round($outCgst + $outSgst + $outIgst, 2);
+        if ($rawOutTax > $compTax) {
+            $unallocated = $rawOutTax - $compTax;
+            $half = round($unallocated / 2, 2);
+            $outCgst += $half;
+            $outSgst += ($unallocated - $half);
+        }
+        $outTax = round($outCgst + $outSgst + $outIgst, 2);
 
         // Table 4(A)(5) Eligible ITC from Inward Purchase Bills
         $itc = Database::selectOne(

@@ -41,6 +41,8 @@ class SettingsController
             $activeTab = 'audit';
         } elseif ($queryTab === 'backups') {
             $activeTab = 'backups';
+        } elseif ($queryTab === 'communication') {
+            $activeTab = 'communication';
         }
 
         $company = Database::selectOne(

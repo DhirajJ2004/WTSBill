@@ -10,6 +10,7 @@ use WTSBill\Core\Response;
 use WTSBill\Core\Session;
 use WTSBill\Core\View;
 use WTSBill\Services\BalanceSheetService;
+use WTSBill\Services\InvoicePaymentStatusReportService;
 
 /**
  * Report Controller.
@@ -711,6 +712,88 @@ class ReportController
 
         return new Response($html, 200, [
             'Content-Type' => 'text/html; charset=UTF-8',
+        ]);
+    }
+
+    /**
+     * Display Invoice Payment Status Report with summary cards, filters, and paginated records.
+     */
+    public function invoicePaymentStatus(Request $req): Response
+    {
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+
+        $filters = [
+            'date_from' => $req->query('date_from'),
+            'date_to' => $req->query('date_to'),
+            'invoice_number' => $req->query('invoice_number'),
+            'customer_name' => $req->query('customer_name'),
+            'mobile' => $req->query('mobile'),
+            'payment_status' => $req->query('payment_status', 'all'),
+            'due_date_from' => $req->query('due_date_from'),
+            'due_date_to' => $req->query('due_date_to'),
+            'branch_id' => $req->query('branch_id'),
+            'overdue' => $req->query('overdue', 'all'),
+            'search' => $req->query('search'),
+            'sort' => $req->query('sort', 'invoice_date'),
+            'dir' => $req->query('dir', 'desc'),
+            'page' => $req->query('page', 1),
+            'per_page' => $req->query('per_page', 25),
+        ];
+
+        // Fetch active operating branches for company
+        $branches = Database::select(
+            "SELECT id, name FROM branches WHERE company_id = ? AND is_active = 1 ORDER BY is_main_branch DESC, name ASC",
+            [$companyId]
+        );
+
+        $service = new InvoicePaymentStatusReportService();
+        $report = $service->getReport($companyId, $filters);
+
+        $html = View::renderWithLayout('reports/invoice_payment_status', [
+            'title' => 'Invoice Payment Status Report',
+            'currentUri' => '/reports/invoice-payment-status',
+            'report' => $report,
+            'branches' => $branches,
+            'filters' => $filters,
+        ], 'layouts/app');
+
+        return Response::html($html);
+    }
+
+    /**
+     * Download Invoice Payment Status Report as genuine Office Open XML (.xlsx) workbook.
+     */
+    public function invoicePaymentStatusExport(Request $req): Response
+    {
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+
+        $filters = [
+            'date_from' => $req->query('date_from'),
+            'date_to' => $req->query('date_to'),
+            'invoice_number' => $req->query('invoice_number'),
+            'customer_name' => $req->query('customer_name'),
+            'mobile' => $req->query('mobile'),
+            'payment_status' => $req->query('payment_status', 'all'),
+            'due_date_from' => $req->query('due_date_from'),
+            'due_date_to' => $req->query('due_date_to'),
+            'branch_id' => $req->query('branch_id'),
+            'overdue' => $req->query('overdue', 'all'),
+            'search' => $req->query('search'),
+            'sort' => $req->query('sort', 'invoice_date'),
+            'dir' => $req->query('dir', 'desc'),
+        ];
+
+        $service = new InvoicePaymentStatusReportService();
+        $excelBinary = $service->generateExcelWorkbook($companyId, $filters);
+
+        $filename = 'Invoice_Payment_Status_Report_' . date('Y-m-d') . '.xlsx';
+
+        return new Response($excelBinary, 200, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Length' => (string)strlen($excelBinary),
+            'Cache-Control' => 'max-age=0, no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
         ]);
     }
 }

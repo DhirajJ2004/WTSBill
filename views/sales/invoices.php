@@ -195,6 +195,7 @@ $buildQuery = function(array $overrides = []) use ($currentStatus, $searchVal, $
                                 <?php if (\WTSBill\Auth\Gate::can('invoices.print')): ?>
                                     <a href="/sales/invoices/<?= (int)$inv['id'] ?>/print" target="_blank" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; text-decoration: none; margin-right: 3px;">Print</a>
                                 <?php endif; ?>
+                                <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; margin-right: 3px;" onclick="window.openShareModal('INVOICE', <?= (int)$inv['id'] ?>, '<?= e(addslashes($inv['invoice_number'])) ?>', '<?= e(addslashes($inv['customer_name'] ?: 'Customer #' . $inv['customer_id'])) ?>', '<?= e(addslashes($inv['customer_phone'] ?? '')) ?>', '<?= e(addslashes($inv['customer_email'] ?? '')) ?>', <?= (float)$inv['grand_total'] ?>)">Share</button>
                                 <?php if (\WTSBill\Auth\Gate::can('invoices.view')): ?>
                                     <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; margin-right: 3px;" onclick="window.viewInvoice(<?= (int)$inv['id'] ?>)">View</button>
                                 <?php endif; ?>
@@ -701,7 +702,7 @@ $buildQuery = function(array $overrides = []) use ($currentStatus, $searchVal, $
     window.openCurrentModalShare = function() {
         if (!window.currentModalInvoiceFull) return;
         const inv = window.currentModalInvoiceFull;
-        window.openShareModal('INVOICE', inv.id, inv.invoice_number, inv.customer_name || 'Customer', inv.customer_phone || '', inv.customer_email || '');
+        window.openShareModal('INVOICE', inv.id, inv.invoice_number, inv.customer_name || 'Customer', inv.customer_phone || '', inv.customer_email || '', inv.grand_total);
     };
 
     window.closeInvoiceModal = function() {

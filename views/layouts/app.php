@@ -17,6 +17,7 @@ $userTheme = \WTSBill\Core\Session::get('theme') ?? 'dark';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="<?= e($csrfToken) ?>">
     <title><?= e($pageTitle) ?></title>
+    <link rel="icon" type="image/png" href="/assets/images/logo.png">
 
     <!-- Native Design System Stylesheet -->
     <link rel="stylesheet" href="/assets/css/app.css">

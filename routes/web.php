@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 use WTSBill\Controllers\AccountingController;
 use WTSBill\Controllers\AuthController;
+use WTSBill\Controllers\BrandingController;
 use WTSBill\Controllers\BranchController;
 use WTSBill\Controllers\CustomerController;
 use WTSBill\Controllers\DashboardController;
 use WTSBill\Controllers\ExpenseController;
 use WTSBill\Controllers\InventoryController;
+use WTSBill\Controllers\PartyController;
 use WTSBill\Controllers\PaymentController;
 use WTSBill\Controllers\ProductController;
 use WTSBill\Controllers\PurchaseController;
@@ -55,7 +57,21 @@ $router->post('/forgot-password', [$authController, 'sendResetLink'], [$csrf]);
 $router->get('/reset-password', [$authController, 'resetPasswordForm']);
 $router->post('/reset-password', [$authController, 'resetPassword'], [$csrf]);
 
-// 4. Customers & CRM (Admin / Sales)
+// 4. Unified Parties Master (Customers & Suppliers)
+$partyController = new PartyController();
+$router->get('/parties', [$partyController, 'index'], [$auth, $can(['customers.view', 'suppliers.view'])]);
+$router->get('/parties/create', [$partyController, 'createForm'], [$auth, $can(['customers.create', 'suppliers.create'])]);
+$router->post('/parties/create', [$partyController, 'store'], [$auth, $csrf, $can(['customers.create', 'suppliers.create'])]);
+$router->post('/parties', [$partyController, 'store'], [$auth, $csrf, $can(['customers.create', 'suppliers.create'])]);
+$router->get('/parties/{id}', [$partyController, 'show'], [$auth, $can(['customers.view', 'suppliers.view'])]);
+$router->get('/parties/{id}/profile', [$partyController, 'show'], [$auth, $can(['customers.view', 'suppliers.view'])]);
+$router->get('/parties/{id}/statement/csv', [$partyController, 'statementCsv'], [$auth, $can(['customers.view', 'suppliers.view'])]);
+$router->post('/parties/{id}/update', [$partyController, 'update'], [$auth, $csrf, $can(['customers.edit', 'suppliers.edit'])]);
+$router->post('/parties/{id}/toggle-status', [$partyController, 'toggleStatus'], [$auth, $csrf, $can(['customers.edit', 'suppliers.edit'])]);
+$router->post('/parties/{id}/delete', [$partyController, 'delete'], [$auth, $csrf, $can(['customers.delete', 'suppliers.delete'])]);
+$router->delete('/parties/{id}', [$partyController, 'delete'], [$auth, $csrf, $can(['customers.delete', 'suppliers.delete'])]);
+
+// 5. Customers & CRM (Admin / Sales) (Preserved for compatibility)
 $customerController = new CustomerController();
 $router->get('/customers', [$customerController, 'index'], [$auth, $can('customers.view')]);
 $router->get('/customers/create', [$customerController, 'createForm'], [$auth, $can('customers.create')]);
@@ -139,6 +155,9 @@ $router->get('/sales/invoices/{id}/pdf', [$commController, 'invoicePdf'], [$auth
 $router->post('/sales/quotations/{id}/share', [$commController, 'shareQuotation'], [$auth, $csrf, $can('quotations.view')]);
 $router->get('/sales/quotations/{id}/communication-history', [$commController, 'quotationHistory'], [$auth, $can('quotations.view')]);
 $router->get('/sales/quotations/{id}/pdf', [$commController, 'quotationPdf'], [$auth, $can('quotations.view')]);
+$router->post('/purchases/bills/{id}/share', [$commController, 'sharePurchaseBill'], [$auth, $csrf, $can('purchases.view')]);
+$router->get('/purchases/bills/{id}/communication-history', [$commController, 'purchaseBillCommunicationHistory'], [$auth, $can('purchases.view')]);
+$router->get('/purchases/bills/{id}/pdf', [$commController, 'purchaseBillPdf'], [$auth, $can('purchases.view')]);
 $router->post('/settings/communication', [$commController, 'saveSettings'], [$auth, $csrf, $can('settings.edit')]);
 $router->post('/api/settings/communication/test-email', [$commController, 'testEmail'], [$auth, $csrf, $can('settings.edit')]);
 $router->post('/api/settings/communication/test-whatsapp', [$commController, 'testWhatsApp'], [$auth, $csrf, $can('settings.edit')]);
@@ -146,10 +165,12 @@ $router->post('/api/settings/communication/test-whatsapp', [$commController, 'te
 // 8c. Public Document Access (Direct PDF & Web View via Verified HMAC Token - No Login Required)
 $router->get('/doc/invoices/{id}/pdf', [$commController, 'publicInvoicePdf']);
 $router->get('/doc/quotations/{id}/pdf', [$commController, 'publicQuotationPdf']);
+$router->get('/doc/purchases/{id}/pdf', [$commController, 'publicPurchaseBillPdf']);
 $router->get('/doc/invoices/{id}', [$commController, 'publicInvoiceView']);
 $router->get('/doc/quotations/{id}', [$commController, 'publicQuotationView']);
 $router->get('/public/invoices/{id}/pdf', [$commController, 'publicInvoicePdf']);
 $router->get('/public/quotations/{id}/pdf', [$commController, 'publicQuotationPdf']);
+$router->get('/public/purchases/{id}/pdf', [$commController, 'publicPurchaseBillPdf']);
 $router->get('/public/invoices/{id}', [$commController, 'publicInvoiceView']);
 $router->get('/public/quotations/{id}', [$commController, 'publicQuotationView']);
 
@@ -169,6 +190,17 @@ $router->delete('/sales/orders/{id}', [$salesOrderController, 'delete'], [$auth,
 // 9. Delivery Challans (Admin / Sales)
 $router->get('/sales/challans', [$salesController, 'challansIndex'], [$auth, $can('challans.view')]);
 $router->post('/sales/challans', [$salesController, 'challanStore'], [$auth, $csrf, $can('challans.create')]);
+
+// 9b. Credit Notes & Sales Returns (Admin / Sales)
+$creditNoteController = new \WTSBill\Controllers\CreditNoteController();
+$router->get('/sales/credit-notes', [$creditNoteController, 'index'], [$auth, $can('invoices.view')]);
+$router->get('/sales/credit-notes/create', [$creditNoteController, 'create'], [$auth, $can('invoices.create')]);
+$router->post('/sales/credit-notes/create', [$creditNoteController, 'store'], [$auth, $csrf, $can('invoices.create')]);
+$router->post('/sales/credit-notes', [$creditNoteController, 'store'], [$auth, $csrf, $can('invoices.create')]);
+$router->get('/sales/credit-notes/{id}', [$creditNoteController, 'edit'], [$auth, $can('invoices.view')]);
+$router->get('/sales/credit-notes/{id}/edit', [$creditNoteController, 'edit'], [$auth, $can('invoices.edit')]);
+$router->post('/sales/credit-notes/{id}/update', [$creditNoteController, 'update'], [$auth, $csrf, $can('invoices.edit')]);
+$router->get('/sales/credit-notes/{id}/print', [$creditNoteController, 'print'], [$auth, $can('invoices.view')]);
 
 // Purchase Orders & Procurement (Purchase Manager / Admin)
 $purchaseOrderController = new \WTSBill\Controllers\PurchaseOrderController();
@@ -193,6 +225,8 @@ $router->post('/purchases/debit-notes', [$purchaseOrderController, 'debitNoteSto
 // 10. Purchases & Accounts Payable (Admin / Purchase Manager)
 $purchaseController = new PurchaseController();
 $router->get('/purchases/bills', [$purchaseController, 'billsIndex'], [$auth, $can('bills.view')]);
+$router->get('/purchases/bills/create', [$purchaseController, 'billCreate'], [$auth, $can('bills.create')]);
+$router->post('/purchases/bills/create', [$purchaseController, 'billStore'], [$auth, $csrf, $can('bills.create')]);
 $router->post('/purchases/bills', [$purchaseController, 'billStore'], [$auth, $csrf, $can('bills.create')]);
 $router->get('/purchases/bills/export', [$purchaseController, 'billExport'], [$auth, $can('bills.export')]);
 $router->get('/api/purchases/bills', [$purchaseController, 'billsApi'], [$auth, $can('bills.view')]);
@@ -230,6 +264,52 @@ $router->post('/payments/advances/{id}/allocate', [$customerAdvanceController, '
 
 // 13. Inventory Controller (Stock & Categories - Inventory Manager / Admin)
 $inventoryController = new InventoryController();
+$router->get('/items', function(Request $req) use ($auth) {
+    $tab = (string)($req->query('tab', 'items'));
+    $search = trim((string)$req->query('search', ''));
+    $companyId = (int)(\WTSBill\Core\Session::getCompanyId() ?? 1);
+
+    $itemsList = [];
+    $categoriesList = [];
+
+    try {
+        $sql = "SELECT p.*, c.name AS category_name 
+                FROM `products` p 
+                LEFT JOIN `categories` c ON p.category_id = c.id 
+                WHERE p.company_id = ? AND p.deleted_at IS NULL";
+        $params = [$companyId];
+        if ($search !== '') {
+            $sql .= " AND (p.name LIKE ? OR p.sku LIKE ? OR p.hsn_code LIKE ?)";
+            $params[] = "%$search%";
+            $params[] = "%$search%";
+            $params[] = "%$search%";
+        }
+        $sql .= " ORDER BY p.name ASC LIMIT 100";
+        $itemsList = \WTSBill\Core\Database::select($sql, $params);
+    } catch (\Throwable $e) {}
+
+    try {
+        $categoriesList = \WTSBill\Core\Database::select(
+            "SELECT c.*, COUNT(p.id) AS product_count 
+             FROM `categories` c 
+             LEFT JOIN `products` p ON c.id = p.category_id AND p.deleted_at IS NULL 
+             WHERE c.company_id = ? 
+             GROUP BY c.id ORDER BY c.name ASC",
+            [$companyId]
+        );
+    } catch (\Throwable $e) {}
+
+    $html = \WTSBill\Core\View::renderWithLayout('inventory/items_merged', [
+        'title' => 'Items & Stock Hub',
+        'currentUri' => '/items',
+        'activeTab' => $tab,
+        'itemsList' => $itemsList,
+        'categoriesList' => $categoriesList,
+    ], 'layouts/app');
+
+    return Response::html($html);
+}, [$auth, $can('inventory.view')]);
+
 $router->get('/inventory/stock', [$inventoryController, 'stockIndex'], [$auth, $can('inventory.view')]);
 $router->get('/inventory/adjustments', fn() => \WTSBill\Core\Response::redirect('/inventory/stock?tab=history'), [$auth, $can('inventory.adjustment.view')]);
 $router->get('/inventory/manage', fn() => \WTSBill\Core\Response::redirect('/inventory/stock?action=adjust'), [$auth, $can('inventory.stock.add')]);
@@ -310,6 +390,8 @@ $router->get('/api/reports/balance-sheet', [$reportController, 'balanceSheetApi'
 $router->get('/reports/balance-sheet/export', [$reportController, 'balanceSheetExport'], [$auth, $can('reports.export')]);
 $router->get('/reports/gst', [$reportController, 'gstIndex'], [$auth, $can('reports.view')]);
 $router->get('/reports/gst/export', [$reportController, 'gstExport'], [$auth, $can('reports.export')]);
+$router->get('/reports/invoice-payment-status', [$reportController, 'invoicePaymentStatus'], [$auth, $can('reports.view')]);
+$router->get('/reports/invoice-payment-status/export', [$reportController, 'invoicePaymentStatusExport'], [$auth, $can(['reports.view', 'reports.export'])]);
 
 // GST Compliance & Tax Reporting (GSTR-3B, Sales & Purchase Registers)
 $gstComplianceController = new \WTSBill\Controllers\GstComplianceController();
@@ -320,6 +402,15 @@ $router->get('/reports/gst-sales-register', [$gstComplianceController, 'salesReg
 $router->get('/reports/gst-sales-register/export', [$gstComplianceController, 'salesRegisterExport'], [$auth, $can('reports.export')]);
 $router->get('/reports/gst-purchase-register', [$gstComplianceController, 'purchaseRegister'], [$auth, $can('reports.view')]);
 $router->get('/reports/gst-purchase-register/export', [$gstComplianceController, 'purchaseRegisterExport'], [$auth, $can('reports.export')]);
+
+// Unified GST Registers Hub (Merged Page with tabs: sales, purchases)
+$router->get('/reports/gst-registers', function(Request $req) use ($auth, $gstComplianceController) {
+    $tab = (string)($req->query('tab', 'sales'));
+    if ($tab === 'purchases') {
+        return $gstComplianceController->purchaseRegister($req);
+    }
+    return $gstComplianceController->salesRegister($req);
+}, [$auth, $can('reports.view')]);
 
 $router->get('/reports/receivables-aging', [$customerAdvanceController, 'receivablesAging'], [$auth, $can('reports.view')]);
 $router->get('/reports/receivables-aging/export', [$customerAdvanceController, 'receivablesAgingExport'], [$auth, $can('reports.export')]);
@@ -333,6 +424,15 @@ $router->get('/reports/trial-balance/export', [$extendedAccountingController, 't
 $router->get('/accounting/cash-book', [$extendedAccountingController, 'cashBook'], [$auth, $can('reports.view')]);
 $router->get('/accounting/bank-book', [$extendedAccountingController, 'bankBook'], [$auth, $can('reports.view')]);
 $router->get('/reports/cash-flow', [$extendedAccountingController, 'cashFlow'], [$auth, $can('reports.view')]);
+
+// Unified Cash & Bank Hub (Merged Page with tabs: cash, bank)
+$router->get('/accounting/cash-bank', function(Request $req) use ($auth, $extendedAccountingController) {
+    $tab = (string)($req->query('tab', 'cash'));
+    if ($tab === 'bank') {
+        return $extendedAccountingController->bankBook($req);
+    }
+    return $extendedAccountingController->cashBook($req);
+}, [$auth, $can('reports.view')]);
 
 // Executive BI Analytics & Decision Support
 $analyticsController = new \WTSBill\Controllers\AnalyticsController();
@@ -373,6 +473,22 @@ $router->post('/settings/company/update', [$settingsController, 'updateCompany']
 $router->get('/settings/audit-logs', [$settingsController, 'auditLogs'], [$auth, $can('audit.view')]);
 $router->get('/api/settings/audit-logs', [$settingsController, 'auditLogs'], [$auth, $can('audit.view')]);
 $router->get('/settings/audit-logs/export', [$settingsController, 'exportAuditLogs'], [$auth, $can('audit.export')]);
+$router->get('/settings/templates', function(Request $req) {
+    $html = \WTSBill\Core\View::renderWithLayout('settings/templates', [
+        'title' => 'Invoice Templates',
+        'currentUri' => '/settings/templates',
+    ], 'layouts/app');
+    return Response::html($html);
+}, [$auth, $can('settings.view')]);
+$router->get('/settings/warehouses', [$warehouseController, 'index'], [$auth, $can('inventory.view')]);
+
+// 18a. Centralized Company Branding Management
+$brandingController = new BrandingController();
+$router->get('/settings/branding', [$brandingController, 'index'], [$auth, $can('settings.view')]);
+$router->post('/settings/branding/upload', [$brandingController, 'upload'], [$auth, $csrf, $can('settings.edit')]);
+$router->post('/settings/branding/remove', [$brandingController, 'remove'], [$auth, $csrf, $can('settings.edit')]);
+$router->post('/settings/branding/settings', [$brandingController, 'saveSettings'], [$auth, $csrf, $can('settings.edit')]);
+$router->get('/api/settings/branding', [$brandingController, 'index'], [$auth, $can('settings.view')]);
 
 // 18b. Enterprise Backup Management & Disaster Recovery
 $backupController = new \WTSBill\Controllers\BackupController();

@@ -298,6 +298,9 @@ $buildQuery = function(array $overrides = []) use ($currentStatus, $currentPayme
                                             Print
                                         </a>
                                     <?php endif; ?>
+                                    <button type="button" class="btn btn-sm btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" title="Share Quotation" onclick="window.openShareModal('QUOTATION', <?= (int)$q['id'] ?>, '<?= e(addslashes($q['quotation_number'])) ?>', '<?= e(addslashes($q['customer_name'] ?: 'Customer #' . $q['customer_id'])) ?>', '<?= e(addslashes($q['customer_phone'] ?? '')) ?>', '<?= e(addslashes($q['customer_email'] ?? '')) ?>', <?= (float)$q['grand_total'] ?>)">
+                                        Share
+                                    </button>
                                     <?php if (Gate::can('quotations.view')): ?>
                                         <button type="button" class="btn btn-sm btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" onclick="window.viewQuotation(<?= (int)$q['id'] ?>)">
                                             View
@@ -527,7 +530,7 @@ $buildQuery = function(array $overrides = []) use ($currentStatus, $currentPayme
     window.openCurrentModalQuotationShare = function() {
         if (!window.currentModalQuoteFull) return;
         const q = window.currentModalQuoteFull;
-        window.openShareModal('QUOTATION', q.id, q.quotation_number, q.customer_name || 'Customer', q.customer_phone || '', q.customer_email || '');
+        window.openShareModal('QUOTATION', q.id, q.quotation_number, q.customer_name || 'Customer', q.customer_phone || '', q.customer_email || '', q.grand_total);
     };
 
     window.closeQuotationViewModal = function() {

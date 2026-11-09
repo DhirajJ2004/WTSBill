@@ -90,8 +90,8 @@ class PurchaseBillsPayableTest
         // 6. Test Record Inward Purchase Bill
         $sup = Database::selectOne("SELECT id FROM suppliers WHERE company_id = ? LIMIT 1", [$companyId]);
         $supplierId = $sup ? (int)$sup['id'] : 1;
-        $testBillNumber = 'PB-TEST-' . rand(1000, 9999);
-        $testVendorInv = 'VND-INV-' . rand(1000, 9999);
+        $testBillNumber = 'PB-TEST-' . time() . '-' . rand(10000, 99999);
+        $testVendorInv = 'VND-INV-' . time() . '-' . rand(10000, 99999);
 
         $storeReq = new Request([], [
             '_csrf_token' => $csrfToken,
@@ -111,7 +111,7 @@ class PurchaseBillsPayableTest
         $storeJson = json_decode($storeRes->getContent(), true);
 
         $createdBill = Database::selectOne(
-            "SELECT * FROM purchases WHERE vendor_invoice_number = ? AND company_id = ?",
+            "SELECT * FROM purchases WHERE vendor_invoice_number = ? AND company_id = ? ORDER BY id DESC LIMIT 1",
             [$testVendorInv, $companyId]
         );
 

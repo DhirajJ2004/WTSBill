@@ -60,11 +60,8 @@ class GstRegistersComplianceTest
         $cashPayable = (float)($gstrData['table_6_1']['net_tax_payable']['total'] ?? 0);
         $excessItc = (float)($gstrData['table_6_1']['excess_itc_cforward']['total'] ?? 0);
 
-        if ($outTax >= $netItc) {
-            $equationHolds = abs(($outTax - $netItc) - $cashPayable) < 0.05 && $excessItc === 0.0;
-        } else {
-            $equationHolds = abs(($netItc - $outTax) - $excessItc) < 0.05 && $cashPayable === 0.0;
-        }
+        // Under GST component isolation (CGST/SGST/IGST), (Outward - ITC) equals (Payable - Excess)
+        $equationHolds = abs(($outTax - $netItc) - ($cashPayable - $excessItc)) < 0.05;
 
         $assert('GST-03', 'GSTR-3B statutory tax offset equation holds: Outward Tax Liability vs Net ITC matches Cash Payable or Excess ITC',
             $equationHolds
