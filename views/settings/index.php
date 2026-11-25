@@ -1,7 +1,17 @@
 <?php
 /**
- * WTSBill ERP — Enterprise System & Organization Settings View
- * Comprehensive settings dashboard for Tenant Organization Profile, GSTIN Master, and Operating Branches.
+ * WTSBill ERP — Company Profile & Branding View
+ * Unified management page for Tenant Organization Profile, GSTIN Master, Operating Branches,
+ * and Document Branding & Assets (Logo, Signature, Stamp, Invoice Display Settings).
+ *
+ * @var array $company
+ * @var array $branches
+ * @var array $allUsers
+ * @var array $branding
+ * @var int $activeBranchId
+ * @var bool $isAdmin
+ * @var string $title
+ * @var string $currentUri
  */
 use WTSBill\Core\Session;
 
@@ -30,23 +40,30 @@ $compPincode = $comp['pincode'] ?? '411041';
 $compCurrency = $comp['currency'] ?? 'INR';
 $compFyStart = $comp['financial_year_start'] ?? '04-01';
 $compTerms = $comp['terms_and_conditions'] ?? '';
+
+// Branding Defaults
+$b = $branding ?? [];
+$selectedBranchId = $selectedBranchId ?? null;
 ?>
 
+<!-- Header -->
 <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
     <div>
-        <h1 class="page-title" style="margin: 0; font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">Enterprise System Settings</h1>
-        <p class="page-subtitle" style="margin: 0.25rem 0 0 0; color: var(--text-muted); font-size: 0.875rem;">Configure organization profile, Indian GSTIN master, branch settings, and defaults</p>
+        <h1 class="page-title" style="margin: 0; font-size: 1.5rem; font-weight: 700; color: var(--text-primary, #051F20);">Company Profile &amp; Branding</h1>
+        <p class="page-subtitle" style="margin: 0.25rem 0 0 0; color: var(--text-muted, #4B5563); font-size: 0.875rem;">
+            Unified configuration for organization details, GSTIN master, operating branches, and document branding assets
+        </p>
     </div>
-    <div style="display: flex; gap: 0.75rem; align-items: center;">
+    <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
         <?php if ($isAdmin): ?>
-            <button type="button" class="btn btn-secondary" onclick="openEditCompanyModal()" style="display: flex; align-items: center; gap: 0.4rem;">
+            <button type="button" class="btn btn-secondary" onclick="openEditCompanyModal()" style="display: flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.9rem; font-size: 0.85rem; border: 1px solid #8EB69B; border-radius: 6px; background: #FFFFFF; color: #051F20;">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                 </svg>
-                <span>Edit Organization Profile</span>
+                <span>Edit Profile</span>
             </button>
-            <button type="button" class="btn btn-primary" onclick="openCreateBranchModal()" style="display: flex; align-items: center; gap: 0.4rem;">
+            <button type="button" class="btn btn-primary" onclick="openCreateBranchModal()" style="display: flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.9rem; font-size: 0.85rem; background: #235347; color: #FFFFFF; border: none; border-radius: 6px;">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -57,150 +74,175 @@ $compTerms = $comp['terms_and_conditions'] ?? '';
     </div>
 </div>
 
-<div class="tabs-nav" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; flex-wrap: wrap;">
-    <button type="button" id="tab-btn-general" class="btn <?= ($activeTab ?? 'general') === 'general' ? 'btn-primary active' : 'btn-secondary' ?>" onclick="switchSettingsTab('general')" style="font-size: 0.85rem; padding: 0.45rem 0.9rem; display: flex; align-items: center; gap: 0.4rem;">
+<!-- Settings Top Navigation Tabs (Audit, Communication, and Backup moved OUT into separate modules) -->
+<div class="tabs-nav" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid #8EB69B; padding-bottom: 0.5rem; flex-wrap: wrap;">
+    <a href="/settings" class="btn btn-primary active" style="font-size: 0.85rem; padding: 0.45rem 0.9rem; display: flex; align-items: center; gap: 0.4rem; text-decoration: none; border-radius: 6px; background: #235347; color: #FFFFFF;">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
-        <span>Organization & Operating Branches</span>
-    </button>
-    <?php if ($isAdmin): ?>
-        <button type="button" id="tab-btn-backups" class="btn <?= ($activeTab ?? 'general') === 'backups' ? 'btn-primary active' : 'btn-secondary' ?>" onclick="switchSettingsTab('backups')" style="font-size: 0.85rem; padding: 0.45rem 0.9rem; display: flex; align-items: center; gap: 0.4rem;">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-            <span>Backup & Disaster Recovery</span>
-        </button>
-        <button type="button" id="tab-btn-communication" class="btn <?= ($activeTab ?? 'general') === 'communication' ? 'btn-primary active' : 'btn-secondary' ?>" onclick="switchSettingsTab('communication')" style="font-size: 0.85rem; padding: 0.45rem 0.9rem; display: flex; align-items: center; gap: 0.4rem;">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-            <span>Communication & Sharing</span>
-        </button>
-        <button type="button" id="tab-btn-audit" class="btn <?= ($activeTab ?? 'general') === 'audit' ? 'btn-primary active' : 'btn-secondary' ?>" onclick="switchSettingsTab('audit')" style="font-size: 0.85rem; padding: 0.45rem 0.9rem; display: flex; align-items: center; gap: 0.4rem;">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-            <span>Audit Trail & System Logs</span>
-            <span class="badge badge-primary" style="font-size: 0.7rem; padding: 0.15rem 0.4rem;" id="audit-badge-count"><?= (int)($auditSummary['total'] ?? 0) ?></span>
-        </button>
-    <?php endif; ?>
+        <span>Company Profile &amp; Branding</span>
+    </a>
+    <a href="/users" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.45rem 0.9rem; display: flex; align-items: center; gap: 0.4rem; text-decoration: none; border-radius: 6px; border: 1px solid #8EB69B; background: #FFFFFF; color: #051F20;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
+        <span>Users &amp; Roles</span>
+    </a>
+    <a href="/settings/communication" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.45rem 0.9rem; display: flex; align-items: center; gap: 0.4rem; text-decoration: none; border-radius: 6px; border: 1px solid #8EB69B; background: #FFFFFF; color: #051F20;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+        <span>Communication</span>
+    </a>
+    <a href="/settings/backups" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.45rem 0.9rem; display: flex; align-items: center; gap: 0.4rem; text-decoration: none; border-radius: 6px; border: 1px solid #8EB69B; background: #FFFFFF; color: #051F20;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        <span>Backup &amp; Disaster Recovery</span>
+    </a>
+    <a href="/settings/audit-logs" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.45rem 0.9rem; display: flex; align-items: center; gap: 0.4rem; text-decoration: none; border-radius: 6px; border: 1px solid #8EB69B; background: #FFFFFF; color: #051F20;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+        <span>Audit Trail</span>
+    </a>
 </div>
 
-<div id="settings-sec-general" style="<?= ($activeTab ?? 'general') === 'general' ? '' : 'display: none;' ?>">
+<!-- ======================================================== -->
+<!-- SECTION 1: ORGANIZATION PROFILE & OPERATING BRANCHES     -->
+<!-- ======================================================== -->
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+
     <!-- 1. Tenant Organization Profile Card -->
-    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+    <div class="card" style="background: #FFFFFF; border: 1px solid #8EB69B; border-radius: 10px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
         <div>
-            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: 1px solid rgba(142,182,155,0.3); background: #DAF1DE;">
                 <div style="display: flex; align-items: center; gap: 0.6rem;">
-                    <span style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; background: var(--primary-soft, rgba(37,99,235,0.1)); color: var(--primary, #2563eb);">
+                    <span style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; background: #235347; color: #FFFFFF;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
                             <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
                         </svg>
                     </span>
-                    <h3 class="card-title" style="margin: 0; font-size: 1.05rem; font-weight: 600;">Tenant Organization Profile</h3>
+                    <h3 class="card-title" style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #051F20;">Company Information &amp; GSTIN</h3>
                 </div>
                 <?php if ($isAdmin): ?>
-                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="openEditCompanyModal()" title="Edit Organization Details" style="font-size: 0.75rem; padding: 0.25rem 0.65rem;">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.25rem;">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                        </svg>
-                        Edit
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="openEditCompanyModal()" title="Edit Organization Details" style="font-size: 0.75rem; padding: 0.25rem 0.65rem; border: 1px solid #235347; color: #235347; background: transparent; border-radius: 4px; cursor: pointer;">
+                        Edit Profile
                     </button>
                 <?php endif; ?>
             </div>
 
             <div class="card-body" style="padding: 1.25rem;">
                 <div style="margin-bottom: 1rem;">
-                    <label style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Company Legal Name</label>
-                    <div id="disp-company-legal-name" style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-top: 0.15rem;"><?= e($compName) ?></div>
+                    <label style="color: #4B5563; font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Legal Entity Name</label>
+                    <div id="disp-company-legal-name" style="font-size: 1.15rem; font-weight: 700; color: #051F20; margin-top: 0.15rem;"><?= e($compName) ?></div>
                     <?php if (!empty($compTrade) && $compTrade !== $compName): ?>
-                        <div style="font-size: 0.85rem; color: var(--text-muted);">Trade Name: <?= e($compTrade) ?></div>
+                        <div style="font-size: 0.85rem; color: #4B5563;">Trade Name: <?= e($compTrade) ?></div>
                     <?php endif; ?>
                 </div>
 
                 <div style="margin-bottom: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div>
-                        <label style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">GSTIN</label>
+                        <label style="color: #4B5563; font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">GSTIN</label>
                         <div id="disp-company-gstin" style="margin-top: 0.15rem;">
                             <?php if (!empty($compGstin)): ?>
-                                <code style="font-size: 0.9rem; font-weight: 600;"><?= e($compGstin) ?></code>
-                                <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem;">State: <?= e($compState) ?> (<?= e($compStateCode) ?>)</div>
+                                <code style="font-size: 0.9rem; font-weight: 600; color: #235347; background: #DAF1DE; padding: 2px 6px; border-radius: 4px;"><?= e($compGstin) ?></code>
+                                <div style="font-size: 0.78rem; color: #4B5563; margin-top: 0.15rem;">State: <?= e($compState) ?> (<?= e($compStateCode) ?>)</div>
                             <?php else: ?>
-                                <span style="color: var(--text-muted);">&mdash;</span>
+                                <span style="color: #4B5563;">&mdash;</span>
                             <?php endif; ?>
                         </div>
                     </div>
                     <div>
-                        <label style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">PAN</label>
+                        <label style="color: #4B5563; font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">PAN</label>
                         <div id="disp-company-pan" style="margin-top: 0.15rem;">
                             <?php if (!empty($compPan)): ?>
-                                <code style="font-size: 0.9rem; font-weight: 600;"><?= e($compPan) ?></code>
+                                <code style="font-size: 0.9rem; font-weight: 600; color: #051F20; background: #F1F5F9; padding: 2px 6px; border-radius: 4px;"><?= e($compPan) ?></code>
                             <?php else: ?>
-                                <span style="color: var(--text-muted);">&mdash;</span>
+                                <span style="color: #4B5563;">&mdash;</span>
                             <?php endif; ?>
                         </div>
                     </div>
                 </div>
 
-                <div style="margin-bottom: 1rem;">
-                    <label style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Financial Year</label>
-                    <div id="disp-company-fy" style="font-size: 0.9rem; color: var(--text-primary); margin-top: 0.15rem;">01 April &mdash; 31 March (FY 2026-27)</div>
+                <div style="margin-bottom: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label style="color: #4B5563; font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Phone / Contact</label>
+                        <div style="font-size: 0.88rem; color: #051F20; margin-top: 0.15rem;"><?= e($compPhone ?: '—') ?></div>
+                    </div>
+                    <div>
+                        <label style="color: #4B5563; font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Official Email</label>
+                        <div style="font-size: 0.88rem; color: #051F20; margin-top: 0.15rem;"><?= e($compEmail ?: '—') ?></div>
+                    </div>
                 </div>
 
                 <div style="margin-bottom: 1rem;">
-                    <label style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Default Currency &amp; Timezone</label>
-                    <div style="font-size: 0.9rem; color: var(--text-primary); margin-top: 0.15rem;"><?= e($compCurrency) ?> (₹) &bull; Asia/Kolkata (+05:30)</div>
+                    <label style="color: #4B5563; font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Registered Office Address</label>
+                    <div style="font-size: 0.88rem; color: #051F20; margin-top: 0.15rem; line-height: 1.4;">
+                        <?= nl2br(e($compAddress ?: '—')) ?><br>
+                        <?= e($compCity) ?>, <?= e($compState) ?> &mdash; <?= e($compPincode) ?>
+                    </div>
                 </div>
 
-                <?php if (!empty($compAddress) || !empty($compCity)): ?>
-                    <div style="margin-bottom: 1rem; border-top: 1px dashed var(--border-color); padding-top: 0.75rem;">
-                        <label style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Registered Office</label>
-                        <div style="font-size: 0.85rem; color: var(--text-primary); margin-top: 0.15rem;">
-                            <?= e($compAddress) ?>
-                            <?php if (!empty($compCity)): ?>
-                                <br><?= e($compCity) ?>, <?= e($compState) ?> &ndash; <?= e($compPincode) ?>
+                <div style="margin-bottom: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label style="color: #4B5563; font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">MSME / Udyam No</label>
+                        <div style="font-size: 0.85rem; color: #051F20; margin-top: 0.15rem;"><?= e($compMsme ?: '—') ?></div>
+                    </div>
+                    <div>
+                        <label style="color: #4B5563; font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Website</label>
+                        <div style="font-size: 0.85rem; margin-top: 0.15rem;">
+                            <?php if ($compWebsite): ?>
+                                <a href="<?= e($compWebsite) ?>" target="_blank" rel="noopener" style="color: #235347; text-decoration: underline;"><?= e($compWebsite) ?></a>
+                            <?php else: ?>
+                                <span style="color: #4B5563;">—</span>
                             <?php endif; ?>
                         </div>
                     </div>
-                <?php endif; ?>
+                </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; border-top: 1px dashed var(--border-color); padding-top: 0.75rem; font-size: 0.82rem;">
+                <div style="margin-bottom: 1rem; padding: 0.75rem 0.85rem; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
                     <div>
-                        <span style="color: var(--text-muted);">Phone:</span> <strong><?= e($compPhone ?: '—') ?></strong><br>
-                        <span style="color: var(--text-muted);">Email:</span> <strong><?= e($compEmail ?: '—') ?></strong>
+                        <label style="color: #4B5563; font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Merchant UPI Payment QR</label>
+                        <div style="font-size: 0.92rem; font-weight: 700; color: #235347; font-family: monospace; margin-top: 0.15rem;">
+                            <?= e($compUpi ?: 'sashted@okhdfcbank') ?>
+                        </div>
+                        <div style="font-size: 0.78rem; color: #64748B;">Payee: <strong><?= e($compUpiName ?: 'Dnyanesh Sashte') ?></strong></div>
                     </div>
-                    <div>
-                        <span style="color: var(--text-muted);">MSME:</span> <strong><?= e($compMsme ?: '—') ?></strong><br>
-                        <span style="color: var(--text-muted);">UPI ID:</span> <strong style="color: <?= $compUpi ? 'var(--color-primary)' : 'var(--text-muted)' ?>;"><?= e($compUpi ?: 'Not Configured') ?></strong>
+                    <div style="background: #ffffff; padding: 4px; border: 1px solid #CBD5E1; border-radius: 6px; display: inline-flex; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+                        <img src="/uploads/branding/company_1_upi_qr.png" alt="UPI QR" style="width: 52px; height: 52px; object-fit: contain;">
                     </div>
+                </div>
+
+                <div style="padding-top: 0.75rem; border-top: 1px dashed #CBD5E1; font-size: 0.8rem; color: #4B5563; display: flex; justify-content: space-between;">
+                    <span>Default Currency: <strong><?= e($compCurrency) ?> (₹)</strong></span>
+                    <span>Financial Year: <strong>01 Apr – 31 Mar</strong></span>
                 </div>
             </div>
         </div>
+
+        <?php if ($isAdmin): ?>
+            <div class="card-footer" style="padding: 0.75rem 1.25rem; border-top: 1px solid rgba(142,182,155,0.3); background: #F8FAFC; text-align: right; border-radius: 0 0 10px 10px;">
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="openEditCompanyModal()" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; border: 1px solid #235347; color: #235347; background: transparent; border-radius: 4px; cursor: pointer;">
+                    Update Organization Details
+                </button>
+            </div>
+        <?php endif; ?>
     </div>
 
-    <!-- 2. Active Operating Branches Card -->
-    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+    <!-- 2. Operating Branches Card -->
+    <div class="card" style="background: #FFFFFF; border: 1px solid #8EB69B; border-radius: 10px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
         <div>
-            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: 1px solid rgba(142,182,155,0.3); background: #DAF1DE;">
                 <div style="display: flex; align-items: center; gap: 0.6rem;">
-                    <span style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; background: var(--success-soft, rgba(16,185,129,0.1)); color: var(--success, #10b981);">
+                    <span style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; background: #235347; color: #FFFFFF;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                            <circle cx="12" cy="10" r="3"></circle>
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
                         </svg>
                     </span>
-                    <h3 class="card-title" style="margin: 0; font-size: 1.05rem; font-weight: 600;">Active Branches</h3>
+                    <h3 class="card-title" style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #051F20;">Operating Branches &amp; Locations</h3>
                 </div>
-                <div style="display: flex; gap: 0.5rem; align-items: center;">
-                    <span class="badge badge-primary"><?= count($branches) ?> Branches</span>
-                    <?php if ($isAdmin): ?>
-                        <a href="/branches" class="btn btn-sm btn-outline-secondary" style="font-size: 0.75rem; padding: 0.25rem 0.65rem;" title="Manage all branches">
-                            Manage All &rarr;
-                        </a>
-                    <?php endif; ?>
-                </div>
+                <span class="badge" style="background: #235347; color: #FFFFFF; font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;">
+                    <?= count($branches) ?> Active
+                </span>
             </div>
 
             <div class="card-body" style="padding: 1.25rem;">
                 <?php if (empty($branches)): ?>
-                    <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
-                        No branches registered.
+                    <div style="text-align: center; padding: 2rem; color: #4B5563;">
+                        No operating branches registered yet.
                     </div>
                 <?php else: ?>
                     <div style="display: flex; flex-direction: column; gap: 0.75rem;">
@@ -208,27 +250,26 @@ $compTerms = $comp['terms_and_conditions'] ?? '';
                             <?php 
                             $bId = (int)$branch['id'];
                             $isCurrent = ($bId === $currentBranchId);
-                            $isActive = ((int)$branch['is_active'] === 1);
-                            $isMain = ((int)$branch['is_main_branch'] === 1);
-                            $badgeClass = $isMain ? 'badge-success' : 'badge-info';
-                            $badgeText = $isMain ? 'MAIN' : 'REGIONAL';
+                            $isMain = ((int)($branch['is_main_branch'] ?? 0) === 1);
                             ?>
-                            <div class="branch-card-row" style="padding: 0.85rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.5rem; transition: border-color 0.15s ease;">
+                            <div style="padding: 0.85rem; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
                                     <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                        <strong style="color: var(--text-primary); font-size: 0.95rem;"><?= e($branch['name']) ?></strong>
-                                        <span class="badge <?= $badgeClass ?>" style="font-size: 0.65rem;"><?= $badgeText ?></span>
+                                        <strong style="color: #051F20; font-size: 0.95rem;"><?= e($branch['name']) ?></strong>
+                                        <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 600; background: <?= $isMain ? '#235347' : '#8EB69B' ?>; color: #FFFFFF;">
+                                            <?= $isMain ? 'MAIN HQ' : 'REGIONAL' ?>
+                                        </span>
                                         <?php if ($isCurrent): ?>
-                                            <span class="badge badge-success" style="font-size: 0.62rem;">ACTIVE</span>
+                                            <span style="font-size: 0.62rem; padding: 0.15rem 0.35rem; border-radius: 4px; font-weight: 600; background: #10B981; color: #FFFFFF;">ACTIVE</span>
                                         <?php endif; ?>
                                     </div>
                                     <?php if ($isAdmin): ?>
-                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="openEditBranchModal(<?= $bId ?>)" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" title="Edit branch details">
+                                        <button type="button" class="btn btn-sm" onclick="openEditBranchModal(<?= $bId ?>)" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; border: 1px solid #CBD5E1; background: #FFFFFF; color: #051F20; border-radius: 4px; cursor: pointer;">
                                             Edit
                                         </button>
                                     <?php endif; ?>
                                 </div>
-                                <div style="font-size: 0.8rem; color: var(--text-muted); display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+                                <div style="font-size: 0.8rem; color: #4B5563; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
                                     <span>Code: <code><?= e($branch['branch_code'] ?? $branch['code'] ?? '—') ?></code></span>
                                     <span>&bull;</span>
                                     <span><?= e($branch['city'] ?? '—') ?><?= !empty($branch['address']) ? ', ' . e($branch['address']) : '' ?></span>
@@ -245,597 +286,449 @@ $compTerms = $comp['terms_and_conditions'] ?? '';
         </div>
 
         <?php if ($isAdmin): ?>
-            <div class="card-footer" style="padding: 0.75rem 1.25rem; border-top: 1px solid var(--border-color); background: var(--bg-surface); text-align: right;">
-                <button type="button" class="btn btn-sm btn-primary" onclick="openCreateBranchModal()" style="display: inline-flex; align-items: center; gap: 0.35rem;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    <span>Add Another Branch</span>
+            <div class="card-footer" style="padding: 0.75rem 1.25rem; border-top: 1px solid rgba(142,182,155,0.3); background: #F8FAFC; text-align: right; border-radius: 0 0 10px 10px;">
+                <button type="button" class="btn btn-sm btn-primary" onclick="openCreateBranchModal()" style="display: inline-flex; align-items: center; gap: 0.35rem; background: #235347; color: #FFFFFF; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; font-size: 0.8rem; cursor: pointer;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span>Add Branch</span>
                 </button>
             </div>
         <?php endif; ?>
     </div>
 </div>
-</div><!-- /#settings-sec-general -->
 
-<?php if ($isAdmin): ?>
-<!-- ========================================== -->
-<!-- 2. AUDIT TRAIL & SYSTEM LOGS SECTION       -->
-<!-- ========================================== -->
-<div id="settings-sec-audit" style="<?= ($activeTab ?? 'general') === 'audit' ? 'display: block;' : 'display: none;' ?> margin-bottom: 2rem;">
-    <!-- 4 KPI Summary Cards -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
-        <div class="card" style="padding: 1.25rem;">
-            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600; letter-spacing: 0.05em;">Total Audit Events</div>
-            <div style="font-size: 1.75rem; font-weight: 700; color: var(--primary, #2563eb); margin-top: 0.25rem;" id="audit-kpi-total"><?= (int)($auditSummary['total'] ?? 0) ?></div>
-            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Immutable activity log records</div>
+<!-- ======================================================== -->
+<!-- SECTION 2: COMPANY BRANDING ASSETS (LOGO, SIGNATURE, STAMP) -->
+<!-- ======================================================== -->
+<div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; border-top: 2px solid #DAF1DE; padding-top: 1.5rem;">
+    <div>
+        <h2 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #051F20;">Company Branding &amp; Visual Identity</h2>
+        <p style="margin: 0.2rem 0 0 0; color: #4B5563; font-size: 0.82rem;">Centralized asset management for Company Logo, Authorized Signature, and Stamp across all layouts and PDFs</p>
+    </div>
+    <!-- Branch Scope Selector -->
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <label for="branding-branch-select" style="font-size: 0.82rem; font-weight: 600; color: #051F20;">Branding Scope:</label>
+        <select id="branding-branch-select" onchange="window.location.href='/settings' + (this.value ? '?branch_id=' + this.value : '')" style="padding: 0.4rem 0.75rem; font-size: 0.85rem; border: 1px solid #8EB69B; border-radius: 6px; background: #FFFFFF; color: #051F20;">
+            <option value="" <?= empty($selectedBranchId) ? 'selected' : '' ?>>🏢 Company-Wide Default</option>
+            <?php foreach ($branches as $br): ?>
+                <option value="<?= (int)$br['id'] ?>" <?= ($selectedBranchId === (int)$br['id']) ? 'selected' : '' ?>>
+                    📍 Branch: <?= e($br['name']) ?> (<?= e($br['branch_code'] ?? $br['code'] ?? 'BR') ?>)
+                </option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+
+    <!-- CARD 1: COMPANY LOGO -->
+    <div class="card" style="background: #FFFFFF; border: 1px solid #8EB69B; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+        <div style="padding: 1.1rem 1.25rem; border-bottom: 1px solid rgba(142,182,155,0.3); background: #DAF1DE; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <span style="display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 6px; background: #235347; color: #FFFFFF;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+                </span>
+                <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #051F20;">1. Company Logo</h3>
+            </div>
+            <span class="badge" style="background: <?= ($b['is_custom_logo'] ?? false) ? '#235347' : '#8EB69B' ?>; color: #FFFFFF; font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;">
+                <?= ($b['is_custom_logo'] ?? false) ? 'Custom Logo' : 'Default Logo' ?>
+            </span>
         </div>
-        <div class="card" style="padding: 1.25rem;">
-            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600; letter-spacing: 0.05em;">Today's Activity</div>
-            <div style="font-size: 1.75rem; font-weight: 700; color: var(--color-success, #10b981); margin-top: 0.25rem;" id="audit-kpi-today"><?= (int)($auditSummary['today'] ?? 0) ?></div>
-            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Actions logged since midnight</div>
-        </div>
-        <div class="card" style="padding: 1.25rem;">
-            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600; letter-spacing: 0.05em;">Modifications</div>
-            <div style="font-size: 1.75rem; font-weight: 700; color: var(--color-warning, #f59e0b); margin-top: 0.25rem;" id="audit-kpi-updates"><?= (int)($auditSummary['updates'] + $auditSummary['creates']) ?></div>
-            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Records created & updated</div>
-        </div>
-        <div class="card" style="padding: 1.25rem;">
-            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600; letter-spacing: 0.05em;">Critical Deletions</div>
-            <div style="font-size: 1.75rem; font-weight: 700; color: var(--danger, #ef4444); margin-top: 0.25rem;" id="audit-kpi-deletes"><?= (int)($auditSummary['deletes'] ?? 0) ?></div>
-            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Cancelled or soft-deleted items</div>
+
+        <div style="padding: 1.25rem; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <!-- Logo Preview Box -->
+                <div style="margin-bottom: 1rem;">
+                    <div style="font-size: 0.8rem; font-weight: 600; color: #163832; margin-bottom: 0.4rem;">Live Preview:</div>
+                    <div id="preview-box-logo" style="width: 100%; height: 130px; border: 2px dashed #8EB69B; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: repeating-conic-gradient(#f8fafc 0% 25%, #ffffff 0% 50%) 50% / 16px 16px; overflow: hidden; padding: 10px;">
+                        <img id="img-preview-logo" src="<?= e($b['logo_url'] ?? '/assets/images/logo.png') ?>" alt="Company Logo" style="max-height: 100px; max-width: 90%; object-fit: contain; background: transparent;">
+                    </div>
+                </div>
+
+                <div style="font-size: 0.76rem; color: #4B5563; line-height: 1.4; margin-bottom: 1rem; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 0.6rem 0.75rem; border-radius: 6px;">
+                    <strong style="color: #051F20;">Recommended:</strong> Square or rectangular transparent PNG, WebP, or SVG.<br>
+                    <strong>Min dimensions:</strong> 200 × 200px. <strong>Max size:</strong> 2 MB.<br>
+                    <span style="color: #235347; font-weight: 500;">✓ Updates in Sidebar, Header, Login, Invoices &amp; Quotations.</span>
+                </div>
+            </div>
+
+            <!-- Upload Form -->
+            <form id="form-upload-logo" method="POST" action="/settings/branding/upload" enctype="multipart/form-data">
+                <input type="hidden" name="_token" value="<?= e($csrfToken) ?>">
+                <input type="hidden" name="type" value="logo">
+                <input type="hidden" name="branch_id" value="<?= e((string)($selectedBranchId ?? '')) ?>">
+
+                <div style="margin-bottom: 0.75rem;">
+                    <input type="file" id="file-logo" name="asset_file" accept=".png,.jpg,.jpeg,.webp,.svg" onchange="previewSelectedFile(this, 'img-preview-logo')" style="display: none;">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('file-logo').click()" style="width: 100%; border: 1px solid #8EB69B; background: #FFFFFF; color: #051F20; padding: 0.5rem; font-size: 0.84rem; font-weight: 600; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        <span id="label-file-logo">Choose New Logo File...</span>
+                    </button>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem;">
+                    <button type="submit" id="btn-save-logo" class="btn btn-primary" style="flex: 1; background: #235347; color: #FFFFFF; border: none; padding: 0.55rem; font-size: 0.85rem; font-weight: 600; border-radius: 6px; cursor: pointer;">
+                        Upload &amp; Apply
+                    </button>
+                    <?php if ($b['is_custom_logo'] ?? false): ?>
+                        <button type="button" class="btn btn-outline-danger" onclick="confirmRemoveAsset('logo', '<?= e((string)($selectedBranchId ?? '')) ?>')" style="padding: 0.55rem 0.85rem; border: 1px solid #EF4444; color: #EF4444; background: transparent; border-radius: 6px; font-size: 0.85rem; cursor: pointer;" title="Reset to default logo">
+                            Reset
+                        </button>
+                    <?php endif; ?>
+                </div>
+            </form>
         </div>
     </div>
 
-    <!-- Main Audit Log Table Card -->
-    <div class="card">
-        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <!-- CARD 2: AUTHORIZED SIGNATURE -->
+    <div class="card" style="background: #FFFFFF; border: 1px solid #8EB69B; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+        <div style="padding: 1.1rem 1.25rem; border-bottom: 1px solid rgba(142,182,155,0.3); background: #DAF1DE; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <span style="display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 6px; background: #235347; color: #FFFFFF;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                </span>
+                <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #051F20;">2. Authorized Signature</h3>
+            </div>
+            <span class="badge" style="background: (!empty($b['signature_url'])) ? '#235347' : '#94A3B8'; color: #FFFFFF; font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;">
+                <?= (!empty($b['signature_url'])) ? 'Configured' : 'Not Set' ?>
+            </span>
+        </div>
+
+        <div style="padding: 1.25rem; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
             <div>
-                <h3 class="card-title" style="margin: 0; font-size: 1.1rem; font-weight: 600;">System Audit Trail</h3>
-                <p style="margin: 0.2rem 0 0 0; font-size: 0.8rem; color: var(--text-muted);">Real-time immutable logging of all administrative and operator transactions</p>
-            </div>
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
-                <a href="/settings/audit-logs/export" class="btn btn-sm btn-secondary" style="text-decoration: none; display: flex; align-items: center; gap: 0.35rem;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                    <span>Export CSV</span>
-                </a>
-                <button type="button" class="btn btn-sm btn-primary" onclick="loadAuditLogs(1)" style="display: flex; align-items: center; gap: 0.35rem;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-                    <span>Refresh</span>
-                </button>
-            </div>
-        </div>
+                <!-- Signature Preview Box -->
+                <div style="margin-bottom: 1rem;">
+                    <div style="font-size: 0.8rem; font-weight: 600; color: #163832; margin-bottom: 0.4rem;">Live Preview:</div>
+                    <div id="preview-box-sig" style="width: 100%; height: 130px; border: 2px dashed #8EB69B; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: repeating-conic-gradient(#f8fafc 0% 25%, #ffffff 0% 50%) 50% / 16px 16px; overflow: hidden; padding: 10px;">
+                        <?php if (!empty($b['signature_url'])): ?>
+                            <img id="img-preview-sig" src="<?= e($b['signature_url']) ?>" alt="Signature" style="max-height: 80px; max-width: 90%; object-fit: contain;">
+                        <?php else: ?>
+                            <div id="img-preview-sig-empty" style="text-align: center; color: #94A3B8; font-size: 0.8rem;">
+                                <span>✍️ No signature uploaded yet</span>
+                            </div>
+                            <img id="img-preview-sig" src="" alt="Signature" style="display: none; max-height: 80px; max-width: 90%; object-fit: contain;">
+                        <?php endif; ?>
+                    </div>
+                </div>
 
-        <!-- Filter Bar -->
-        <div style="padding: 0.75rem 1.25rem; background: var(--bg-surface); border-bottom: 1px solid var(--border-color); display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
-            <div style="flex: 1; min-width: 220px;">
-                <input type="text" id="audit-filter-search" class="form-control" placeholder="Search description, user, IP..." style="font-size: 0.85rem; padding: 0.35rem 0.65rem;" oninput="debounceAuditSearch()">
+                <div style="font-size: 0.76rem; color: #4B5563; line-height: 1.4; margin-bottom: 1rem; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 0.6rem 0.75rem; border-radius: 6px;">
+                    <strong style="color: #051F20;">Recommended:</strong> Clean dark signature on transparent PNG.<br>
+                    <strong>Max size:</strong> 2 MB.<br>
+                    <span style="color: #235347; font-weight: 500;">✓ Renders dynamically in the Signatory block of bills &amp; quotes.</span>
+                </div>
             </div>
-            <div style="width: 140px;">
-                <select id="audit-filter-action" class="form-control" style="font-size: 0.85rem; padding: 0.35rem 0.5rem;" onchange="loadAuditLogs(1)">
-                    <option value="">All Actions</option>
-                    <option value="CREATE">CREATE</option>
-                    <option value="UPDATE">UPDATE</option>
-                    <option value="DELETE">DELETE</option>
-                    <option value="LOGIN">LOGIN</option>
-                    <option value="EXPORT">EXPORT</option>
-                </select>
-            </div>
-            <div style="width: 150px;">
-                <select id="audit-filter-entity" class="form-control" style="font-size: 0.85rem; padding: 0.35rem 0.5rem;" onchange="loadAuditLogs(1)">
-                    <option value="">All Entities</option>
-                    <option value="COMPANY">COMPANY</option>
-                    <option value="BRANCH">BRANCH</option>
-                    <option value="INVOICE">INVOICE</option>
-                    <option value="CUSTOMER">CUSTOMER</option>
-                    <option value="USER">USER</option>
-                    <option value="SETTINGS">SETTINGS</option>
-                </select>
-            </div>
-        </div>
 
-        <div class="table-container">
-            <table class="table" style="font-size: 0.85rem; margin: 0;">
-                <thead>
-                    <tr>
-                        <th style="width: 60px;"># ID</th>
-                        <th style="width: 160px;">Date & Time</th>
-                        <th style="width: 180px;">User & IP</th>
-                        <th style="width: 110px; text-align: center;">Action</th>
-                        <th style="width: 130px;">Target Entity</th>
-                        <th>Description</th>
-                        <th style="width: 90px; text-align: center;">Details</th>
-                    </tr>
-                </thead>
-                <tbody id="audit-table-body">
-                    <?php if (!empty($auditLogs)): ?>
-                        <?php foreach ($auditLogs as $log): ?>
-                            <?php
-                                $act = strtoupper((string)($log['action'] ?? ''));
-                                $badgeClass = match($act) {
-                                    'CREATE' => 'success',
-                                    'UPDATE' => 'info',
-                                    'DELETE' => 'danger',
-                                    'LOGIN' => 'primary',
-                                    default => 'secondary'
-                                };
-                            ?>
-                            <tr id="audit-row-<?= (int)$log['id'] ?>">
-                                <td><code>#<?= (int)$log['id'] ?></code></td>
-                                <td style="white-space: nowrap; color: var(--text-muted); font-size: 0.8rem;">
-                                    <?= e(date('d M Y, H:i:s', strtotime($log['created_at']))) ?>
-                                </td>
-                                <td>
-                                    <strong><?= e($log['user_name'] ?: 'Administrator') ?></strong>
-                                    <div style="font-size: 0.75rem; color: var(--text-muted); font-family: monospace;"><?= e($log['ip_address'] ?? '127.0.0.1') ?></div>
-                                </td>
-                                <td style="text-align: center;">
-                                    <span class="badge badge-<?= $badgeClass ?>"><?= e($act) ?></span>
-                                </td>
-                                <td>
-                                    <code><?= e($log['entity_type']) ?><?= !empty($log['entity_id']) ? ' #' . $log['entity_id'] : '' ?></code>
-                                </td>
-                                <td><?= e($log['description']) ?></td>
-                                <td style="text-align: center;">
-                                    <?php if (!empty($log['before_data_json']) || !empty($log['after_data_json'])): ?>
-                                        <button type="button" class="btn btn-sm btn-outline-secondary" style="padding: 0.15rem 0.45rem; font-size: 0.75rem;" onclick="inspectAuditLog(<?= (int)$log['id'] ?>)">View</button>
-                                    <?php else: ?>
-                                        <span style="color: var(--text-muted);">&mdash;</span>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <tr id="no-audit-row">
-                            <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
-                                No audit log records found. Any administrative changes will appear here automatically.
-                            </td>
-                        </tr>
+            <!-- Upload Form -->
+            <form id="form-upload-sig" method="POST" action="/settings/branding/upload" enctype="multipart/form-data">
+                <input type="hidden" name="_token" value="<?= e($csrfToken) ?>">
+                <input type="hidden" name="type" value="signature">
+                <input type="hidden" name="branch_id" value="<?= e((string)($selectedBranchId ?? '')) ?>">
+
+                <div style="margin-bottom: 0.75rem;">
+                    <input type="file" id="file-sig" name="asset_file" accept=".png,.jpg,.jpeg,.webp" onchange="previewSelectedFile(this, 'img-preview-sig', 'img-preview-sig-empty')" style="display: none;">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('file-sig').click()" style="width: 100%; border: 1px solid #8EB69B; background: #FFFFFF; color: #051F20; padding: 0.5rem; font-size: 0.84rem; font-weight: 600; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        <span id="label-file-sig"><?= !empty($b['signature_url']) ? 'Replace Signature File...' : 'Choose Signature Image...' ?></span>
+                    </button>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem;">
+                    <button type="submit" id="btn-save-sig" class="btn btn-primary" style="flex: 1; background: #235347; color: #FFFFFF; border: none; padding: 0.55rem; font-size: 0.85rem; font-weight: 600; border-radius: 6px; cursor: pointer;">
+                        Upload &amp; Apply
+                    </button>
+                    <?php if (!empty($b['signature_url'])): ?>
+                        <button type="button" class="btn btn-outline-danger" onclick="confirmRemoveAsset('signature', '<?= e((string)($selectedBranchId ?? '')) ?>')" style="padding: 0.55rem 0.85rem; border: 1px solid #EF4444; color: #EF4444; background: transparent; border-radius: 6px; font-size: 0.85rem; cursor: pointer;" title="Remove signature">
+                            Remove
+                        </button>
                     <?php endif; ?>
-                </tbody>
-            </table>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CARD 3: COMPANY STAMP / SEAL -->
+    <div class="card" style="background: #FFFFFF; border: 1px solid #8EB69B; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+        <div style="padding: 1.1rem 1.25rem; border-bottom: 1px solid rgba(142,182,155,0.3); background: #DAF1DE; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <span style="display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 6px; background: #235347; color: #FFFFFF;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 3"></path></svg>
+                </span>
+                <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #051F20;">3. Company Official Stamp</h3>
+            </div>
+            <span class="badge" style="background: (!empty($b['stamp_url'])) ? '#235347' : '#94A3B8'; color: #FFFFFF; font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;">
+                <?= (!empty($b['stamp_url'])) ? 'Configured' : 'Not Set' ?>
+            </span>
         </div>
 
-        <!-- Pagination Bar -->
-        <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1.25rem; font-size: 0.8rem; color: var(--text-muted);" id="audit-pagination-bar">
-            <span id="audit-page-info">Showing page 1</span>
-            <div style="display: flex; gap: 0.35rem;">
-                <button type="button" class="btn btn-sm btn-secondary" id="audit-prev-btn" onclick="prevAuditPage()" disabled>&larr; Previous</button>
-                <button type="button" class="btn btn-sm btn-secondary" id="audit-next-btn" onclick="nextAuditPage()">Next &rarr;</button>
+        <div style="padding: 1.25rem; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <!-- Stamp Preview Box -->
+                <div style="margin-bottom: 1rem;">
+                    <div style="font-size: 0.8rem; font-weight: 600; color: #163832; margin-bottom: 0.4rem;">Live Preview:</div>
+                    <div id="preview-box-stamp" style="width: 100%; height: 130px; border: 2px dashed #8EB69B; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: repeating-conic-gradient(#f8fafc 0% 25%, #ffffff 0% 50%) 50% / 16px 16px; overflow: hidden; padding: 10px;">
+                        <?php if (!empty($b['stamp_url'])): ?>
+                            <img id="img-preview-stamp" src="<?= e($b['stamp_url']) ?>" alt="Company Stamp" style="max-height: 90px; max-width: 90%; object-fit: contain;">
+                        <?php else: ?>
+                            <div id="img-preview-stamp-empty" style="text-align: center; color: #94A3B8; font-size: 0.8rem;">
+                                <span>⭕ No stamp uploaded yet</span>
+                            </div>
+                            <img id="img-preview-stamp" src="" alt="Company Stamp" style="display: none; max-height: 90px; max-width: 90%; object-fit: contain;">
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <div style="font-size: 0.76rem; color: #4B5563; line-height: 1.4; margin-bottom: 1rem; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 0.6rem 0.75rem; border-radius: 6px;">
+                    <strong style="color: #051F20;">Recommended:</strong> Circular or oval transparent PNG seal.<br>
+                    <strong>Max size:</strong> 2 MB.<br>
+                    <span style="color: #235347; font-weight: 500;">✓ Pairs neatly with the signature on invoices, quotes, &amp; POs.</span>
+                </div>
             </div>
+
+            <!-- Upload Form -->
+            <form id="form-upload-stamp" method="POST" action="/settings/branding/upload" enctype="multipart/form-data">
+                <input type="hidden" name="_token" value="<?= e($csrfToken) ?>">
+                <input type="hidden" name="type" value="stamp">
+                <input type="hidden" name="branch_id" value="<?= e((string)($selectedBranchId ?? '')) ?>">
+
+                <div style="margin-bottom: 0.75rem;">
+                    <input type="file" id="file-stamp" name="asset_file" accept=".png,.jpg,.jpeg,.webp" onchange="previewSelectedFile(this, 'img-preview-stamp', 'img-preview-stamp-empty')" style="display: none;">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('file-stamp').click()" style="width: 100%; border: 1px solid #8EB69B; background: #FFFFFF; color: #051F20; padding: 0.5rem; font-size: 0.84rem; font-weight: 600; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        <span id="label-file-stamp"><?= !empty($b['stamp_url']) ? 'Replace Stamp File...' : 'Choose Stamp Image...' ?></span>
+                    </button>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem;">
+                    <button type="submit" id="btn-save-stamp" class="btn btn-primary" style="flex: 1; background: #235347; color: #FFFFFF; border: none; padding: 0.55rem; font-size: 0.85rem; font-weight: 600; border-radius: 6px; cursor: pointer;">
+                        Upload &amp; Apply
+                    </button>
+                    <?php if (!empty($b['stamp_url'])): ?>
+                        <button type="button" class="btn btn-outline-danger" onclick="confirmRemoveAsset('stamp', '<?= e((string)($selectedBranchId ?? '')) ?>')" style="padding: 0.55rem 0.85rem; border: 1px solid #EF4444; color: #EF4444; background: transparent; border-radius: 6px; font-size: 0.85rem; cursor: pointer;" title="Remove stamp">
+                            Remove
+                        </button>
+                    <?php endif; ?>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CARD 4: UPI PAYMENT QR CODE -->
+    <div class="card" style="background: #FFFFFF; border: 1px solid #8EB69B; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+        <div style="padding: 1.1rem 1.25rem; border-bottom: 1px solid rgba(142,182,155,0.3); background: #DAF1DE; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <span style="display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 6px; background: #235347; color: #FFFFFF;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                </span>
+                <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #051F20;">4. UPI Payment QR Code</h3>
+            </div>
+            <span class="badge" style="background: <?= (!empty($b['qr_code_url'])) ? '#235347' : '#8EB69B' ?>; color: #FFFFFF; font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;">
+                <?= (!empty($b['qr_code_url'])) ? 'Custom QR Active' : 'Dynamic Auto-Generated' ?>
+            </span>
+        </div>
+
+        <div style="padding: 1.25rem; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <!-- QR Code Preview Box -->
+                <div style="margin-bottom: 1rem;">
+                    <div style="font-size: 0.8rem; font-weight: 600; color: #163832; margin-bottom: 0.4rem;">Live Scannable QR:</div>
+                    <div style="height: 120px; background: #FFFFFF; border: 1.5px dashed #8EB69B; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 0.5rem; overflow: hidden;">
+                        <?php if (!empty($b['qr_code_url'])): ?>
+                            <img id="img-preview-qr" src="<?= e($b['qr_code_url']) ?>" alt="UPI QR Code" style="max-height: 105px; max-width: 90%; object-fit: contain; border-radius: 4px;">
+                        <?php else: ?>
+                            <div id="img-preview-qr-empty" style="text-align: center; color: #64748B; font-size: 0.8rem;">
+                                <span>📱 Auto-generates dynamic UPI QR</span>
+                            </div>
+                            <img id="img-preview-qr" src="" alt="UPI QR Code" style="display: none; max-height: 105px; max-width: 90%; object-fit: contain;">
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <div style="font-size: 0.76rem; color: #4B5563; line-height: 1.4; margin-bottom: 1rem; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 0.6rem 0.75rem; border-radius: 6px;">
+                    <strong style="color: #051F20;">Active VPA:</strong> <code style="background: #E2E8F0; padding: 1px 4px; border-radius: 3px;"><?= e($company['upi_id'] ?? 'sashted@okhdfcbank') ?></code><br>
+                    <strong>Payee Name:</strong> <?= e($company['upi_display_name'] ?? 'Dnyanesh Sashte') ?><br>
+                    <span style="color: #235347; font-weight: 500;">✓ Scannable by Google Pay, PhonePe, Paytm &amp; all BHIM UPI apps.</span>
+                </div>
+            </div>
+
+            <!-- Upload Form -->
+            <form id="form-upload-qr" method="POST" action="/settings/branding/upload" enctype="multipart/form-data">
+                <input type="hidden" name="_token" value="<?= e($csrfToken) ?>">
+                <input type="hidden" name="type" value="qr">
+                <input type="hidden" name="branch_id" value="<?= e((string)($selectedBranchId ?? '')) ?>">
+
+                <div style="margin-bottom: 0.75rem;">
+                    <input type="file" id="file-qr" name="asset_file" accept=".png,.jpg,.jpeg,.webp" onchange="previewSelectedFile(this, 'img-preview-qr', 'img-preview-qr-empty')" style="display: none;">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('file-qr').click()" style="width: 100%; border: 1px solid #8EB69B; background: #FFFFFF; color: #051F20; padding: 0.5rem; font-size: 0.84rem; font-weight: 600; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        <span id="label-file-qr"><?= !empty($b['qr_code_url']) ? 'Replace QR Image...' : 'Choose QR Image...' ?></span>
+                    </button>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem;">
+                    <button type="submit" id="btn-save-qr" class="btn btn-primary" style="flex: 1; background: #235347; color: #FFFFFF; border: none; padding: 0.55rem; font-size: 0.85rem; font-weight: 600; border-radius: 6px; cursor: pointer;">
+                        Upload &amp; Apply
+                    </button>
+                    <?php if (!empty($b['qr_code_url'])): ?>
+                        <button type="button" class="btn btn-outline-danger" onclick="confirmRemoveAsset('qr', '<?= e((string)($selectedBranchId ?? '')) ?>')" style="padding: 0.55rem 0.85rem; border: 1px solid #EF4444; color: #EF4444; background: transparent; border-radius: 6px; font-size: 0.85rem; cursor: pointer;" title="Reset QR to dynamic generator">
+                            Reset
+                        </button>
+                    <?php endif; ?>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
-<!-- ========================================== -->
-<!-- 4. BACKUP & DISASTER RECOVERY SECTION     -->
-<!-- ========================================== -->
-<?php if ($isAdmin): ?>
-<div id="settings-sec-backups" style="<?= ($activeTab ?? 'general') === 'backups' ? 'display: block;' : 'display: none;' ?> margin-bottom: 2rem;">
-    <!-- 3 KPI Cards -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
-        <div class="card" style="padding: 1.25rem;">
-            <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--text-muted); margin-bottom: 0.35rem;">Last Successful Backup</div>
-            <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary);" id="backup-kpi-last">
-                <?= !empty($lastBackup) ? date('d M Y, h:i A', strtotime((string)$lastBackup['created_at'])) : 'Never Backed Up' ?>
-            </div>
-            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;" id="backup-kpi-last-file">
-                <?= !empty($lastBackup) ? e($lastBackup['file_name']) . ' (' . number_format($lastBackup['file_size'] / 1024, 1) . ' KB)' : 'Automatic 7-day schedule' ?>
-            </div>
+<!-- ======================================================== -->
+<!-- SECTION 3: INVOICE BRANDING & DOCUMENT DISPLAY SETTINGS   -->
+<!-- ======================================================== -->
+<div class="card" style="background: #FFFFFF; border: 1px solid #8EB69B; border-radius: 10px; margin-bottom: 2rem; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+    <div style="padding: 1.1rem 1.25rem; border-bottom: 1px solid rgba(142,182,155,0.3); background: #0B2B26; color: #FFFFFF; border-radius: 10px 10px 0 0; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8EB69B" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #DAF1DE;">Invoice Branding &amp; Document Display Settings</h3>
         </div>
-
-        <div class="card" style="padding: 1.25rem;">
-            <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--text-muted); margin-bottom: 0.35rem;">Next Scheduled Run</div>
-            <div style="font-size: 1.15rem; font-weight: 700; color: <?= !empty($nextBackup['is_overdue']) ? 'var(--danger, #DC2626)' : 'var(--primary, #2563EB)' ?>;">
-                <?= e($nextBackup['human'] ?? 'Every 7 Days') ?>
-            </div>
-            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
-                Managed via Scheduler / Windows Task Engine
-            </div>
-        </div>
-
-        <div class="card" style="padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
-            <div>
-                <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--text-muted); margin-bottom: 0.35rem;">Backup Archive Integrity</div>
-                <div style="font-size: 1.15rem; font-weight: 700; color: var(--color-success, #059669); display: flex; align-items: center; gap: 0.4rem;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                    <span>SHA-256 Verified</span>
-                </div>
-            </div>
-            <div style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
-                <button type="button" class="btn btn-sm btn-primary" onclick="createBackupNow()" id="btn-create-backup" style="width: 100%; font-size: 0.8rem; padding: 0.45rem;">
-                    + Create Backup Now
-                </button>
-            </div>
-        </div>
+        <span style="font-size: 0.75rem; color: #8EB69B;">Fine-tune sizing and document-level inclusion rules</span>
     </div>
 
-    <!-- Safe Audit Log Cleanup Action Bar -->
-    <div class="card" style="margin-bottom: 1.5rem; padding: 1.25rem; border-left: 4px solid var(--primary, #2563eb);">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-            <div>
-                <h4 style="margin: 0 0 0.25rem 0; font-size: 1rem; font-weight: 700;">Atomic Weekly Audit Log Retention & Cleanup</h4>
-                <p style="margin: 0; font-size: 0.825rem; color: var(--text-muted);">
-                    Creates a verified backup archive containing eligible logs first. Only after checksum verification succeeds, logs older than the retention period (default 7 days) are purged.
-                </p>
-            </div>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <label style="font-size: 0.8rem; font-weight: 600; margin: 0;">Retention:</label>
-                <select id="cleanup-retention-days" style="padding: 0.4rem 0.6rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); font-size: 0.8rem;">
-                    <option value="7" selected>7 Days (Recommended)</option>
-                    <option value="14">14 Days</option>
-                    <option value="30">30 Days</option>
-                </select>
-                <button type="button" class="btn btn-sm btn-outline-primary" onclick="runAuditCleanup()" id="btn-cleanup-audit" style="font-size: 0.8rem; padding: 0.45rem 0.85rem;">
-                    Run Safe Cleanup
-                </button>
-            </div>
-        </div>
-    </div>
+    <form method="POST" action="/settings/branding/settings" style="padding: 1.5rem;">
+        <input type="hidden" name="_token" value="<?= e($csrfToken) ?>">
+        <input type="hidden" name="branch_id" value="<?= e((string)($selectedBranchId ?? '')) ?>">
 
-    <!-- Backup Records Table -->
-    <div class="card">
-        <div class="card-header" style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="margin: 0; font-size: 1rem; font-weight: 600;">Verified Backup History</h3>
-            <span style="font-size: 0.8rem; color: var(--text-muted);"><?= count($backups) ?> Archives Stored</span>
-        </div>
-        <div class="table-responsive">
-            <table class="table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
-                <thead>
-                    <tr style="border-bottom: 1px solid var(--border-color); text-align: left; background: var(--bg-surface);">
-                        <th style="padding: 0.75rem 1rem;">Created At</th>
-                        <th style="padding: 0.75rem 1rem;">Archive Name</th>
-                        <th style="padding: 0.75rem 1rem;">Type</th>
-                        <th style="padding: 0.75rem 1rem;">Size</th>
-                        <th style="padding: 0.75rem 1rem;">SHA-256 Checksum</th>
-                        <th style="padding: 0.75rem 1rem;">Status</th>
-                        <th style="padding: 0.75rem 1rem; text-align: right;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="backups-table-body">
-                    <?php if (!empty($backups)): ?>
-                        <?php foreach ($backups as $b): ?>
-                            <tr style="border-bottom: 1px solid var(--border-color);">
-                                <td style="padding: 0.75rem 1rem; white-space: nowrap;"><?= date('d M Y, h:i A', strtotime((string)$b['created_at'])) ?></td>
-                                <td style="padding: 0.75rem 1rem; font-weight: 600;"><?= e($b['file_name']) ?></td>
-                                <td style="padding: 0.75rem 1rem;">
-                                    <span class="badge <?= $b['backup_type'] === 'SCHEDULED_WEEKLY' ? 'badge-primary' : ($b['backup_type'] === 'SAFETY_PRE_RESTORE' ? 'badge-warning' : 'badge-secondary') ?>" style="font-size: 0.7rem;">
-                                        <?= e($b['backup_type']) ?>
-                                    </span>
-                                </td>
-                                <td style="padding: 0.75rem 1rem;"><?= number_format($b['file_size'] / 1024, 1) ?> KB</td>
-                                <td style="padding: 0.75rem 1rem; font-family: monospace; font-size: 0.75rem; color: var(--text-muted);" title="<?= e($b['checksum']) ?>">
-                                    <?= substr((string)$b['checksum'], 0, 14) ?>...
-                                </td>
-                                <td style="padding: 0.75rem 1rem;">
-                                    <span class="badge badge-success" style="font-size: 0.7rem;">Verified</span>
-                                </td>
-                                <td style="padding: 0.75rem 1rem; text-align: right; white-space: nowrap;">
-                                    <a href="/settings/backups/<?= (int)$b['id'] ?>/download" class="btn btn-sm btn-secondary" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; text-decoration: none;">Download</a>
-                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="openRestoreModal(<?= (int)$b['id'] ?>, '<?= e($b['file_name']) ?>')" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; margin-left: 0.25rem;">Restore</button>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="openDeleteModal(<?= (int)$b['id'] ?>, '<?= e($b['file_name']) ?>')" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; margin-left: 0.25rem; color: #dc2626;" title="Delete backup archive">Delete</button>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <tr>
-                            <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
-                                No backup archives created yet. Click "+ Create Backup Now" to generate your first verified backup.
-                            </td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<!-- ========================================== -->
-<!-- 4. COMMUNICATION & SHARING SETTINGS TAB    -->
-<!-- ========================================== -->
-<?php if ($isAdmin): ?>
-<div id="settings-sec-communication" style="<?= ($activeTab ?? 'general') === 'communication' ? 'display: block;' : 'display: none;' ?> margin-bottom: 2rem;">
-    <form method="POST" action="/settings/communication" id="commSettingsForm">
-        <input type="hidden" name="_csrf_token" value="<?= $csrfToken ?>">
-
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
-            <!-- 1. Email SMTP Configuration Card -->
-            <div class="card" style="display: flex; flex-direction: column;">
-                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
-                    <div style="display: flex; align-items: center; gap: 0.6rem;">
-                        <span style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                        </span>
-                        <div>
-                            <h3 style="margin: 0; font-size: 1rem; font-weight: 700;">Email SMTP Configuration</h3>
-                            <span style="font-size: 0.75rem; color: var(--text-muted);">Direct socket SMTP transmission with PDF attachments</span>
-                        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+            <!-- Sizing: Signature -->
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 1.1rem; border-radius: 8px;">
+                <h4 style="margin: 0 0 0.75rem 0; font-size: 0.95rem; font-weight: 700; color: #163832; display: flex; align-items: center; gap: 0.4rem;">
+                    <span>✍️</span> Signature Sizing &amp; Position
+                </h4>
+                <div style="display: flex; gap: 0.75rem; margin-bottom: 0.75rem;">
+                    <div style="flex: 1;">
+                        <label style="display: block; font-size: 0.76rem; font-weight: 600; color: #4B5563; margin-bottom: 0.25rem;">Width (px):</label>
+                        <input type="number" name="signature_width" min="50" max="300" value="<?= (int)($b['signature_width'] ?? 140) ?>" class="form-control" style="width: 100%; padding: 0.45rem; border: 1px solid #CBD5E1; border-radius: 6px;">
                     </div>
-                    <div>
-                        <span class="badge <?= !empty($commSettings['email_configured']) ? 'badge-success' : 'badge-secondary' ?>">
-                            <?= !empty($commSettings['email_configured']) ? 'Configured' : 'Unconfigured' ?>
-                        </span>
+                    <div style="flex: 1;">
+                        <label style="display: block; font-size: 0.76rem; font-weight: 600; color: #4B5563; margin-bottom: 0.25rem;">Height (px):</label>
+                        <input type="number" name="signature_height" min="20" max="150" value="<?= (int)($b['signature_height'] ?? 60) ?>" class="form-control" style="width: 100%; padding: 0.45rem; border: 1px solid #CBD5E1; border-radius: 6px;">
                     </div>
                 </div>
-                <div class="card-body" style="padding-top: 1rem;">
-                    <!-- Quick Setup Presets -->
-                    <div style="margin-bottom: 0.85rem; padding: 0.5rem 0.75rem; background: var(--bg-surface); border-radius: 6px; border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
-                        <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Quick Presets:</span>
-                        <div style="display: flex; gap: 0.4rem;">
-                            <button type="button" class="btn btn-sm btn-secondary" onclick="applySmtpPreset('gmail')" style="font-size: 0.72rem; padding: 0.2rem 0.5rem;">
-                                Google Gmail
-                            </button>
-                            <button type="button" class="btn btn-sm btn-secondary" onclick="applySmtpPreset('outlook')" style="font-size: 0.72rem; padding: 0.2rem 0.5rem;">
-                                Microsoft 365 / Outlook
-                            </button>
-                        </div>
-                    </div>
-
-                    <div style="display: flex; gap: 1rem; margin-bottom: 0.75rem;">
-                        <div style="flex: 2;">
-                            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">SMTP Host</label>
-                            <input type="text" name="smtp_host" value="<?= e($commSettings['smtp_host'] ?? '') ?>" class="form-control" placeholder="e.g. smtp.gmail.com or smtp.mailtrap.io" style="font-size: 0.85rem; width: 100%;">
-                        </div>
-                        <div style="flex: 1;">
-                            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Port</label>
-                            <input type="number" name="smtp_port" value="<?= (int)($commSettings['smtp_port'] ?? 587) ?>" class="form-control" placeholder="587" style="font-size: 0.85rem; width: 100%;">
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 1rem; margin-bottom: 0.75rem;">
-                        <div style="flex: 1;">
-                            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Encryption</label>
-                            <select name="smtp_encryption" class="form-control" style="font-size: 0.85rem; width: 100%;">
-                                <option value="tls" <?= strtolower($commSettings['smtp_encryption'] ?? '') === 'tls' ? 'selected' : '' ?>>TLS (Port 587 - Recommended)</option>
-                                <option value="ssl" <?= strtolower($commSettings['smtp_encryption'] ?? '') === 'ssl' ? 'selected' : '' ?>>SSL (Port 465)</option>
-                                <option value="none" <?= strtolower($commSettings['smtp_encryption'] ?? '') === 'none' ? 'selected' : '' ?>>None (Port 25)</option>
-                            </select>
-                        </div>
-                        <div style="flex: 1;">
-                            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">SMTP Username</label>
-                            <input type="text" name="smtp_username" value="<?= e($commSettings['smtp_username'] ?? '') ?>" class="form-control" placeholder="smtp_username" style="font-size: 0.85rem; width: 100%;">
-                        </div>
-                    </div>
-                    <div style="margin-bottom: 0.75rem;">
-                        <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">SMTP Password</label>
-                        <input type="password" name="smtp_password" placeholder="<?= !empty($commSettings['smtp_password']) ? '•••••••••••• (Leave blank to keep unchanged)' : 'Enter SMTP password' ?>" class="form-control" style="font-size: 0.85rem; width: 100%;">
-                        <small id="smtp-preset-tip" style="display: none; color: #b45309; font-size: 0.72rem; margin-top: 0.35rem; padding: 0.35rem 0.5rem; background: rgba(245, 158, 11, 0.1); border-radius: 4px;"></small>
-                    </div>
-                    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
-                        <div style="flex: 1;">
-                            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">From Email</label>
-                            <input type="email" name="smtp_from_address" value="<?= e($commSettings['smtp_from_address'] ?? 'billing@wtsbill.in') ?>" class="form-control" placeholder="billing@wtsbill.in" style="font-size: 0.85rem; width: 100%;">
-                        </div>
-                        <div style="flex: 1;">
-                            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">From Name</label>
-                            <input type="text" name="smtp_from_name" value="<?= e($commSettings['smtp_from_name'] ?? 'WTSBill Enterprise') ?>" class="form-control" placeholder="WTSBill Enterprise" style="font-size: 0.85rem; width: 100%;">
-                        </div>
-                    </div>
-                    <!-- Test Email Block -->
-                    <div style="background: var(--bg-surface); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color);">
-                        <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 0.35rem;">Test SMTP Delivery</label>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <input type="email" id="test-email-address" placeholder="recipient@example.com" class="form-control" style="font-size: 0.8rem; flex: 1;">
-                            <button type="button" class="btn btn-secondary" onclick="sendTestEmail()" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; white-space: nowrap;">Send Test Email</button>
-                        </div>
-                        <div id="test-email-feedback" style="font-size: 0.75rem; margin-top: 0.35rem; display: none;"></div>
-                    </div>
+                <div>
+                    <label style="display: block; font-size: 0.76rem; font-weight: 600; color: #4B5563; margin-bottom: 0.25rem;">Alignment in Signatory Block:</label>
+                    <select name="signature_position" class="form-control" style="width: 100%; padding: 0.45rem; border: 1px solid #CBD5E1; border-radius: 6px;">
+                        <option value="right" <?= (($b['signature_position'] ?? 'right') === 'right') ? 'selected' : '' ?>>Right Aligned (Standard)</option>
+                        <option value="center" <?= (($b['signature_position'] ?? '') === 'center') ? 'selected' : '' ?>>Center Aligned</option>
+                        <option value="left" <?= (($b['signature_position'] ?? '') === 'left') ? 'selected' : '' ?>>Left Aligned</option>
+                    </select>
                 </div>
             </div>
 
-            <!-- 2. WhatsApp Business API Configuration Card -->
-            <div class="card" style="display: flex; flex-direction: column;">
-                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
-                    <div style="display: flex; align-items: center; gap: 0.6rem;">
-                        <span style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; background: rgba(37, 211, 102, 0.1); color: #25D366;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-                        </span>
-                        <div>
-                            <h3 style="margin: 0; font-size: 1rem; font-weight: 700;">WhatsApp Business Cloud API</h3>
-                            <span style="font-size: 0.75rem; color: var(--text-muted);">Meta Cloud API automated delivery & Web Share fallback</span>
-                        </div>
+            <!-- Sizing: Stamp -->
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 1.1rem; border-radius: 8px;">
+                <h4 style="margin: 0 0 0.75rem 0; font-size: 0.95rem; font-weight: 700; color: #163832; display: flex; align-items: center; gap: 0.4rem;">
+                    <span>⭕</span> Stamp Sizing &amp; Position
+                </h4>
+                <div style="display: flex; gap: 0.75rem; margin-bottom: 0.75rem;">
+                    <div style="flex: 1;">
+                        <label style="display: block; font-size: 0.76rem; font-weight: 600; color: #4B5563; margin-bottom: 0.25rem;">Width (px):</label>
+                        <input type="number" name="stamp_width" min="40" max="200" value="<?= (int)($b['stamp_width'] ?? 90) ?>" class="form-control" style="width: 100%; padding: 0.45rem; border: 1px solid #CBD5E1; border-radius: 6px;">
                     </div>
-                    <div>
-                        <span class="badge <?= !empty($commSettings['whatsapp_configured']) ? 'badge-success' : 'badge-secondary' ?>">
-                            <?= !empty($commSettings['whatsapp_configured']) ? 'API Active' : 'Fallback Mode' ?>
-                        </span>
+                    <div style="flex: 1;">
+                        <label style="display: block; font-size: 0.76rem; font-weight: 600; color: #4B5563; margin-bottom: 0.25rem;">Height (px):</label>
+                        <input type="number" name="stamp_height" min="40" max="200" value="<?= (int)($b['stamp_height'] ?? 90) ?>" class="form-control" style="width: 100%; padding: 0.45rem; border: 1px solid #CBD5E1; border-radius: 6px;">
                     </div>
                 </div>
-                <div class="card-body" style="padding-top: 1rem;">
-                    <div style="margin-bottom: 0.75rem;">
-                        <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">WhatsApp Provider Integration</label>
-                        <select name="whatsapp_provider" class="form-control" style="font-size: 0.85rem; width: 100%;">
-                            <option value="CLOUD_API" <?= ($commSettings['whatsapp_provider'] ?? '') === 'CLOUD_API' ? 'selected' : '' ?>>Meta WhatsApp Business Cloud API (Automated Server Dispatch)</option>
-                            <option value="CLICK_TO_CHAT" <?= ($commSettings['whatsapp_provider'] ?? '') === 'CLICK_TO_CHAT' ? 'selected' : '' ?>>Web Share API & WhatsApp Direct Click-to-Chat (Zero Meta Setup)</option>
-                        </select>
+                <div>
+                    <label style="display: block; font-size: 0.76rem; font-weight: 600; color: #4B5563; margin-bottom: 0.25rem;">Alignment in Signatory Block:</label>
+                    <select name="stamp_position" class="form-control" style="width: 100%; padding: 0.45rem; border: 1px solid #CBD5E1; border-radius: 6px;">
+                        <option value="right" <?= (($b['stamp_position'] ?? 'right') === 'right') ? 'selected' : '' ?>>Right Aligned (Standard)</option>
+                        <option value="center" <?= (($b['stamp_position'] ?? '') === 'center') ? 'selected' : '' ?>>Center Aligned</option>
+                        <option value="left" <?= (($b['stamp_position'] ?? '') === 'left') ? 'selected' : '' ?>>Left Aligned</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Document Visibility Toggles -->
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 1.1rem; border-radius: 8px;">
+                <h4 style="margin: 0 0 0.75rem 0; font-size: 0.95rem; font-weight: 700; color: #163832; display: flex; align-items: center; gap: 0.4rem;">
+                    <span>📄</span> Document Inclusions
+                </h4>
+                <div style="font-size: 0.8rem; margin-bottom: 0.6rem;">
+                    <strong style="color: #051F20;">Authorized Signature:</strong>
+                    <div style="margin: 0.35rem 0 0.5rem 0.2rem; display: flex; flex-direction: column; gap: 0.35rem;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" name="show_signature_invoice" value="1" <?= (!empty($b['show_signature_invoice'])) ? 'checked' : '' ?>>
+                            <span>Show on Sales Invoices</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" name="show_signature_quotation" value="1" <?= (!empty($b['show_signature_quotation'])) ? 'checked' : '' ?>>
+                            <span>Show on Quotations</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" name="show_signature_purchase" value="1" <?= (!empty($b['show_signature_purchase'])) ? 'checked' : '' ?>>
+                            <span>Show on Purchase Orders</span>
+                        </label>
                     </div>
-                    <div style="display: flex; gap: 1rem; margin-bottom: 0.75rem;">
-                        <div style="flex: 1;">
-                            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Phone Number ID</label>
-                            <input type="text" name="whatsapp_phone_number_id" value="<?= e($commSettings['whatsapp_phone_number_id'] ?? '') ?>" class="form-control" placeholder="e.g. 109876543210987" style="font-size: 0.85rem; width: 100%;">
-                        </div>
-                        <div style="flex: 1;">
-                            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">WABA Account ID</label>
-                            <input type="text" name="whatsapp_business_account_id" value="<?= e($commSettings['whatsapp_business_account_id'] ?? '') ?>" class="form-control" placeholder="e.g. 293847291039485" style="font-size: 0.85rem; width: 100%;">
-                        </div>
-                    </div>
-                    <div style="margin-bottom: 0.75rem;">
-                        <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">System User Permanent Access Token</label>
-                        <input type="password" name="whatsapp_access_token" placeholder="<?= !empty($commSettings['whatsapp_access_token']) ? '•••••••••••••••• (Leave blank to keep unchanged)' : 'EAABw...' ?>" class="form-control" style="font-size: 0.85rem; width: 100%;">
-                    </div>
-                    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
-                        <div style="flex: 1;">
-                            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">API Version</label>
-                            <input type="text" name="whatsapp_api_version" value="<?= e($commSettings['whatsapp_api_version'] ?? 'v19.0') ?>" class="form-control" placeholder="v19.0" style="font-size: 0.85rem; width: 100%;">
-                        </div>
-                        <div style="flex: 1;">
-                            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Template Name</label>
-                            <input type="text" name="whatsapp_template_name" value="<?= e($commSettings['whatsapp_template_name'] ?? 'document_share') ?>" class="form-control" placeholder="document_share" style="font-size: 0.85rem; width: 100%;">
-                        </div>
-                    </div>
-                    <!-- Test WhatsApp Block -->
-                    <div style="background: var(--bg-surface); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color);">
-                        <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 0.35rem;">Test WhatsApp Connection</label>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <input type="text" id="test-wa-phone" placeholder="Mobile Number (e.g. 9876543210)" class="form-control" style="font-size: 0.8rem; flex: 1;">
-                            <button type="button" class="btn btn-secondary" onclick="sendTestWhatsApp()" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; white-space: nowrap;">Test WhatsApp</button>
-                        </div>
-                        <div id="test-wa-feedback" style="font-size: 0.75rem; margin-top: 0.35rem; display: none;"></div>
+                </div>
+
+                <div style="font-size: 0.8rem;">
+                    <strong style="color: #051F20;">Official Stamp:</strong>
+                    <div style="margin: 0.35rem 0 0 0.2rem; display: flex; flex-direction: column; gap: 0.35rem;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" name="show_stamp_invoice" value="1" <?= (!empty($b['show_stamp_invoice'])) ? 'checked' : '' ?>>
+                            <span>Show on Sales Invoices</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" name="show_stamp_quotation" value="1" <?= (!empty($b['show_stamp_quotation'])) ? 'checked' : '' ?>>
+                            <span>Show on Quotations</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" name="show_stamp_purchase" value="1" <?= (!empty($b['show_stamp_purchase'])) ? 'checked' : '' ?>>
+                            <span>Show on Purchase Orders</span>
+                        </label>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 3. Preferences & Templates Card -->
-        <div class="card" style="margin-bottom: 1.5rem;">
-            <div class="card-header" style="padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
-                <h3 style="margin: 0; font-size: 1rem; font-weight: 700;">Sharing Channels, Defaults & Message Templates</h3>
-                <span style="font-size: 0.75rem; color: var(--text-muted);">Enable/disable specific channels and customize default messaging</span>
-            </div>
-            <div class="card-body" style="padding-top: 1rem;">
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 1.25rem;">
-                    <div>
-                        <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.5rem;">Channel Toggles</label>
-                        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                            <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; cursor: pointer;">
-                                <input type="checkbox" name="whatsapp_enabled" value="1" <?= !empty($commSettings['whatsapp_enabled']) ? 'checked' : '' ?>>
-                                <span>Enable WhatsApp PDF Sharing</span>
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; cursor: pointer;">
-                                <input type="checkbox" name="email_enabled" value="1" <?= !empty($commSettings['email_enabled']) ? 'checked' : '' ?>>
-                                <span>Enable Email PDF Sharing</span>
-                            </label>
-                        </div>
-                    </div>
-                    <div>
-                        <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.5rem;">Default Channels</label>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
-                            <div>
-                                <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Tax Invoices</label>
-                                <select name="default_invoice_channel" class="form-control" style="font-size: 0.85rem; width: 100%;">
-                                    <option value="BOTH" <?= ($commSettings['default_invoice_channel'] ?? '') === 'BOTH' ? 'selected' : '' ?>>Both (WhatsApp + Email)</option>
-                                    <option value="WHATSAPP" <?= ($commSettings['default_invoice_channel'] ?? '') === 'WHATSAPP' ? 'selected' : '' ?>>WhatsApp Only</option>
-                                    <option value="EMAIL" <?= ($commSettings['default_invoice_channel'] ?? '') === 'EMAIL' ? 'selected' : '' ?>>Email Only</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Quotations</label>
-                                <select name="default_quotation_channel" class="form-control" style="font-size: 0.85rem; width: 100%;">
-                                    <option value="BOTH" <?= ($commSettings['default_quotation_channel'] ?? '') === 'BOTH' ? 'selected' : '' ?>>Both (WhatsApp + Email)</option>
-                                    <option value="WHATSAPP" <?= ($commSettings['default_quotation_channel'] ?? '') === 'WHATSAPP' ? 'selected' : '' ?>>WhatsApp Only</option>
-                                    <option value="EMAIL" <?= ($commSettings['default_quotation_channel'] ?? '') === 'EMAIL' ? 'selected' : '' ?>>Email Only</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                    <div>
-                        <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Default Email Note / Message</label>
-                        <textarea name="default_email_message" rows="3" class="form-control" style="font-size: 0.85rem; width: 100%;" placeholder="e.g. Please find attached your document."><?= e($commSettings['default_email_message'] ?? '') ?></textarea>
-                    </div>
-                    <div>
-                        <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Default WhatsApp Note / Message</label>
-                        <textarea name="default_whatsapp_message" rows="3" class="form-control" style="font-size: 0.85rem; width: 100%;" placeholder="e.g. Please review the attached document."><?= e($commSettings['default_whatsapp_message'] ?? '') ?></textarea>
-                    </div>
-                </div>
-            </div>
-            <div class="card-footer" style="display: flex; justify-content: flex-end; padding: 0.75rem 1.25rem; border-top: 1px solid var(--border-color); background: var(--bg-surface);">
-                <button type="submit" class="btn btn-primary" style="display: flex; align-items: center; gap: 0.4rem;">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                    <span>Save Communication Settings</span>
-                </button>
-            </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid #E2E8F0; padding-top: 1rem;">
+            <button type="submit" class="btn btn-primary" style="background: #235347; color: #FFFFFF; border: none; padding: 0.6rem 1.4rem; font-size: 0.88rem; font-weight: 600; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                <span>Save Invoice Branding Settings</span>
+            </button>
         </div>
     </form>
 </div>
-<?php endif; ?>
 
-<!-- RESTORE DATABASE SAFETY CONFIRMATION MODAL -->
-<div id="restore-backup-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.75); z-index: 99999; align-items: center; justify-content: center;">
-    <div style="max-width: 480px; width: 100%; margin: 1rem; background: var(--bg-card); border-radius: 12px; padding: 1.5rem; border: 1px solid var(--border-color); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--danger, #DC2626); display: flex; align-items: center; gap: 0.4rem;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                <span>Confirm Database Restoration</span>
-            </h3>
-            <button type="button" onclick="closeRestoreModal()" style="background: none; border: none; font-size: 1.25rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+<!-- ======================================================== -->
+<!-- MODALS: EDIT COMPANY, REGISTER BRANCH, REMOVE ASSET      -->
+<!-- ======================================================== -->
+
+<!-- Modal for Remove Confirmation -->
+<div id="modal-remove-asset" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
+    <div style="background: #FFFFFF; width: 100%; max-width: 420px; border-radius: 10px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+        <div style="padding: 1rem 1.25rem; background: #FEF2F2; border-bottom: 1px solid #FEE2E2; display: flex; align-items: center; gap: 0.6rem;">
+            <span style="color: #DC2626; font-size: 1.25rem;">⚠️</span>
+            <h4 style="margin: 0; color: #991B1B; font-size: 1rem; font-weight: 700;">Confirm Asset Removal</h4>
         </div>
-        <div style="font-size: 0.85rem; color: var(--text-primary); line-height: 1.5; margin-bottom: 1rem;">
-            <p style="margin-top: 0;">You are about to restore the database from archive: <strong id="restore-modal-filename"></strong>.</p>
-            <div style="background: var(--bg-surface); padding: 0.75rem; border-radius: 6px; border-left: 3px solid #059669; margin-bottom: 1rem; font-size: 0.8rem;">
-                ✓ A safety snapshot of your current database will be generated automatically before any changes are applied.
+        <div style="padding: 1.25rem; font-size: 0.88rem; color: #374151;">
+            <p style="margin: 0 0 0.5rem 0;" id="modal-remove-desc">Are you sure you want to remove this branding asset?</p>
+            <p style="margin: 0; font-size: 0.78rem; color: #6B7280;">This will revert the asset to default across all invoices, quotations, and documents.</p>
+        </div>
+        <form id="form-remove-asset" method="POST" action="/settings/branding/remove">
+            <input type="hidden" name="_token" value="<?= e($csrfToken) ?>">
+            <input type="hidden" id="remove-asset-type" name="type" value="">
+            <input type="hidden" id="remove-asset-branch" name="branch_id" value="">
+            <div style="padding: 0.75rem 1.25rem; background: #F9FAFB; border-top: 1px solid #E5E7EB; display: flex; justify-content: flex-end; gap: 0.65rem;">
+                <button type="button" class="btn btn-secondary" onclick="closeRemoveModal()" style="padding: 0.5rem 1rem; border: 1px solid #D1D5DB; background: #FFFFFF; color: #374151; border-radius: 6px; font-size: 0.85rem; cursor: pointer;">Cancel</button>
+                <button type="submit" class="btn btn-danger" style="padding: 0.5rem 1rem; border: none; background: #DC2626; color: #FFFFFF; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer;">Yes, Remove Asset</button>
             </div>
-            <p style="color: var(--text-muted); margin-bottom: 0.5rem;">To confirm, please type <strong>RESTORE</strong> below:</p>
-            <input type="text" id="restore-confirm-text" placeholder="Type RESTORE" style="width: 100%; padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); font-size: 0.9rem;" oninput="checkRestoreInput()">
-        </div>
-        <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-            <button type="button" class="btn btn-secondary" onclick="closeRestoreModal()">Cancel</button>
-            <button type="button" class="btn btn-danger" id="btn-execute-restore" onclick="executeRestore()" disabled style="opacity: 0.5;">Restore Database</button>
-        </div>
+        </form>
     </div>
 </div>
 
-<!-- DELETE BACKUP SAFETY CONFIRMATION MODAL -->
-<div id="delete-backup-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.75); z-index: 99999; align-items: center; justify-content: center;">
-    <div style="max-width: 440px; width: 100%; margin: 1rem; background: var(--bg-card); border-radius: 12px; padding: 1.5rem; border: 1px solid var(--border-color); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--danger, #DC2626); display: flex; align-items: center; gap: 0.4rem;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                <span>Confirm Delete Backup</span>
-            </h3>
-            <button type="button" onclick="closeDeleteModal()" style="background: none; border: none; font-size: 1.25rem; cursor: pointer; color: var(--text-muted);">&times;</button>
-        </div>
-        <div style="font-size: 0.85rem; color: var(--text-primary); line-height: 1.5; margin-bottom: 1.25rem;">
-            <p style="margin-top: 0;">Are you sure you want to permanently delete backup archive: <strong id="delete-modal-filename"></strong>?</p>
-            <div style="background: var(--bg-surface); padding: 0.75rem; border-radius: 6px; border-left: 3px solid #dc2626; font-size: 0.8rem; color: var(--text-muted);">
-                This will remove the archive from disk storage. Note: Safety policy prevents deleting the only remaining successful backup.
-            </div>
-        </div>
-        <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-            <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
-            <button type="button" class="btn btn-danger" id="btn-execute-delete" onclick="executeDeleteBackup()">Delete Permanently</button>
-        </div>
-    </div>
-</div>
-<?php endif; ?>
-
-<!-- AUDIT DETAIL INSPECTION MODAL -->
-<div id="audit-detail-modal" class="modal-backdrop">
-    <div class="modal-dialog" style="max-width: 620px;">
-        <div class="modal-header">
-            <h3 class="modal-title" id="audit-modal-title">Audit Payload Inspection</h3>
-            <button type="button" class="modal-close" onclick="closeAuditModal()">&times;</button>
-        </div>
-        <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-            <div style="margin-bottom: 1rem;">
-                <label style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--text-muted);">Event Description</label>
-                <div id="audit-modal-desc" style="font-size: 0.95rem; font-weight: 600; margin-top: 0.25rem;"></div>
-            </div>
-            <div id="audit-modal-before-sec" style="margin-bottom: 1rem; display: none;">
-                <label style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--danger);">Before State</label>
-                <pre id="audit-modal-before" style="background: var(--bg-surface); padding: 0.75rem; border-radius: 6px; font-size: 0.8rem; overflow-x: auto; margin-top: 0.25rem; border: 1px solid var(--border-color);"></pre>
-            </div>
-            <div id="audit-modal-after-sec" style="margin-bottom: 1rem; display: none;">
-                <label style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--color-success);">After State / Payload</label>
-                <pre id="audit-modal-after" style="background: var(--bg-surface); padding: 0.75rem; border-radius: 6px; font-size: 0.8rem; overflow-x: auto; margin-top: 0.25rem; border: 1px solid var(--border-color);"></pre>
-            </div>
-        </div>
-        <div class="modal-footer" style="text-align: right;">
-            <button type="button" class="btn btn-secondary" onclick="closeAuditModal()">Close</button>
-        </div>
-    </div>
-</div>
-<?php endif; ?>
-
-<!-- ========================================== -->
-<!-- 1. EDIT TENANT ORGANIZATION PROFILE MODAL  -->
-<!-- ========================================== -->
+<!-- Modal 1: Edit Organization Profile -->
 <div id="company-modal" class="modal-backdrop">
     <div class="modal-dialog" style="max-width: 680px;">
         <div class="modal-header">
-            <h3 class="modal-title">Edit Tenant Organization Profile</h3>
+            <h3 class="modal-title">Edit Organization Profile</h3>
             <button type="button" class="modal-close" onclick="WTSBill.Modal.close('company-modal')">&times;</button>
         </div>
         <form id="company-form" onsubmit="handleCompanyFormSubmit(event)">
@@ -866,13 +759,25 @@ $compTerms = $comp['terms_and_conditions'] ?? '';
                     </div>
                 </div>
 
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label class="form-label">Official Email</label>
+                        <input type="email" id="company-email" name="email" class="form-control" value="<?= e($compEmail) ?>" placeholder="info@wtsindia.co.in">
+                    </div>
+                    <div>
+                        <label class="form-label">Official Phone</label>
+                        <input type="text" id="company-phone" name="phone" class="form-control" value="<?= e($compPhone) ?>" placeholder="020 47252364">
+                    </div>
+                </div>
+
                 <div>
                     <label class="form-label">Premises / Address Line 1</label>
-                    <input type="text" id="company-address1" name="address_line1" class="form-control" value="<?= e($comp['address_line1'] ?? '') ?>" placeholder="Office No-B-7, 2nd floor, Shreya Business Hub">
+                    <input type="text" id="company-address1" name="address_line1" class="form-control" value="<?= e($comp['address_line1'] ?? '') ?>" placeholder="Flat/Shop, Building, Commercial Park">
                 </div>
+
                 <div>
-                    <label class="form-label">Address Line 2 (Optional)</label>
-                    <input type="text" id="company-address2" name="address_line2" class="form-control" value="<?= e($comp['address_line2'] ?? '') ?>" placeholder="Opp CNG Pump, Narhe">
+                    <label class="form-label">Road / Area / Address Line 2</label>
+                    <input type="text" id="company-address2" name="address_line2" class="form-control" value="<?= e($comp['address_line2'] ?? '') ?>" placeholder="Street, Landmark, Area">
                 </div>
 
                 <div style="display: grid; grid-template-columns: 2fr 2fr 1fr; gap: 1rem;">
@@ -882,58 +787,48 @@ $compTerms = $comp['terms_and_conditions'] ?? '';
                     </div>
                     <div>
                         <label class="form-label">State</label>
-                        <input type="text" id="company-state" name="state" class="form-control" value="<?= e($compState) ?>">
+                        <input type="text" id="company-state" name="state" class="form-control" value="<?= e($compState) ?>" placeholder="Maharashtra">
                     </div>
                     <div>
                         <label class="form-label">State Code</label>
-                        <input type="text" id="company-state-code" name="state_code" class="form-control" value="<?= e($compStateCode) ?>" maxlength="2">
+                        <input type="text" id="company-state-code" name="state_code" class="form-control" value="<?= e($compStateCode) ?>" maxlength="2" placeholder="27">
                     </div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
                     <div>
                         <label class="form-label">Pincode</label>
-                        <input type="text" id="company-pincode" name="pincode" class="form-control" value="<?= e($compPincode) ?>" placeholder="411041" maxlength="10">
+                        <input type="text" id="company-pincode" name="pincode" class="form-control" value="<?= e($compPincode) ?>" maxlength="10" placeholder="411041">
                     </div>
                     <div>
-                        <label class="form-label">Phone</label>
-                        <input type="text" id="company-phone" name="phone" class="form-control" value="<?= e($compPhone) ?>" placeholder="020 47252364">
-                    </div>
-                    <div>
-                        <label class="form-label">Email</label>
-                        <input type="email" id="company-email" name="email" class="form-control" value="<?= e($compEmail) ?>" placeholder="info@wtsindia.co.in">
-                    </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
-                    <div>
-                        <label class="form-label">MSME No. (UDYAM)</label>
+                        <label class="form-label">MSME / Udyam No</label>
                         <input type="text" id="company-msme" name="msme_no" class="form-control" value="<?= e($compMsme) ?>" placeholder="UDYAM-MH-26-0734598">
                     </div>
                     <div>
                         <label class="form-label">Website</label>
-                        <input type="text" id="company-website" name="website" class="form-control" value="<?= e($compWebsite) ?>" placeholder="http://www.wtsindia.co.in">
-                    </div>
-                    <div>
-                        <label class="form-label">Merchant UPI ID (e.g. merchant@bank)</label>
-                        <input type="text" id="company-upi" name="upi_id" class="form-control" value="<?= e($compUpi) ?>" placeholder="merchant@upi">
+                        <input type="url" id="company-website" name="website" class="form-control" value="<?= e($compWebsite) ?>" placeholder="http://www.wtsindia.co.in">
                     </div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div>
-                        <label class="form-label">Merchant Payee Display Name</label>
-                        <input type="text" id="company-upi-name" name="upi_display_name" class="form-control" value="<?= e($compUpiName) ?>" placeholder="Legal or Brand Name">
+                        <label class="form-label">UPI ID for Invoices (VPA)</label>
+                        <input type="text" id="company-upi" name="upi_id" class="form-control" value="<?= e($compUpi) ?>" placeholder="e.g. sashted@okhdfcbank">
                     </div>
                     <div>
-                        <label class="form-label">Default UPI Payment Instructions</label>
-                        <input type="text" id="company-payment-instructions" name="payment_instructions" class="form-control" value="<?= e($compPaymentInstructions) ?>" placeholder="Scan this QR code using any supported UPI application to pay the outstanding invoice balance.">
+                        <label class="form-label">UPI Payee Display Name</label>
+                        <input type="text" id="company-upi-name" name="upi_display_name" class="form-control" value="<?= e($compUpiName) ?>" placeholder="e.g. Dnyanesh Sashte">
                     </div>
                 </div>
 
                 <div>
-                    <label class="form-label">Default Invoice Terms &amp; Conditions</label>
-                    <textarea id="company-terms" name="terms_and_conditions" class="form-control" rows="3" placeholder="Terms printed on invoices"><?= e($compTerms) ?></textarea>
+                    <label class="form-label">Invoice Payment Instructions</label>
+                    <textarea id="company-payment-instructions" name="payment_instructions" class="form-control" rows="2" placeholder="e.g. Bank details, NEFT/RTGS accounts, UPI instructions"><?= e($compPaymentInstructions) ?></textarea>
+                </div>
+
+                <div>
+                    <label class="form-label">Default Terms &amp; Conditions</label>
+                    <textarea id="company-terms" name="terms_and_conditions" class="form-control" rows="3" placeholder="Standard commercial terms printed at the bottom of customer invoices"><?= e($compTerms) ?></textarea>
                 </div>
             </div>
 
@@ -945,9 +840,7 @@ $compTerms = $comp['terms_and_conditions'] ?? '';
     </div>
 </div>
 
-<!-- ========================================== -->
-<!-- 2. CREATE / EDIT BRANCH MODAL              -->
-<!-- ========================================== -->
+<!-- Modal 2: Create / Edit Operating Branch -->
 <div id="branch-modal" class="modal-backdrop">
     <div class="modal-dialog" style="max-width: 640px;">
         <div class="modal-header">
@@ -1029,7 +922,7 @@ $compTerms = $comp['terms_and_conditions'] ?? '';
                     </div>
                 </div>
 
-                <div style="display: flex; gap: 1.5rem; align-items: center; margin-top: 0.5rem; padding: 0.75rem; background: var(--bg-surface); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                <div style="display: flex; gap: 1.5rem; align-items: center; margin-top: 0.5rem; padding: 0.75rem; background: var(--bg-surface, #F8FAFC); border-radius: 6px; border: 1px solid #E2E8F0;">
                     <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin: 0;">
                         <input type="checkbox" id="branch-is-main" name="is_main_branch" value="1">
                         <span>Is Main Organization HQ Branch</span>
@@ -1050,6 +943,7 @@ $compTerms = $comp['terms_and_conditions'] ?? '';
 </div>
 
 <script>
+// Auto-derive PAN and State Code from GSTIN input
 function syncGstinPan(gstin) {
     gstin = (gstin || '').toUpperCase().trim();
     if (gstin.length >= 12) {
@@ -1072,7 +966,6 @@ function openEditCompanyModal() {
     var errBox = document.getElementById('company-form-error');
     if (errBox) errBox.style.display = 'none';
 
-    // Fetch latest fresh company data
     WTSBill.Http.fetchWithCsrf('/api/settings/company')
         .then(function(res) { return res.json(); })
         .then(function(data) {
@@ -1130,19 +1023,19 @@ function handleCompanyFormSubmit(e) {
         btn.disabled = false;
         btn.textContent = 'Save Organization Profile';
 
-        if (result.ok && result.data.success) {
-            WTSBill.Modal.close('company-modal');
-            WTSBill.Toast.show(result.data.message || 'Organization Profile updated successfully.', 'success');
-            setTimeout(function() { window.location.reload(); }, 400);
-        } else {
-            errBox.textContent = result.data.message || 'Failed to update organization profile.';
+        if (!result.ok || !result.data.success) {
+            errBox.textContent = result.data.message || 'Failed to update company settings.';
             errBox.style.display = 'block';
+            return;
         }
+
+        WTSBill.Modal.close('company-modal');
+        window.location.reload();
     })
     .catch(function(err) {
         btn.disabled = false;
         btn.textContent = 'Save Organization Profile';
-        errBox.textContent = 'Network error: ' + err.message;
+        errBox.textContent = 'Network or server error occurred.';
         errBox.style.display = 'block';
     });
 }
@@ -1153,20 +1046,22 @@ function openCreateBranchModal() {
     document.getElementById('branch-id').value = '';
     document.getElementById('branch-is-active').checked = true;
     document.getElementById('branch-is-main').checked = false;
-    document.getElementById('branch-form-error').style.display = 'none';
+    var errBox = document.getElementById('branch-form-error');
+    if (errBox) errBox.style.display = 'none';
     WTSBill.Modal.open('branch-modal');
 }
 
-function openEditBranchModal(branchId) {
-    document.getElementById('branch-modal-title').textContent = 'Edit Branch Details';
-    document.getElementById('branch-form-error').style.display = 'none';
+function openEditBranchModal(id) {
+    document.getElementById('branch-modal-title').textContent = 'Edit Operating Branch';
+    var errBox = document.getElementById('branch-form-error');
+    if (errBox) errBox.style.display = 'none';
 
-    WTSBill.Http.fetchWithCsrf('/branches/' + branchId)
+    WTSBill.Http.fetchWithCsrf('/branches/' + id, { headers: { 'Accept': 'application/json' } })
         .then(function(res) { return res.json(); })
         .then(function(data) {
             if (data.success && data.branch) {
                 var b = data.branch;
-                document.getElementById('branch-id').value = b.id;
+                document.getElementById('branch-id').value = b.id || '';
                 document.getElementById('branch-name').value = b.name || '';
                 document.getElementById('branch-code').value = b.branch_code || b.code || '';
                 document.getElementById('branch-contact').value = b.contact_person || '';
@@ -1180,16 +1075,13 @@ function openEditBranchModal(branchId) {
                 document.getElementById('branch-pincode').value = b.pincode || '';
                 document.getElementById('branch-phone').value = b.phone || '';
                 document.getElementById('branch-email').value = b.email || '';
-                document.getElementById('branch-is-main').checked = (parseInt(b.is_main_branch) === 1);
-                document.getElementById('branch-is-active').checked = (parseInt(b.is_active) === 1);
-
+                document.getElementById('branch-is-main').checked = parseInt(b.is_main_branch) === 1;
+                document.getElementById('branch-is-active').checked = parseInt(b.is_active) === 1;
                 WTSBill.Modal.open('branch-modal');
-            } else {
-                WTSBill.Toast.show(data.message || 'Failed to load branch details', 'danger');
             }
         })
-        .catch(function(err) {
-            WTSBill.Toast.show('Error loading branch: ' + err.message, 'danger');
+        .catch(function() {
+            WTSBill.Modal.open('branch-modal');
         });
 }
 
@@ -1223,483 +1115,59 @@ function handleBranchFormSubmit(e) {
         btn.disabled = false;
         btn.textContent = 'Save Branch';
 
-        if (result.ok && result.data.success) {
-            WTSBill.Modal.close('branch-modal');
-            WTSBill.Toast.show(result.data.message || 'Branch saved successfully.', 'success');
-            setTimeout(function() { window.location.reload(); }, 400);
-        } else {
+        if (!result.ok || !result.data.success) {
             errBox.textContent = result.data.message || 'Failed to save branch.';
             errBox.style.display = 'block';
+            return;
         }
+
+        WTSBill.Modal.close('branch-modal');
+        window.location.reload();
     })
     .catch(function(err) {
         btn.disabled = false;
         btn.textContent = 'Save Branch';
-        errBox.textContent = 'Network error: ' + err.message;
+        errBox.textContent = 'Network or server error occurred.';
         errBox.style.display = 'block';
     });
 }
 
-// ==========================================
-// AUDIT LOGS & TAB SWITCHING WORKFLOW
-// ==========================================
-var currentAuditPage = 1;
-var totalAuditPages = 1;
-var auditSearchDebounceTimer = null;
-var cachedAuditRows = {};
-
-function switchSettingsTab(tab) {
-    var generalSec = document.getElementById('settings-sec-general');
-    var auditSec = document.getElementById('settings-sec-audit');
-    var backupsSec = document.getElementById('settings-sec-backups');
-    var commSec = document.getElementById('settings-sec-communication');
-
-    var genBtn = document.getElementById('tab-btn-general');
-    var audBtn = document.getElementById('tab-btn-audit');
-    var backupsBtn = document.getElementById('tab-btn-backups');
-    var commBtn = document.getElementById('tab-btn-communication');
-
-    // Hide all
-    if (generalSec) generalSec.style.display = 'none';
-    if (auditSec) auditSec.style.display = 'none';
-    if (backupsSec) backupsSec.style.display = 'none';
-    if (commSec) commSec.style.display = 'none';
-
-    [genBtn, audBtn, backupsBtn, commBtn].forEach(function(btn) {
-        if (btn) {
-            btn.classList.remove('active', 'btn-primary');
-            btn.classList.add('btn-secondary');
-        }
-    });
-
-    if (tab === 'audit') {
-        if (auditSec) auditSec.style.display = 'block';
-        if (audBtn) { audBtn.classList.remove('btn-secondary'); audBtn.classList.add('active', 'btn-primary'); }
-        if (window.history && window.history.replaceState) window.history.replaceState({}, '', '/settings/audit-logs');
-        loadAuditLogs(1);
-    } else if (tab === 'backups') {
-        if (backupsSec) backupsSec.style.display = 'block';
-        if (backupsBtn) { backupsBtn.classList.remove('btn-secondary'); backupsBtn.classList.add('active', 'btn-primary'); }
-        if (window.history && window.history.replaceState) window.history.replaceState({}, '', '/settings?tab=backups');
-    } else if (tab === 'communication') {
-        if (commSec) commSec.style.display = 'block';
-        if (commBtn) { commBtn.classList.remove('btn-secondary'); commBtn.classList.add('active', 'btn-primary'); }
-        if (window.history && window.history.replaceState) window.history.replaceState({}, '', '/settings?tab=communication');
-    } else {
-        if (generalSec) generalSec.style.display = 'block';
-        if (genBtn) { genBtn.classList.remove('btn-secondary'); genBtn.classList.add('active', 'btn-primary'); }
-        if (window.history && window.history.replaceState) window.history.replaceState({}, '', '/settings');
-    }
-}
-
-function applySmtpPreset(provider) {
-    var hostInput = document.querySelector('input[name="smtp_host"]');
-    var portInput = document.querySelector('input[name="smtp_port"]');
-    var encSelect = document.querySelector('select[name="smtp_encryption"]');
-    var tip = document.getElementById('smtp-preset-tip');
-
-    if (provider === 'gmail') {
-        if (hostInput) hostInput.value = 'smtp.gmail.com';
-        if (portInput) portInput.value = '587';
-        if (encSelect) encSelect.value = 'tls';
-        if (tip) {
-            tip.style.display = 'block';
-            tip.innerHTML = '<strong>Gmail Configuration:</strong> Set <em>Username</em> to your full Gmail address (e.g. <code>you@gmail.com</code>). For <em>Password</em>, use a 16-character <strong>Google App Password</strong> (from Google Account &gt; Security &gt; 2-Step Verification &gt; App Passwords), NOT your normal Gmail password.';
-        }
-    } else if (provider === 'outlook') {
-        if (hostInput) hostInput.value = 'smtp.office365.com';
-        if (portInput) portInput.value = '587';
-        if (encSelect) encSelect.value = 'tls';
-        if (tip) {
-            tip.style.display = 'block';
-            tip.innerHTML = '<strong>Microsoft 365 / Outlook:</strong> Set <em>Username</em> to your full Outlook/365 email and enter your password or App Password.';
-        }
-    }
-}
-
-function sendTestEmail() {
-    var email = document.getElementById('test-email-address').value.trim();
-    var fb = document.getElementById('test-email-feedback');
-    if (!email) {
-        fb.style.display = 'block';
-        fb.style.color = 'var(--danger, #ef4444)';
-        fb.textContent = 'Please enter a test email address.';
-        return;
-    }
-    fb.style.display = 'block';
-    fb.style.color = 'var(--text-muted)';
-    fb.textContent = 'Connecting to SMTP server and dispatching test email...';
-
-    var csrf = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
-    fetch('/api/settings/communication/test-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
-        body: JSON.stringify({ test_email: email })
-    }).then(function(r) { return r.json(); }).then(function(res) {
-        if (res.success) {
-            fb.style.color = 'var(--success, #10b981)';
-            fb.textContent = '✓ ' + (res.message || 'Test email dispatched successfully.');
-        } else {
-            fb.style.color = 'var(--danger, #ef4444)';
-            fb.textContent = '✗ ' + (res.message || 'SMTP delivery failed.');
-        }
-    }).catch(function(err) {
-        fb.style.color = 'var(--danger, #ef4444)';
-        fb.textContent = '✗ Error: ' + err.message;
-    });
-}
-
-function sendTestWhatsApp() {
-    var phone = document.getElementById('test-wa-phone').value.trim();
-    var fb = document.getElementById('test-wa-feedback');
-    if (!phone) {
-        fb.style.display = 'block';
-        fb.style.color = 'var(--danger, #ef4444)';
-        fb.textContent = 'Please enter a test mobile phone number.';
-        return;
-    }
-    fb.style.display = 'block';
-    fb.style.color = 'var(--text-muted)';
-    fb.textContent = 'Connecting to WhatsApp API...';
-
-    var csrf = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
-    fetch('/api/settings/communication/test-whatsapp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
-        body: JSON.stringify({ test_phone: phone })
-    }).then(function(r) { return r.json(); }).then(function(res) {
-        if (res.success) {
-            fb.style.color = 'var(--success, #10b981)';
-            fb.textContent = '✓ ' + (res.message || 'WhatsApp notification initiated.');
-            if (res.url) {
-                window.open(res.url, '_blank');
+// Branding Preview & Remove Controls
+function previewSelectedFile(input, imgId, emptyId) {
+    if (input.files && input.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var img = document.getElementById(imgId);
+            if (img) {
+                img.src = e.target.result;
+                img.style.display = 'block';
             }
-        } else {
-            fb.style.color = 'var(--danger, #ef4444)';
-            fb.textContent = '✗ ' + (res.message || 'WhatsApp dispatch failed.');
-        }
-    }).catch(function(err) {
-        fb.style.color = 'var(--danger, #ef4444)';
-        fb.textContent = '✗ Error: ' + err.message;
-    });
-}
-
-// -------------------------------------------------------------
-// Backup & Disaster Recovery Actions
-// -------------------------------------------------------------
-function createBackupNow() {
-    var btn = document.getElementById('btn-create-backup');
-    if (btn) { btn.disabled = true; btn.textContent = 'Generating Verified Backup...'; }
-
-    fetch('/settings/backups/create', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
-    }).then(function(r) { return r.json(); }).then(function(res) {
-        if (btn) { btn.disabled = false; btn.textContent = '+ Create Backup Now'; }
-        if (res.success) {
-            Toast.show(res.message || 'Backup archive created and verified.', 'success');
-            setTimeout(function() { window.location.href = '/settings?tab=backups'; }, 1000);
-        } else {
-            Toast.show(res.message || 'Backup creation failed.', 'error');
-        }
-    }).catch(function(err) {
-        if (btn) { btn.disabled = false; btn.textContent = '+ Create Backup Now'; }
-        Toast.show('Error: ' + err.message, 'error');
-    });
-}
-
-function runAuditCleanup() {
-    var btn = document.getElementById('btn-cleanup-audit');
-    var retentionDays = parseInt(document.getElementById('cleanup-retention-days').value, 10) || 7;
-    if (btn) { btn.disabled = true; btn.textContent = 'Running Backup & Purge...'; }
-
-    fetch('/settings/audit-logs/cleanup', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({ retention_days: retentionDays })
-    }).then(function(r) { return r.json(); }).then(function(res) {
-        if (btn) { btn.disabled = false; btn.textContent = 'Run Safe Cleanup'; }
-        if (res.success) {
-            Toast.show(res.message || 'Audit logs safely archived and cleaned.', 'success');
-            setTimeout(function() { window.location.href = '/settings?tab=backups'; }, 1200);
-        } else {
-            Toast.show(res.message || 'Audit cleanup failed.', 'error');
-        }
-    }).catch(function(err) {
-        if (btn) { btn.disabled = false; btn.textContent = 'Run Safe Cleanup'; }
-        Toast.show('Error: ' + err.message, 'error');
-    });
-}
-
-var activeRestoreBackupId = null;
-function openRestoreModal(backupId, filename) {
-    activeRestoreBackupId = backupId;
-    document.getElementById('restore-modal-filename').textContent = filename;
-    document.getElementById('restore-confirm-text').value = '';
-    document.getElementById('btn-execute-restore').disabled = true;
-    document.getElementById('btn-execute-restore').style.opacity = '0.5';
-    document.getElementById('restore-backup-modal').style.display = 'flex';
-}
-
-function closeRestoreModal() {
-    document.getElementById('restore-backup-modal').style.display = 'none';
-    activeRestoreBackupId = null;
-}
-
-function checkRestoreInput() {
-    var val = (document.getElementById('restore-confirm-text').value || '').trim();
-    var btn = document.getElementById('btn-execute-restore');
-    if (val === 'RESTORE') {
-        btn.disabled = false;
-        btn.style.opacity = '1';
-    } else {
-        btn.disabled = true;
-        btn.style.opacity = '0.5';
+            if (emptyId) {
+                var emptyEl = document.getElementById(emptyId);
+                if (emptyEl) emptyEl.style.display = 'none';
+            }
+        };
+        reader.readAsDataURL(input.files[0]);
     }
 }
 
-function executeRestore() {
-    if (!activeRestoreBackupId) return;
-    var btn = document.getElementById('btn-execute-restore');
-    btn.disabled = true;
-    btn.textContent = 'Restoring Database...';
+function confirmRemoveAsset(type, branchId) {
+    var modal = document.getElementById('modal-remove-asset');
+    var inputType = document.getElementById('remove-asset-type');
+    var inputBranch = document.getElementById('remove-asset-branch');
+    var desc = document.getElementById('modal-remove-desc');
 
-    fetch('/settings/backups/' + activeRestoreBackupId + '/restore', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({ confirm: true, backup_id: activeRestoreBackupId })
-    }).then(function(r) { return r.json(); }).then(function(res) {
-        if (res.success) {
-            Toast.show(res.message || 'Database restored successfully.', 'success');
-            setTimeout(function() { window.location.href = '/settings?tab=backups'; }, 1500);
-        } else {
-            btn.disabled = false;
-            btn.textContent = 'Restore Database';
-            Toast.show(res.message || 'Database restoration aborted.', 'error');
-        }
-    }).catch(function(err) {
-        btn.disabled = false;
-        btn.textContent = 'Restore Database';
-        Toast.show('Error: ' + err.message, 'error');
-    });
-}
+    if (inputType) inputType.value = type;
+    if (inputBranch) inputBranch.value = branchId || '';
 
-var activeDeleteBackupId = null;
-function openDeleteModal(backupId, filename) {
-    activeDeleteBackupId = backupId;
-    var elem = document.getElementById('delete-modal-filename');
-    if (elem) elem.textContent = filename;
-    var modal = document.getElementById('delete-backup-modal');
+    var names = { logo: 'Company Logo', signature: 'Authorized Signature', stamp: 'Company Stamp', qr: 'UPI Payment QR Code' };
+    if (desc) desc.textContent = 'Are you sure you want to remove the ' + (names[type] || type) + '?';
+
     if (modal) modal.style.display = 'flex';
 }
 
-function closeDeleteModal() {
-    var modal = document.getElementById('delete-backup-modal');
+function closeRemoveModal() {
+    var modal = document.getElementById('modal-remove-asset');
     if (modal) modal.style.display = 'none';
-    activeDeleteBackupId = null;
 }
-
-function executeDeleteBackup() {
-    if (!activeDeleteBackupId) return;
-    var btn = document.getElementById('btn-execute-delete');
-    if (btn) {
-        btn.disabled = true;
-        btn.textContent = 'Deleting...';
-    }
-
-    fetch('/settings/backups/' + activeDeleteBackupId + '/delete', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({ backup_id: activeDeleteBackupId })
-    }).then(function(r) { return r.json(); }).then(function(res) {
-        if (res.success) {
-            Toast.show(res.message || 'Backup archive deleted.', 'success');
-            setTimeout(function() { window.location.href = '/settings?tab=backups'; }, 1000);
-        } else {
-            if (btn) {
-                btn.disabled = false;
-                btn.textContent = 'Delete Permanently';
-            }
-            Toast.show(res.message || 'Failed to delete backup archive.', 'error');
-        }
-    }).catch(function(err) {
-        if (btn) {
-            btn.disabled = false;
-            btn.textContent = 'Delete Permanently';
-        }
-        Toast.show('Error: ' + err.message, 'error');
-    });
-}
-
-function debounceAuditSearch() {
-    clearTimeout(auditSearchDebounceTimer);
-    auditSearchDebounceTimer = setTimeout(function() {
-        loadAuditLogs(1);
-    }, 300);
-}
-
-function loadAuditLogs(page) {
-    if (!page) page = 1;
-    currentAuditPage = page;
-
-    var search = document.getElementById('audit-filter-search') ? document.getElementById('audit-filter-search').value : '';
-    var action = document.getElementById('audit-filter-action') ? document.getElementById('audit-filter-action').value : '';
-    var entity = document.getElementById('audit-filter-entity') ? document.getElementById('audit-filter-entity').value : '';
-
-    var url = '/api/settings/audit-logs?page=' + page + '&per_page=20' +
-              '&search=' + encodeURIComponent(search) +
-              '&action=' + encodeURIComponent(action) +
-              '&entity_type=' + encodeURIComponent(entity);
-
-    fetch(url, {
-        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
-    })
-    .then(function(res) { return res.json(); })
-    .then(function(res) {
-        if (res.success && res.data) {
-            renderAuditRows(res.data);
-            if (res.meta) {
-                totalAuditPages = res.meta.last_page || 1;
-                document.getElementById('audit-page-info').textContent = 'Page ' + res.meta.page + ' of ' + (res.meta.last_page || 1) + ' (' + res.meta.total + ' total events)';
-                document.getElementById('audit-prev-btn').disabled = (res.meta.page <= 1);
-                document.getElementById('audit-next-btn').disabled = (res.meta.page >= res.meta.last_page);
-                var countBadge = document.getElementById('audit-badge-count');
-                if (countBadge) countBadge.textContent = res.meta.total;
-                var totalKpi = document.getElementById('audit-kpi-total');
-                if (totalKpi) totalKpi.textContent = res.meta.total;
-            }
-        }
-    })
-    .catch(function(err) {
-        console.error('Failed to load audit logs:', err);
-    });
-}
-
-function renderAuditRows(rows) {
-    var tbody = document.getElementById('audit-table-body');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-    cachedAuditRows = {};
-
-    if (!rows || rows.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">No matching audit events found.</td></tr>';
-        return;
-    }
-
-    rows.forEach(function(r) {
-        cachedAuditRows[r.id] = r;
-        var act = (r.action || '').toUpperCase();
-        var badgeClass = 'secondary';
-        if (act === 'CREATE') badgeClass = 'success';
-        else if (act === 'UPDATE') badgeClass = 'info';
-        else if (act === 'DELETE') badgeClass = 'danger';
-        else if (act === 'LOGIN') badgeClass = 'primary';
-
-        var tr = document.createElement('tr');
-        tr.id = 'audit-row-' + r.id;
-        tr.innerHTML = `
-            <td><code>#${r.id}</code></td>
-            <td style="white-space: nowrap; color: var(--text-muted); font-size: 0.8rem;">
-                ${r.created_at || '—'}
-            </td>
-            <td>
-                <strong>${r.user_name || 'Administrator'}</strong>
-                <div style="font-size: 0.75rem; color: var(--text-muted); font-family: monospace;">${r.ip_address || '127.0.0.1'}</div>
-            </td>
-            <td style="text-align: center;">
-                <span class="badge badge-${badgeClass}">${act}</span>
-            </td>
-            <td>
-                <code>${r.entity_type || 'SYSTEM'}${r.entity_id ? ' #' + r.entity_id : ''}</code>
-            </td>
-            <td>${r.description || '—'}</td>
-            <td style="text-align: center;">
-                ${(r.before_data_json || r.after_data_json) ? `<button type="button" class="btn btn-sm btn-outline-secondary" style="padding: 0.15rem 0.45rem; font-size: 0.75rem;" onclick="inspectAuditLog(${r.id})">View</button>` : `<span style="color: var(--text-muted);">&mdash;</span>`}
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
-
-function prevAuditPage() {
-    if (currentAuditPage > 1) {
-        loadAuditLogs(currentAuditPage - 1);
-    }
-}
-
-function nextAuditPage() {
-    if (currentAuditPage < totalAuditPages) {
-        loadAuditLogs(currentAuditPage + 1);
-    }
-}
-
-function inspectAuditLog(id) {
-    var log = cachedAuditRows[id];
-    if (!log) return;
-
-    document.getElementById('audit-modal-desc').textContent = log.description || 'Action performed by ' + (log.user_name || 'Administrator');
-
-    var beforeSec = document.getElementById('audit-modal-before-sec');
-    var afterSec = document.getElementById('audit-modal-after-sec');
-
-    if (log.before_data_json) {
-        try {
-            var bObj = JSON.parse(log.before_data_json);
-            document.getElementById('audit-modal-before').textContent = JSON.stringify(bObj, null, 2);
-        } catch(e) {
-            document.getElementById('audit-modal-before').textContent = log.before_data_json;
-        }
-        beforeSec.style.display = 'block';
-    } else {
-        beforeSec.style.display = 'none';
-    }
-
-    if (log.after_data_json) {
-        try {
-            var aObj = JSON.parse(log.after_data_json);
-            document.getElementById('audit-modal-after').textContent = JSON.stringify(aObj, null, 2);
-        } catch(e) {
-            document.getElementById('audit-modal-after').textContent = log.after_data_json;
-        }
-        afterSec.style.display = 'block';
-    } else {
-        afterSec.style.display = 'none';
-    }
-
-    if (window.WTSBill && window.WTSBill.Modal) {
-        window.WTSBill.Modal.open('audit-detail-modal');
-    } else {
-        document.getElementById('audit-detail-modal').classList.add('active');
-    }
-}
-
-function closeAuditModal() {
-    if (window.WTSBill && window.WTSBill.Modal) {
-        window.WTSBill.Modal.close('audit-detail-modal');
-    } else {
-        document.getElementById('audit-detail-modal').classList.remove('active');
-    }
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    var urlParams = new URLSearchParams(window.location.search);
-    var qTab = urlParams.get('tab');
-    if (qTab === 'audit' || window.location.pathname.indexOf('audit-logs') !== -1) {
-        switchSettingsTab('audit');
-    } else if (qTab === 'backups') {
-        switchSettingsTab('backups');
-    }
-});
 </script>

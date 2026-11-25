@@ -224,6 +224,14 @@ class ProductService
                 $errors['sku'] = 'SKU must be at least 2 characters.';
             } elseif (strlen($sku) > 100) {
                 $errors['sku'] = 'SKU cannot exceed 100 characters.';
+            } else {
+                $companyId = (int)(\WTSBill\Core\Session::getCompanyId() ?? 1);
+                $dupSkuQuery = "SELECT id, name FROM `products` WHERE company_id = ? AND sku = ? AND deleted_at IS NULL" . ($isUpdate && !empty($data['id']) ? " AND id != ?" : "") . " LIMIT 1";
+                $params = ($isUpdate && !empty($data['id'])) ? [$companyId, $sku, (int)$data['id']] : [$companyId, $sku];
+                $existingSku = \WTSBill\Core\Database::selectOne($dupSkuQuery, $params);
+                if ($existingSku) {
+                    $errors['sku'] = "An item ('{$existingSku['name']}') with SKU / Item Code '{$sku}' already exists.";
+                }
             }
         }
 

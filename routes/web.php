@@ -158,6 +158,7 @@ $router->get('/sales/quotations/{id}/pdf', [$commController, 'quotationPdf'], [$
 $router->post('/purchases/bills/{id}/share', [$commController, 'sharePurchaseBill'], [$auth, $csrf, $can('purchases.view')]);
 $router->get('/purchases/bills/{id}/communication-history', [$commController, 'purchaseBillCommunicationHistory'], [$auth, $can('purchases.view')]);
 $router->get('/purchases/bills/{id}/pdf', [$commController, 'purchaseBillPdf'], [$auth, $can('purchases.view')]);
+$router->get('/settings/communication', [$commController, 'index'], [$auth, $can('settings.view')]);
 $router->post('/settings/communication', [$commController, 'saveSettings'], [$auth, $csrf, $can('settings.edit')]);
 $router->post('/api/settings/communication/test-email', [$commController, 'testEmail'], [$auth, $csrf, $can('settings.edit')]);
 $router->post('/api/settings/communication/test-whatsapp', [$commController, 'testWhatsApp'], [$auth, $csrf, $can('settings.edit')]);
@@ -190,6 +191,8 @@ $router->delete('/sales/orders/{id}', [$salesOrderController, 'delete'], [$auth,
 // 9. Delivery Challans (Admin / Sales)
 $router->get('/sales/challans', [$salesController, 'challansIndex'], [$auth, $can('challans.view')]);
 $router->post('/sales/challans', [$salesController, 'challanStore'], [$auth, $csrf, $can('challans.create')]);
+$router->get('/api/sales/invoices/lookup', [$salesController, 'apiInvoiceLookup'], [$auth, $can('challans.create')]);
+$router->get('/sales/challans/{id}/print', [$salesController, 'challanPrint'], [$auth, $can('challans.view')]);
 
 // 9b. Credit Notes & Sales Returns (Admin / Sales)
 $creditNoteController = new \WTSBill\Controllers\CreditNoteController();
@@ -482,9 +485,11 @@ $router->get('/settings/templates', function(Request $req) {
 }, [$auth, $can('settings.view')]);
 $router->get('/settings/warehouses', [$warehouseController, 'index'], [$auth, $can('inventory.view')]);
 
-// 18a. Centralized Company Branding Management
+// 18a. Centralized Company Branding Management (Merged into unified Company Profile & Branding)
 $brandingController = new BrandingController();
-$router->get('/settings/branding', [$brandingController, 'index'], [$auth, $can('settings.view')]);
+$router->get('/settings/branding', function(Request $req) {
+    return Response::redirect('/settings');
+}, [$auth, $can('settings.view')]);
 $router->post('/settings/branding/upload', [$brandingController, 'upload'], [$auth, $csrf, $can('settings.edit')]);
 $router->post('/settings/branding/remove', [$brandingController, 'remove'], [$auth, $csrf, $can('settings.edit')]);
 $router->post('/settings/branding/settings', [$brandingController, 'saveSettings'], [$auth, $csrf, $can('settings.edit')]);
@@ -492,6 +497,7 @@ $router->get('/api/settings/branding', [$brandingController, 'index'], [$auth, $
 
 // 18b. Enterprise Backup Management & Disaster Recovery
 $backupController = new \WTSBill\Controllers\BackupController();
+$router->get('/settings/backups', [$backupController, 'index'], [$auth, $can('settings.view')]);
 $router->post('/settings/backups/create', [$backupController, 'create'], [$auth, $csrf, $can('settings.edit')]);
 $router->get('/settings/backups/{id}/download', [$backupController, 'download'], [$auth, $can('settings.edit')]);
 $router->post('/settings/backups/{id}/restore', [$backupController, 'restore'], [$auth, $csrf, $can('settings.edit')]);

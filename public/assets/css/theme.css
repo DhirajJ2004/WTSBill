@@ -209,6 +209,8 @@ aside.erp-sidebar,
     }
     body.sidebar-collapsed .erp-main {
         margin-left: 0 !important;
+        max-width: 100vw !important;
+        width: 100vw !important;
     }
 }
 
@@ -227,6 +229,8 @@ aside.erp-sidebar,
     }
     .erp-main {
         margin-left: 0 !important;
+        max-width: 100vw !important;
+        width: 100vw !important;
     }
     .sidebar-overlay {
         position: fixed;

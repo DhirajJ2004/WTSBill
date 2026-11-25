@@ -224,61 +224,70 @@ class CreditNoteController
         return Response::redirect('/sales/credit-notes');
     }
 
-    public function print(Request $req, array $params = []): Response
+    public function print(Request $req, mixed $id = null): Response
     {
         $companyId = $this->getCompanyId();
-        $id = (int)($params['id'] ?? 1);
+        $cnId = (int)(is_array($id) ? ($id['id'] ?? 1) : ($id ?: $req->query('id') ?: 1));
 
-        $cn = null;
-        try {
-            $cn = Database::selectOne("SELECT cn.*, c.name AS customer_name, c.address_line1 AS address, c.gstin, c.phone 
-                                      FROM `credit_notes` cn 
-                                      LEFT JOIN `customers` c ON cn.customer_id = c.id 
-                                      WHERE cn.id = ? AND cn.company_id = ?", [$id, $companyId]);
-        } catch (\Throwable $e) {}
+        $cn = Database::selectOne(
+            "SELECT cn.*, c.name AS customer_name, c.company_name AS customer_company,
+                    COALESCE(c.address_line1, '') AS customer_address,
+                    COALESCE(c.city, '') AS customer_city,
+                    COALESCE(c.state, 'Maharashtra') AS customer_state,
+                    COALESCE(c.pincode, '') AS customer_pincode,
+                    c.gstin AS customer_gstin, c.phone AS customer_phone,
+                    COALESCE(cn.original_invoice_number, inv.invoice_number, 'N/A') AS invoice_number
+             FROM `credit_notes` cn 
+             LEFT JOIN `customers` c ON cn.customer_id = c.id 
+             LEFT JOIN `invoices` inv ON cn.invoice_id = inv.id
+             WHERE cn.id = ? AND cn.company_id = ?",
+            [$cnId, $companyId]
+        );
 
         if (!$cn) {
-            $list = Session::get('mock_credit_notes', []);
-            foreach ($list as $item) {
-                if ((int)$item['id'] === $id) {
-                    $cn = $item;
-                    break;
-                }
-            }
+            $cn = Database::selectOne(
+                "SELECT cn.*, c.name AS customer_name, c.company_name AS customer_company,
+                        COALESCE(c.address_line1, '') AS customer_address,
+                        COALESCE(c.city, '') AS customer_city,
+                        COALESCE(c.state, 'Maharashtra') AS customer_state,
+                        COALESCE(c.pincode, '') AS customer_pincode,
+                        c.gstin AS customer_gstin, c.phone AS customer_phone,
+                        COALESCE(cn.original_invoice_number, inv.invoice_number, 'N/A') AS invoice_number
+                 FROM `credit_notes` cn 
+                 LEFT JOIN `customers` c ON cn.customer_id = c.id 
+                 LEFT JOIN `invoices` inv ON cn.invoice_id = inv.id
+                 WHERE cn.company_id = ?
+                 ORDER BY cn.id DESC LIMIT 1",
+                [$companyId]
+            );
         }
 
         if (!$cn) {
-            $cn = [
-                'id' => $id,
-                'credit_note_number' => 'CN-2026-0001',
-                'credit_note_date' => date('Y-m-d'),
-                'customer_name' => 'Ramesh Hardware Stores',
-                'invoice_number' => 'INV-2026-0001',
-                'reason' => 'Defective Goods Return',
-                'taxable_amount' => 2000.00,
-                'gst_rate' => 18,
-                'total_amount' => 2360.00,
-                'status' => 'ISSUED',
-                'notes' => 'Returned 1 unit brass valve',
-            ];
+            Session::flash('error', 'Credit note record not found.');
+            return Response::redirect('/sales/credit-notes');
         }
 
-        $company = [
-            'name' => 'WIS TECHNOSAVVY PVT LTD',
-            'address' => 'Bandra Kurla Complex, Mumbai, Pune, Maharashtra 411041',
-            'gstin' => '27AADCW7577N1ZE',
-            'phone' => '020 47252364',
-        ];
+        $items = Database::select(
+            "SELECT cni.*, COALESCE(p.sku, '') AS sku
+             FROM `credit_note_items` cni
+             LEFT JOIN `products` p ON cni.product_id = p.id
+             WHERE cni.credit_note_id = ? AND cni.company_id = ?
+             ORDER BY cni.id ASC",
+            [(int)$cn['id'], $companyId]
+        );
+
+        $company = Database::selectOne(
+            "SELECT * FROM `companies` WHERE id = ?",
+            [$companyId]
+        ) ?? [];
+
+        $branding = \WTSBill\Services\CompanyBrandingService::getCompanyBranding($companyId, $cn['branch_id'] ?? null);
 
         $html = View::render('sales/credit_notes/print', [
             'creditNote' => $cn,
+            'items' => $items,
             'company' => $company,
-            'customer' => [
-                'name' => $cn['customer_name'] ?? 'Direct Customer',
-                'address' => 'Maharashtra, India',
-                'gstin' => '27BBBBB1234C1Z5',
-                'phone' => '9588468248',
-            ],
+            'branding' => $branding,
         ]);
 
         return Response::html($html);

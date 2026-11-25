@@ -37,14 +37,29 @@ $purchases = $purchases ?? [];
 
                 <div>
                     <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">Original Inward Bill (Optional)</label>
-                    <select name="purchase_id" style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: #fff;">
-                        <option value="">-- Link to Purchase Bill (Optional) --</option>
+                    <select name="purchase_id" id="purchase_id" style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: #fff;">
+                        <option value="">-- Link to Pending Purchase Bill (Optional) --</option>
                         <?php foreach ($purchases as $p): ?>
-                            <option value="<?= (int)$p['id'] ?>">
-                                <?= htmlspecialchars($p['purchase_number']) ?> (Due: ₹<?= number_format((float)$p['amount_due'], 2) ?>)
+                            <?php
+                            $amtDue = (float)($p['amount_due'] ?? 0);
+                            $isSettled = ($amtDue <= 0.001) || (strtoupper($p['status'] ?? '') === 'PAID');
+                            if ($isSettled) {
+                                continue;
+                            }
+                            $isOverdue = !empty($p['due_date']) && (strtotime($p['due_date']) < strtotime(date('Y-m-d')));
+
+                            if ($isOverdue) {
+                                $dueStatusLabel = 'Overdue: ₹' . number_format($amtDue, 2) . (!empty($p['due_date']) ? ' (Due: ' . date('d M Y', strtotime($p['due_date'])) . ')' : '');
+                            } else {
+                                $dueStatusLabel = 'Outstanding: ₹' . number_format($amtDue, 2) . (!empty($p['due_date']) ? ' (Due: ' . date('d M Y', strtotime($p['due_date'])) . ')' : '');
+                            }
+                            ?>
+                            <option value="<?= (int)$p['id'] ?>" data-supplier-id="<?= (int)($p['supplier_id'] ?? 0) ?>" data-amount-due="<?= $amtDue ?>">
+                                <?= htmlspecialchars($p['purchase_number']) ?> (<?= $dueStatusLabel ?>)
                             </option>
                         <?php endforeach; ?>
                     </select>
+                    <div id="purchase-bill-hint" style="margin-top: 6px; font-size: 12.5px; color: #0284c7; display: none;"></div>
                 </div>
             </div>
 
@@ -84,4 +99,73 @@ $purchases = $purchases ?? [];
         </div>
     </form>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const supplierSelect = document.getElementById('supplier_id');
+    const purchaseSelect = document.getElementById('purchase_id');
+    const amountInput = document.querySelector('input[name="amount"]');
+    const hintDiv = document.getElementById('purchase-bill-hint');
+
+    if (!supplierSelect || !purchaseSelect) return;
+
+    function filterBills() {
+        const selectedSupplierId = supplierSelect.value;
+        const currentBillOpt = purchaseSelect.selectedOptions[0];
+
+        Array.from(purchaseSelect.options).forEach((opt, idx) => {
+            if (idx === 0) return; // Keep default prompt option
+            const billSupplierId = opt.getAttribute('data-supplier-id');
+            if (!selectedSupplierId || billSupplierId === selectedSupplierId) {
+                opt.style.display = '';
+                opt.disabled = false;
+            } else {
+                opt.style.display = 'none';
+                opt.disabled = true;
+            }
+        });
+
+        // If currently selected bill doesn't belong to newly selected supplier, reset bill
+        if (currentBillOpt && currentBillOpt.value && selectedSupplierId) {
+            if (currentBillOpt.getAttribute('data-supplier-id') !== selectedSupplierId) {
+                purchaseSelect.value = '';
+                updateHint();
+            }
+        }
+    }
+
+    function updateHint() {
+        const opt = purchaseSelect.selectedOptions[0];
+        if (opt && opt.value) {
+            const due = parseFloat(opt.getAttribute('data-amount-due') || 0);
+            const suppId = opt.getAttribute('data-supplier-id');
+            if (suppId && (!supplierSelect.value || supplierSelect.value !== suppId)) {
+                supplierSelect.value = suppId;
+            }
+            if (hintDiv) {
+                hintDiv.style.display = 'block';
+                hintDiv.innerHTML = `<strong>Selected Bill Outstanding:</strong> ₹${due.toLocaleString('en-IN', {minimumFractionDigits: 2})} remaining`;
+            }
+            if (amountInput && (!amountInput.value || parseFloat(amountInput.value) <= 0)) {
+                amountInput.placeholder = `Max ₹${due.toFixed(2)}`;
+            }
+        } else {
+            if (hintDiv) {
+                hintDiv.style.display = 'none';
+                hintDiv.innerHTML = '';
+            }
+            if (amountInput) {
+                amountInput.placeholder = '0.00';
+            }
+        }
+    }
+
+    supplierSelect.addEventListener('change', filterBills);
+    purchaseSelect.addEventListener('change', updateHint);
+
+    // Initial filter pass
+    filterBills();
+    updateHint();
+});
+</script>
 

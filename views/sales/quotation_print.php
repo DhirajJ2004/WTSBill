@@ -791,26 +791,26 @@ $hasCustomSigOrStamp = !empty($sigUrl) || !empty($stampUrl);
                                 <tr>
                                     <td style="vertical-align: middle; padding: 0;">
                                         <div style="font-size: 7.2pt; color: #333333;">UPI ID:</div>
-                                        <div style="font-size: 8pt; font-weight: bold;"><?= e($seller['company_upi_id'] ?? 'sashted@oksbi') ?></div>
+                                        <div style="font-size: 8pt; font-weight: bold; font-family: monospace;"><?= e($seller['company_upi_id'] ?? 'sashted@okhdfcbank') ?></div>
+                                        <div style="font-size: 7.2pt; color: #555555; margin-top: 1px;">Payee: <?= e($seller['company_upi_name'] ?? 'Dnyanesh Sashte') ?></div>
                                     </td>
-                                    <td style="width: 65px; text-align: right; vertical-align: middle; padding: 0;">
-                                        <div class="qr-code-box">
-                                            <?php if (!empty($qrSvg)): ?>
-                                                <?= $qrSvg ?>
-                                            <?php else: ?>
-                                                <!-- Built-in vector QR Code -->
-                                                <svg viewBox="0 0 100 100" width="60" height="60" xmlns="http://www.w3.org/2000/svg" aria-label="UPI Payment QR Code">
-                                                    <rect width="100" height="100" fill="#ffffff"/>
-                                                    <path d="M10 10h30v30h-30z M60 10h30v30h-30z M10 60h30v30h-30z" fill="#000000"/>
-                                                    <rect x="18" y="18" width="14" height="14" fill="#ffffff"/>
-                                                    <rect x="68" y="18" width="14" height="14" fill="#ffffff"/>
-                                                    <rect x="18" y="68" width="14" height="14" fill="#ffffff"/>
-                                                    <rect x="22" y="22" width="6" height="6" fill="#000000"/>
-                                                    <rect x="72" y="22" width="6" height="6" fill="#000000"/>
-                                                    <rect x="22" y="72" width="6" height="6" fill="#000000"/>
-                                                    <path d="M50 15h5v20h-5z M15 50h20v5h-20z M45 45h20v10h-20z M70 50h15v5h-15z M50 70h10v20h-10z M70 70h20v20h-20z" fill="#000000"/>
-                                                </svg>
-                                            <?php endif; ?>
+                                    <td style="width: 78px; text-align: right; vertical-align: middle; padding: 0;">
+                                        <div class="qr-code-box" style="text-align: right;">
+                                            <?php
+                                                $vpaToUse = !empty($seller['company_upi_id']) ? $seller['company_upi_id'] : 'sashted@okhdfcbank';
+                                                $nameToUse = !empty($seller['company_upi_name']) ? $seller['company_upi_name'] : 'Dnyanesh Sashte';
+                                                $totAmount = (float)($quote['grand_total'] ?? 0);
+                                                $qNum = (string)($quote['quotation_number'] ?? '');
+                                                $finalPayload = !empty($upiPayload) 
+                                                    ? $upiPayload 
+                                                    : ($totAmount > 0.001 
+                                                        ? \WTSBill\Services\QrCodeService::buildUpiPayload($vpaToUse, $nameToUse, $totAmount, $qNum) 
+                                                        : "upi://pay?pa={$vpaToUse}&pn=" . rawurlencode($nameToUse) . "&aid=uGICAgIC156CAZw");
+                                                $qrPngUri = \WTSBill\Services\QrCodeService::generatePngDataUri($finalPayload, 150);
+                                                $customQrUrl = !empty($branding['qr_code_url']) ? $branding['qr_code_url'] : '/uploads/branding/company_1_upi_qr.png';
+                                                $qrImgSrc = !empty($qrPngUri) ? $qrPngUri : $customQrUrl;
+                                            ?>
+                                            <img src="<?= $qrImgSrc ?>" alt="UPI QR Code" style="width: 72px; height: 72px; object-fit: contain; display: inline-block; border-radius: 4px;" onerror="this.onerror=null; this.src='/uploads/branding/company_1_upi_qr.png';">
                                         </div>
                                     </td>
                                 </tr>

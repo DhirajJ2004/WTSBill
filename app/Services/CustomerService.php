@@ -168,9 +168,29 @@ class CustomerService
             $stateCode = substr($gstin, 0, 2);
         }
 
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $phone = trim((string)($data['phone'] ?? ''));
+        if (!empty($phone)) {
+            $dupPhoneSql = "SELECT id, name FROM `customers` WHERE company_id = ? AND phone = ? AND deleted_at IS NULL" . ($excludeId ? " AND id != ?" : "") . " LIMIT 1";
+            $params = $excludeId ? [$companyId, $phone, $excludeId] : [$companyId, $phone];
+            $existingPhone = \WTSBill\Core\Database::selectOne($dupPhoneSql, $params);
+            if ($existingPhone) {
+                $errors['phone'] = "A customer ('{$existingPhone['name']}') with mobile number '{$phone}' already exists.";
+            }
+        }
+
         $email = trim((string)($data['email'] ?? ''));
-        if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $errors['email'] = 'Please enter a valid email address.';
+        if (!empty($email)) {
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $errors['email'] = 'Please enter a valid email address.';
+            } else {
+                $dupEmailSql = "SELECT id, name FROM `customers` WHERE company_id = ? AND email = ? AND deleted_at IS NULL" . ($excludeId ? " AND id != ?" : "") . " LIMIT 1";
+                $params = $excludeId ? [$companyId, $email, $excludeId] : [$companyId, $email];
+                $existingEmail = \WTSBill\Core\Database::selectOne($dupEmailSql, $params);
+                if ($existingEmail) {
+                    $errors['email'] = "A customer ('{$existingEmail['name']}') with email '{$email}' already exists.";
+                }
+            }
         }
 
         if (!empty($errors)) {

@@ -22,7 +22,7 @@ $pagination = $pagination ?? ['total' => 0, 'page' => 1, 'per_page' => 25, 'tota
 $cities = $cities ?? [];
 ?>
 
-<div class="parties-container" style="padding: 1.5rem; max-width: 1440px; margin: 0 auto;">
+<div class="parties-container" style="padding: 0; width: 100%; max-width: 100%;">
     <!-- HEADER BAR -->
     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
         <div>
@@ -128,22 +128,22 @@ $cities = $cities ?? [];
     </div>
 
     <!-- COMBINED PARTY TABLE CARD -->
-    <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 1.5rem;">
-        <div style="overflow-x: auto;">
-            <table class="table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.86rem;">
+    <div class="card party-table-card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 1.5rem; position: relative;">
+        <div class="party-table-responsive" id="partyTableWrapper" style="overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch;">
+            <table class="table party-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.83rem;">
                 <thead>
-                    <tr style="background: #0B2B26; color: #DAF1DE; border-bottom: 2px solid #235347;">
-                        <th style="padding: 0.75rem 1rem; font-weight: 600;">Party Name</th>
-                        <th style="padding: 0.75rem 0.85rem; font-weight: 600;">Party Code</th>
-                        <th style="padding: 0.75rem 0.85rem; font-weight: 600;">Party Type</th>
-                        <th style="padding: 0.75rem 0.85rem; font-weight: 600;">Contact Person</th>
-                        <th style="padding: 0.75rem 0.85rem; font-weight: 600;">Phone Number</th>
-                        <th style="padding: 0.75rem 0.85rem; font-weight: 600;">Email</th>
-                        <th style="padding: 0.75rem 0.85rem; font-weight: 600;">GSTIN</th>
-                        <th style="padding: 0.75rem 0.85rem; font-weight: 600;">City / State</th>
-                        <th style="padding: 0.75rem 1rem; font-weight: 600; text-align: right;">Outstanding Balance</th>
-                        <th style="padding: 0.75rem 0.85rem; font-weight: 600; text-align: center;">Status</th>
-                        <th style="padding: 0.75rem 1rem; font-weight: 600; text-align: center;">Actions</th>
+                    <tr style="background: #0B2B26; color: #DAF1DE; border-bottom: 2px solid #235347; font-size: 0.77rem; text-transform: uppercase; letter-spacing: 0.03em;">
+                        <th style="padding: 0.65rem 0.75rem; font-weight: 600; white-space: nowrap;">Party Name</th>
+                        <th style="padding: 0.65rem 0.65rem; font-weight: 600; white-space: nowrap;">Code</th>
+                        <th style="padding: 0.65rem 0.65rem; font-weight: 600; text-align: center; white-space: nowrap;">Type</th>
+                        <th style="padding: 0.65rem 0.65rem; font-weight: 600; white-space: nowrap;">Contact</th>
+                        <th style="padding: 0.65rem 0.65rem; font-weight: 600; white-space: nowrap;">Phone</th>
+                        <th style="padding: 0.65rem 0.65rem; font-weight: 600; white-space: nowrap;">Email</th>
+                        <th style="padding: 0.65rem 0.65rem; font-weight: 600; white-space: nowrap;">GSTIN</th>
+                        <th style="padding: 0.65rem 0.65rem; font-weight: 600; white-space: nowrap;">City / State</th>
+                        <th style="padding: 0.65rem 0.75rem; font-weight: 600; text-align: right; white-space: nowrap;">Balance</th>
+                        <th style="padding: 0.65rem 0.65rem; font-weight: 600; text-align: center; white-space: nowrap;">Status</th>
+                        <th style="padding: 0.65rem 0.75rem; font-weight: 600; text-align: center; white-space: nowrap;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -178,59 +178,59 @@ $cities = $cities ?? [];
                             ?>
                             <tr style="background: <?= $rowBg ?>; border-bottom: 1px solid #E2E8F0; transition: background 0.15s ease;" onmouseover="this.style.background='#F1F5F9'" onmouseout="this.style.background='<?= $rowBg ?>'">
                                 <!-- Name -->
-                                <td style="padding: 0.75rem 1rem; font-weight: 600;">
-                                    <a href="/parties/<?= (int)$p['id'] ?>" style="color: #0F172A; text-decoration: none;" onmouseover="this.style.color='#235347'; this.style.textDecoration='underline';" onmouseout="this.style.color='#0F172A'; this.style.textDecoration='none';">
+                                <td style="padding: 0.6rem 0.75rem; font-weight: 600; min-width: 140px; max-width: 180px;">
+                                    <a href="/parties/<?= (int)$p['id'] ?>" style="color: #0F172A; text-decoration: none; word-break: break-word;" onmouseover="this.style.color='#235347'; this.style.textDecoration='underline';" onmouseout="this.style.color='#0F172A'; this.style.textDecoration='none';">
                                         <?= e($p['name']) ?>
                                     </a>
                                     <?php if (!empty($p['company_name']) && $p['company_name'] !== $p['name']): ?>
-                                        <div style="font-size: 0.75rem; color: #64748B; font-weight: 400;"><?= e($p['company_name']) ?></div>
+                                        <div style="font-size: 0.72rem; color: #64748B; font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<?= e($p['company_name']) ?>"><?= e($p['company_name']) ?></div>
                                     <?php endif; ?>
                                 </td>
 
                                 <!-- Code -->
-                                <td style="padding: 0.75rem 0.85rem; color: #475569; font-family: monospace; font-size: 0.82rem;">
+                                <td style="padding: 0.6rem 0.65rem; color: #475569; font-family: monospace; font-size: 0.8rem; white-space: nowrap;">
                                     <?= e($p['party_code']) ?>
                                 </td>
 
                                 <!-- Type -->
-                                <td style="padding: 0.75rem 0.85rem;">
-                                    <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.74rem; font-weight: 600; <?= $badgeStyle ?>">
+                                <td style="padding: 0.6rem 0.65rem; text-align: center; white-space: nowrap;">
+                                    <span style="display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; <?= $badgeStyle ?>">
                                         <?= e($pType) ?>
                                     </span>
                                 </td>
 
                                 <!-- Contact Person -->
-                                <td style="padding: 0.75rem 0.85rem; color: #334155;">
+                                <td style="padding: 0.6rem 0.65rem; color: #334155; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<?= e($p['contact_person'] ?: '') ?>">
                                     <?= e($p['contact_person'] ?: '—') ?>
                                 </td>
 
                                 <!-- Phone -->
-                                <td style="padding: 0.75rem 0.85rem; color: #334155; white-space: nowrap;">
+                                <td style="padding: 0.6rem 0.65rem; color: #334155; white-space: nowrap; font-size: 0.81rem;">
                                     <?= e($p['phone'] ?: '—') ?>
                                 </td>
 
                                 <!-- Email -->
-                                <td style="padding: 0.75rem 0.85rem; color: #334155;">
+                                <td style="padding: 0.6rem 0.65rem; color: #334155; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<?= e($p['email'] ?: '') ?>">
                                     <?= e($p['email'] ?: '—') ?>
                                 </td>
 
                                 <!-- GSTIN -->
-                                <td style="padding: 0.75rem 0.85rem; color: #475569; font-family: monospace; font-size: 0.82rem;">
+                                <td style="padding: 0.6rem 0.65rem; color: #475569; font-family: monospace; font-size: 0.78rem; white-space: nowrap;">
                                     <?= e($p['gstin'] ?: '—') ?>
                                 </td>
 
                                 <!-- City / State -->
-                                <td style="padding: 0.75rem 0.85rem; color: #334155;">
+                                <td style="padding: 0.6rem 0.65rem; color: #334155; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<?= e(implode(', ', array_filter([$p['city'], $p['state']]))) ?>">
                                     <?= e(implode(', ', array_filter([$p['city'], $p['state']]))) ?: '—' ?>
                                 </td>
 
                                 <!-- Outstanding Balance -->
-                                <td style="padding: 0.75rem 1rem; text-align: right; <?= $balanceClass ?>">
+                                <td style="padding: 0.6rem 0.75rem; text-align: right; white-space: nowrap; <?= $balanceClass ?>">
                                     <?= $balanceLabel ?>
                                 </td>
 
                                 <!-- Status -->
-                                <td style="padding: 0.75rem 0.85rem; text-align: center;">
+                                <td style="padding: 0.6rem 0.65rem; text-align: center; white-space: nowrap;">
                                     <?php if ($p['is_active']): ?>
                                         <span style="display: inline-block; padding: 2px 7px; border-radius: 12px; font-size: 0.72rem; font-weight: 600; background: #DEF7EC; color: #03543F;">Active</span>
                                     <?php else: ?>
@@ -239,21 +239,21 @@ $cities = $cities ?? [];
                                 </td>
 
                                 <!-- Actions -->
-                                <td style="padding: 0.75rem 1rem; text-align: center; white-space: nowrap;">
-                                    <div style="display: inline-flex; gap: 0.4rem; align-items: center;">
+                                <td style="padding: 0.6rem 0.75rem; text-align: center; white-space: nowrap;">
+                                    <div style="display: inline-flex; gap: 0.35rem; align-items: center; justify-content: center;">
                                         <!-- View Profile -->
                                         <a href="/parties/<?= (int)$p['id'] ?>" class="btn-action" title="View 360° Profile" style="color: #235347; padding: 4px; display: inline-flex; border-radius: 4px;" onmouseover="this.style.background='#E2E8F0'" onmouseout="this.style.background='transparent'">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                         </a>
 
                                         <!-- Edit Party -->
                                         <button type="button" class="btn-action" onclick='window.editParty(<?= json_encode($p, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>)' title="Edit Party" style="background: none; border: none; cursor: pointer; color: #2563EB; padding: 4px; display: inline-flex; border-radius: 4px;" onmouseover="this.style.background='#E2E8F0'" onmouseout="this.style.background='transparent'">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                         </button>
 
                                         <!-- Toggle Status -->
                                         <button type="button" class="btn-action" onclick="window.togglePartyStatus(<?= (int)$p['id'] ?>)" title="<?= $p['is_active'] ? 'Deactivate' : 'Activate' ?>" style="background: none; border: none; cursor: pointer; color: <?= $p['is_active'] ? '#DC2626' : '#16A34A' ?>; padding: 4px; display: inline-flex; border-radius: 4px;" onmouseover="this.style.background='#E2E8F0'" onmouseout="this.style.background='transparent'">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
                                         </button>
                                     </div>
                                 </td>
@@ -262,6 +262,11 @@ $cities = $cities ?? [];
                     <?php endif; ?>
                 </tbody>
             </table>
+        </div>
+
+        <!-- DEDICATED BOTTOM HORIZONTAL SLIDEBAR / CONTROLLER -->
+        <div id="partyBottomScrollbar" style="display: none; width: 100%; overflow-x: auto; overflow-y: hidden; background: #F8FAFC; border-top: 1px solid #CBD5E1; height: 13px; position: sticky; bottom: 0; z-index: 15;">
+            <div id="partyBottomScrollbarInner" style="height: 1px;"></div>
         </div>
 
         <!-- PAGINATION BAR -->
@@ -658,6 +663,54 @@ document.addEventListener('DOMContentLoaded', function() {
         window.openPartyModal();
     }
 });
+
+// Dedicated Bottom Horizontal Slidebar Controller
+(function() {
+    function initPartyScrollbar() {
+        var tableWrap = document.getElementById('partyTableWrapper');
+        var bottomBar = document.getElementById('partyBottomScrollbar');
+        var bottomInner = document.getElementById('partyBottomScrollbarInner');
+        if (!tableWrap || !bottomBar || !bottomInner) return;
+
+        function syncWidth() {
+            var scrollW = tableWrap.scrollWidth;
+            var clientW = tableWrap.clientWidth;
+            if (scrollW > clientW + 2) {
+                bottomInner.style.width = scrollW + 'px';
+                bottomBar.style.display = 'block';
+                bottomBar.scrollLeft = tableWrap.scrollLeft;
+            } else {
+                bottomBar.style.display = 'none';
+            }
+        }
+
+        var isSyncing = false;
+        tableWrap.addEventListener('scroll', function() {
+            if (isSyncing) return;
+            isSyncing = true;
+            bottomBar.scrollLeft = tableWrap.scrollLeft;
+            isSyncing = false;
+        });
+
+        bottomBar.addEventListener('scroll', function() {
+            if (isSyncing) return;
+            isSyncing = true;
+            tableWrap.scrollLeft = bottomBar.scrollLeft;
+            isSyncing = false;
+        });
+
+        window.addEventListener('resize', syncWidth);
+        syncWidth();
+        setTimeout(syncWidth, 150);
+        setTimeout(syncWidth, 500);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initPartyScrollbar);
+    } else {
+        initPartyScrollbar();
+    }
+})();
 </script>
 
 <?php

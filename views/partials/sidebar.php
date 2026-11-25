@@ -31,7 +31,7 @@ $isItemActive = function(?string $path) use ($currentUri): bool {
         return true;
     }
     if ($targetPath === '/settings') {
-        return ($uriPath === '/settings');
+        return ($uriPath === '/settings' || $uriPath === '/settings/branding');
     }
     if ($targetPath !== '/' && str_starts_with($uriPath, $targetPath)) {
         return true;

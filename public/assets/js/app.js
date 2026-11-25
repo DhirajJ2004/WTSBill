@@ -165,13 +165,20 @@
     // 6. Form Safeguards & Input Helpers
     const Forms = {
         init: function () {
-            // Prevent double submission
-            document.querySelectorAll('form[data-disable-on-submit]').forEach(function (form) {
-                form.addEventListener('submit', function () {
+            // Universal double submission prevention
+            document.querySelectorAll('form').forEach(function (form) {
+                if (form.hasAttribute('data-allow-double-submit')) return;
+                form.addEventListener('submit', function (e) {
+                    if (e.defaultPrevented) return;
                     const submitBtn = form.querySelector('button[type="submit"]');
-                    if (submitBtn) {
-                        submitBtn.disabled = true;
-                        submitBtn.textContent = 'Processing...';
+                    if (submitBtn && !submitBtn.disabled) {
+                        setTimeout(function() {
+                            submitBtn.disabled = true;
+                            if (!submitBtn.dataset.originalHtml) {
+                                submitBtn.dataset.originalHtml = submitBtn.innerHTML;
+                            }
+                            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display:inline-block;width:12px;height:12px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .75s linear infinite;"></span> Processing...';
+                        }, 10);
                     }
                 });
             });

@@ -559,7 +559,7 @@ $buildQuery = function(array $overrides = []) use ($currentStatus, $searchVal, $
                 const amountDue = parseFloat(inv.amount_due !== undefined ? inv.amount_due : (grandTotal - amountPaid));
                 
                 document.getElementById('inv-view-paid').textContent = '₹' + amountPaid.toLocaleString('en-IN', {minimumFractionDigits: 2});
-                document.getElementById('inv-view-due').textContent = '₹' + (amountDue > 0 ? amountDue.toLocaleString('en-IN', {minimumFractionDigits: 2}) : '0.00');
+                document.getElementById('inv-view-due').textContent = amountDue > 0.001 ? ('₹' + amountDue.toLocaleString('en-IN', {minimumFractionDigits: 2})) : '₹0.00 (Fully Settled)';
 
                 const payBtn = document.getElementById('inv-modal-record-pay-btn');
                 if (payBtn) {
@@ -585,7 +585,7 @@ $buildQuery = function(array $overrides = []) use ($currentStatus, $searchVal, $
                 const sumPaid = document.getElementById('inv-summary-paid');
                 if (sumPaid) sumPaid.textContent = '₹' + amountPaid.toLocaleString('en-IN', {minimumFractionDigits: 2});
                 const sumDue = document.getElementById('inv-summary-due');
-                if (sumDue) sumDue.textContent = '₹' + (amountDue > 0 ? amountDue.toLocaleString('en-IN', {minimumFractionDigits: 2}) : '0.00');
+                if (sumDue) sumDue.textContent = amountDue > 0.001 ? ('₹' + amountDue.toLocaleString('en-IN', {minimumFractionDigits: 2})) : '₹0.00 (Fully Settled)';
 
                 const sumBadge = document.getElementById('inv-summary-pay-badge');
                 if (sumBadge) {

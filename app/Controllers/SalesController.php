@@ -273,14 +273,19 @@ class SalesController
 
         $qrSvg = '';
         $upiPayload = '';
-        if ($outstanding > 0.001 && $hasMerchantUpi) {
-            $upiPayload = QrCodeService::buildUpiPayload(
-                $merchantUpi,
-                $merchantName,
-                $outstanding,
-                (string)$invoice['invoice_number']
-            );
-            $qrSvg = QrCodeService::generateSvg($upiPayload, 110);
+        if ($hasMerchantUpi) {
+            if ($outstanding > 0.001) {
+                $upiPayload = QrCodeService::buildUpiPayload(
+                    $merchantUpi,
+                    $merchantName,
+                    $outstanding,
+                    (string)$invoice['invoice_number']
+                );
+                $qrSvg = QrCodeService::generateSvg($upiPayload, 110);
+            } else {
+                $upiPayload = "upi://pay?pa={$merchantUpi}&pn=" . rawurlencode($merchantName) . "&aid=uGICAgIC156CAZw";
+                $qrSvg = QrCodeService::generateSvg($upiPayload, 110);
+            }
         }
 
         return Response::json([
@@ -758,14 +763,19 @@ class SalesController
 
         $qrSvg = '';
         $upiPayload = '';
-        if ($amountDue > 0.001 && $hasMerchantUpi) {
-            $upiPayload = QrCodeService::buildUpiPayload(
-                $upiVpa,
-                $upiName,
-                $amountDue,
-                (string)$invData['invoice_number']
-            );
-            $qrSvg = QrCodeService::generateSvg($upiPayload, 95);
+        if ($hasMerchantUpi) {
+            if ($amountDue > 0.001) {
+                $upiPayload = QrCodeService::buildUpiPayload(
+                    $upiVpa,
+                    $upiName,
+                    $amountDue,
+                    (string)$invData['invoice_number']
+                );
+                $qrSvg = QrCodeService::generateSvg($upiPayload, 95);
+            } else {
+                $upiPayload = "upi://pay?pa={$upiVpa}&pn=" . rawurlencode($upiName) . "&aid=uGICAgIC156CAZw";
+                $qrSvg = QrCodeService::generateSvg($upiPayload, 95);
+            }
         }
 
         // Render standalone printable view
@@ -2312,17 +2322,22 @@ class SalesController
             : number_format($grandTotal, 2);
 
         // Server-side SVG UPI QR Code
-        $upiVpa = trim((string)($quote['company_upi_id'] ?? ''));
-        $upiName = !empty($quote['company_legal_name']) ? $quote['company_legal_name'] : $quote['company_name'];
+        $upiVpa = trim((string)($quote['company_upi_id'] ?? 'sashted@okhdfcbank'));
+        $upiName = !empty($quote['company_legal_name']) ? $quote['company_legal_name'] : (!empty($quote['company_name']) ? $quote['company_name'] : 'Dnyanesh Sashte');
         $qrSvg = '';
-        if ($upiVpa !== '' && $grandTotal > 0) {
-            $upiPayload = QrCodeService::buildUpiPayload(
-                $upiVpa,
-                $upiName,
-                $grandTotal,
-                (string)$quote['quotation_number']
-            );
-            $qrSvg = QrCodeService::generateSvg($upiPayload, 78);
+        if ($upiVpa !== '') {
+            if ($grandTotal > 0.001) {
+                $upiPayload = QrCodeService::buildUpiPayload(
+                    $upiVpa,
+                    $upiName,
+                    $grandTotal,
+                    (string)$quote['quotation_number']
+                );
+                $qrSvg = QrCodeService::generateSvg($upiPayload, 78);
+            } else {
+                $upiPayload = "upi://pay?pa={$upiVpa}&pn=" . rawurlencode($upiName) . "&aid=uGICAgIC156CAZw";
+                $qrSvg = QrCodeService::generateSvg($upiPayload, 78);
+            }
         }
 
         // Kind Attn resolution
@@ -2421,7 +2436,8 @@ class SalesController
         $companyId = Session::getCompanyId() ?? 1;
         $challans = Database::select(
             "SELECT dc.id, dc.challan_number, dc.customer_id, COALESCE(c.name, 'Direct Client') as customer_name,
-                    dc.challan_date, dc.status, dc.notes 
+                    dc.challan_date, dc.status, dc.notes, dc.invoice_id, dc.invoice_number,
+                    dc.transport_details, dc.delivery_address
              FROM delivery_challans dc 
              LEFT JOIN customers c ON dc.customer_id = c.id 
              WHERE dc.company_id = ? 
@@ -2445,46 +2461,176 @@ class SalesController
     }
 
     /**
-     * Store delivery challan.
+     * Lookup an existing invoice by number or ID to auto-populate a Delivery Challan.
+     * Route: GET /api/sales/invoices/lookup
+     */
+    public function apiInvoiceLookup(Request $req): Response
+    {
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $query = trim((string)($req->query('query') ?? ($req->query('invoice_number') ?? ($req->query('term') ?? ''))));
+
+        if (empty($query)) {
+            return Response::json(['success' => false, 'message' => 'Please provide an invoice number to search.'], 400);
+        }
+
+        // Exact match first
+        $inv = Database::selectOne(
+            "SELECT i.id, i.invoice_number, i.invoice_date, i.customer_id,
+                    COALESCE(c.name, i.customer_name, 'Direct Customer') AS customer_name,
+                    COALESCE(c.phone, '') AS customer_phone,
+                    COALESCE(c.gstin, i.customer_gstin, '') AS customer_gstin,
+                    COALESCE(i.shipping_address, i.billing_address, c.address_line1, '') AS delivery_address,
+                    i.grand_total, i.challan_no, i.po_no
+             FROM invoices i
+             LEFT JOIN customers c ON i.customer_id = c.id
+             WHERE i.company_id = ? AND (i.invoice_number = ? OR i.id = ?) AND i.deleted_at IS NULL
+             LIMIT 1",
+            [$companyId, $query, is_numeric($query) ? (int)$query : 0]
+        );
+
+        // Substring match if not found and query >= 3 chars
+        if (!$inv && strlen($query) >= 2) {
+            $inv = Database::selectOne(
+                "SELECT i.id, i.invoice_number, i.invoice_date, i.customer_id,
+                        COALESCE(c.name, i.customer_name, 'Direct Customer') AS customer_name,
+                        COALESCE(c.phone, '') AS customer_phone,
+                        COALESCE(c.gstin, i.customer_gstin, '') AS customer_gstin,
+                        COALESCE(i.shipping_address, i.billing_address, c.address_line1, '') AS delivery_address,
+                        i.grand_total, i.challan_no, i.po_no
+                 FROM invoices i
+                 LEFT JOIN customers c ON i.customer_id = c.id
+                 WHERE i.company_id = ? AND i.invoice_number LIKE ? AND i.deleted_at IS NULL
+                 ORDER BY i.id DESC LIMIT 1",
+                [$companyId, '%' . $query . '%']
+            );
+        }
+
+        if (!$inv) {
+            return Response::json([
+                'success' => false,
+                'message' => "Invoice '{$query}' was not found. Please verify the invoice number.",
+            ], 404);
+        }
+
+        // Fetch line items
+        $items = Database::select(
+            "SELECT ii.id, ii.product_id, ii.item_name, ii.quantity, ii.unit, ii.unit_price, ii.total_amount,
+                    COALESCE(p.sku, '') AS sku
+             FROM invoice_items ii
+             LEFT JOIN products p ON ii.product_id = p.id
+             WHERE ii.invoice_id = ?
+             ORDER BY ii.id ASC",
+            [$inv['id']]
+        );
+
+        return Response::json([
+            'success' => true,
+            'invoice' => $inv,
+            'items' => $items,
+        ]);
+    }
+
+    /**
+     * Store delivery challan, optionally generating from an existing Invoice.
+     * Route: POST /sales/challans
      */
     public function challanStore(Request $req): Response
     {
-        $companyId = Session::getCompanyId() ?? 1;
+        $companyId = (int)(Session::getCompanyId() ?? 1);
         $payload = !empty($req->json()) ? $req->json() : $req->post();
 
+        $invoiceId = !empty($payload['invoice_id']) ? (int)$payload['invoice_id'] : null;
+        $invoiceNumber = trim((string)($payload['invoice_number'] ?? '')) ?: null;
         $customerId = (int)($payload['customer_id'] ?? 0);
         $deliveryAddress = trim((string)($payload['delivery_address'] ?? ''));
         $transport = trim((string)($payload['transport_details'] ?? ''));
+        $notes = trim((string)($payload['notes'] ?? 'Materials dispatched in good condition'));
+
+        // If invoice_id provided but customer_id missing, fetch from invoice
+        if ($invoiceId && $customerId <= 0) {
+            $invRow = Database::selectOne("SELECT customer_id, invoice_number, shipping_address FROM invoices WHERE id = ? AND company_id = ?", [$invoiceId, $companyId]);
+            if ($invRow) {
+                $customerId = (int)$invRow['customer_id'];
+                if (empty($invoiceNumber)) $invoiceNumber = $invRow['invoice_number'];
+                if (empty($deliveryAddress)) $deliveryAddress = $invRow['shipping_address'] ?? '';
+            }
+        }
 
         if ($customerId <= 0) {
             if ($this->expectsJson($req)) {
-                return Response::json(['success' => false, 'message' => 'Please select a customer.'], 422);
+                return Response::json(['success' => false, 'message' => 'Please select a customer or provide a valid invoice.'], 422);
             }
-            Session::flash('error', 'Please select a customer.');
+            Session::flash('error', 'Please select a customer or provide a valid invoice.');
             return Response::redirect('/sales/challans');
         }
 
-        $challanNumber = 'DC-' . date('Y') . '-' . rand(1000, 9999);
+        // Generate sequential Delivery Challan number
+        $year = date('Y');
+        $countRow = Database::selectOne("SELECT COUNT(*) AS total FROM delivery_challans WHERE company_id = ?", [$companyId]);
+        $nextNum = ((int)($countRow['total'] ?? 0)) + 1;
+        $challanNumber = sprintf('DC-%s-%04d', $year, $nextNum);
 
         try {
-            Database::insert('delivery_challans', [
+            $challanId = Database::insert('delivery_challans', [
                 'company_id' => $companyId,
                 'branch_id' => (int)(Session::getBranchId() ?? 1),
                 'customer_id' => $customerId,
                 'challan_number' => $challanNumber,
                 'challan_date' => date('Y-m-d'),
+                'invoice_id' => $invoiceId,
+                'invoice_number' => $invoiceNumber,
                 'delivery_address' => $deliveryAddress ?: 'Standard site delivery',
                 'transport_details' => $transport ?: 'Direct dispatch via road logistics',
                 'status' => 'DELIVERED',
-                'notes' => 'Materials dispatched in good condition',
+                'notes' => $notes,
                 'created_at' => date('Y-m-d H:i:s'),
                 'updated_at' => date('Y-m-d H:i:s'),
             ]);
 
+            // Save line items
+            $rawItems = $payload['items'] ?? [];
+            if (is_string($rawItems)) {
+                $rawItems = json_decode($rawItems, true) ?: [];
+            }
+
+            if (!empty($rawItems) && is_array($rawItems)) {
+                foreach ($rawItems as $item) {
+                    $prodId = (int)($item['product_id'] ?? 0);
+                    $qty = (float)($item['quantity'] ?? 1);
+                    $name = trim((string)($item['item_name'] ?? 'Item'));
+                    $unit = trim((string)($item['unit'] ?? 'Pcs'));
+                    $price = (float)($item['unit_price'] ?? 0);
+                    $total = (float)($item['total_amount'] ?? ($qty * $price));
+
+                    Database::insert('delivery_challan_items', [
+                        'company_id' => $companyId,
+                        'delivery_challan_id' => $challanId,
+                        'product_id' => $prodId ?: 1,
+                        'quantity' => $qty,
+                        'item_name' => $name,
+                        'unit' => $unit,
+                        'unit_price' => $price,
+                        'total_amount' => $total,
+                        'created_at' => date('Y-m-d H:i:s'),
+                        'updated_at' => date('Y-m-d H:i:s'),
+                    ]);
+                }
+            }
+
+            // Link original invoice to this challan without touching any invoice financial calculations
+            if ($invoiceId) {
+                Database::execute(
+                    "UPDATE invoices SET challan_no = ?, updated_at = NOW() WHERE id = ? AND company_id = ?",
+                    [$challanNumber, $invoiceId, $companyId]
+                );
+            }
+
             if ($this->expectsJson($req)) {
                 return Response::json([
                     'success' => true,
-                    'message' => "Delivery challan '{$challanNumber}' generated successfully.",
+                    'message' => "Delivery challan '{$challanNumber}' generated successfully." . ($invoiceNumber ? " (Linked to Invoice {$invoiceNumber})" : ""),
+                    'challan_id' => $challanId,
+                    'challan_number' => $challanNumber,
                 ], 201);
             }
 
@@ -2492,11 +2638,57 @@ class SalesController
             return Response::redirect('/sales/challans');
         } catch (\Throwable $e) {
             if ($this->expectsJson($req)) {
-                return Response::json(['success' => false, 'message' => $e->getMessage()], 500);
+                return Response::json(['success' => false, 'message' => 'Failed to create challan: ' . $e->getMessage()], 500);
             }
             Session::flash('error', 'Failed to create challan: ' . $e->getMessage());
             return Response::redirect('/sales/challans');
         }
+    }
+
+    /**
+     * Printable view for a delivery challan.
+     * Route: GET /sales/challans/{id}/print
+     */
+    public function challanPrint(Request $req, mixed $id = null): Response
+    {
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $challanId = (int)(is_array($id) ? ($id['id'] ?? 1) : ($id ?: $req->query('id') ?: 1));
+
+        $challan = Database::selectOne(
+            "SELECT dc.*, c.name AS customer_name, c.phone AS customer_phone, c.gstin AS customer_gstin,
+                    c.address_line1 AS customer_address, c.city AS customer_city, c.state AS customer_state,
+                    c.pincode AS customer_pincode
+             FROM delivery_challans dc
+             LEFT JOIN customers c ON dc.customer_id = c.id
+             WHERE dc.id = ? AND dc.company_id = ?",
+            [$challanId, $companyId]
+        );
+
+        if (!$challan) {
+            Session::flash('error', 'Delivery challan record not found.');
+            return Response::redirect('/sales/challans');
+        }
+
+        $items = Database::select(
+            "SELECT dci.*, COALESCE(p.sku, '') AS sku
+             FROM delivery_challan_items dci
+             LEFT JOIN products p ON dci.product_id = p.id
+             WHERE dci.delivery_challan_id = ? AND dci.company_id = ?
+             ORDER BY dci.id ASC",
+            [$challanId, $companyId]
+        );
+
+        $branding = \WTSBill\Services\CompanyBrandingService::getCompanyBranding($companyId, $challan['branch_id'] ?? null);
+        $company = Database::selectOne("SELECT * FROM companies WHERE id = ?", [$companyId]) ?? [];
+
+        $html = View::render('sales/challans/print', [
+            'challan' => $challan,
+            'items' => $items,
+            'branding' => $branding,
+            'company' => $company,
+        ]);
+
+        return Response::html($html);
     }
 
     protected function expectsJson(Request $req): bool

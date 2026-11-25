@@ -411,7 +411,16 @@ class PurchaseOrderController
 
         $companyId = (int)(Session::getCompanyId() ?? 1);
         $suppliers = Database::select("SELECT id, name, company_name FROM suppliers WHERE company_id = ? AND deleted_at IS NULL ORDER BY name ASC", [$companyId]);
-        $purchases = Database::select("SELECT id, purchase_number, supplier_id, grand_total, amount_due FROM purchases WHERE company_id = ? AND deleted_at IS NULL ORDER BY id DESC", [$companyId]);
+        $purchases = Database::select(
+            "SELECT id, purchase_number, supplier_id, grand_total, amount_paid, amount_due, due_date, status, DATEDIFF(CURDATE(), due_date) AS days_overdue 
+             FROM purchases 
+             WHERE company_id = ? 
+               AND deleted_at IS NULL 
+               AND amount_due > 0.001 
+               AND (status IS NULL OR UPPER(status) != 'PAID') 
+             ORDER BY id DESC", 
+            [$companyId]
+        );
 
         $html = View::renderWithLayout('purchases/debit_notes/create', [
             'title' => 'Issue Debit Note',

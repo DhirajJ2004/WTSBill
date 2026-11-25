@@ -86,7 +86,7 @@ class BrandingController
                 return Response::json($errResp, 422);
             }
             Session::flash('error', $errResp['message']);
-            return Response::redirect('/settings/branding' . ($branchId ? "?branch_id={$branchId}" : ''));
+            return Response::redirect('/settings' . ($branchId ? "?branch_id={$branchId}" : ''));
         }
 
         $result = CompanyBrandingService::saveAsset($companyId, $branchId, $type, $file, $userId);
@@ -102,7 +102,7 @@ class BrandingController
             Session::flash('error', $result['message']);
         }
 
-        return Response::redirect('/settings/branding' . ($branchId ? "?branch_id={$branchId}" : ''));
+        return Response::redirect('/settings' . ($branchId ? "?branch_id={$branchId}" : ''));
     }
 
     /**

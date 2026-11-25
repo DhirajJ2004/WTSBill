@@ -17,6 +17,32 @@ use WTSBill\Services\AuditCleanupService;
 class BackupController
 {
     /**
+     * Render Backup & Disaster Recovery management page.
+     * Route: GET /settings/backups
+     */
+    public function index(Request $req): Response
+    {
+        $this->ensureAdmin();
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $backups = BackupService::getHistory($companyId);
+        $lastBackup = BackupService::getLastSuccessful($companyId);
+        $nextBackup = BackupService::getNextScheduled($companyId);
+        $cleanupLogs = AuditCleanupService::getCleanupHistory($companyId);
+
+        $html = \WTSBill\Core\View::renderWithLayout('settings/backups', [
+            'title' => 'Backup & Disaster Recovery',
+            'currentUri' => '/settings/backups',
+            'backups' => $backups,
+            'lastBackup' => $lastBackup,
+            'nextBackup' => $nextBackup,
+            'cleanupLogs' => $cleanupLogs,
+            'isAdmin' => true,
+        ], 'layouts/app');
+
+        return Response::html($html);
+    }
+
+    /**
      * Trigger on-demand manual backup creation.
      * Route: POST /settings/backups/create
      */

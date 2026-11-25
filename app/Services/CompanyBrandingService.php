@@ -85,6 +85,7 @@ class CompanyBrandingService
         $logoPath = $row['logo_path'] ?? $defaultLogo;
         $sigPath = $row['signature_path'] ?? null;
         $stampPath = $row['stamp_path'] ?? null;
+        $qrPath = $row['qr_code_path'] ?? ($compRow['qr_code_path'] ?? '/uploads/branding/company_1_upi_qr.png');
 
         // Auto-heal: verify custom upload files exist on disk, fallback cleanly if missing
         $rootPub = self::getRootPath() . '/public';
@@ -96,6 +97,9 @@ class CompanyBrandingService
         }
         if (!empty($stampPath) && str_starts_with($stampPath, '/uploads/') && !is_file($rootPub . $stampPath)) {
             $stampPath = null;
+        }
+        if (!empty($qrPath) && str_starts_with($qrPath, '/uploads/') && !is_file($rootPub . $qrPath)) {
+            $qrPath = null;
         }
 
         // If row is not created yet, seed company-wide defaults
@@ -119,6 +123,9 @@ class CompanyBrandingService
             'stamp_path' => $stampPath,
             'stamp_url' => $stampPath ? ($stampPath . $cacheBuster) : null,
             'is_custom_stamp' => !empty($stampPath) && !str_starts_with($stampPath, '/assets/images/'),
+            'qr_code_path' => $qrPath,
+            'qr_code_url' => $qrPath ? ($qrPath . $cacheBuster) : null,
+            'is_custom_qr' => !empty($qrPath),
             'signature_width' => (int)($row['signature_width'] ?? 140),
             'signature_height' => (int)($row['signature_height'] ?? 56),
             'signature_position' => $row['signature_position'] ?? 'right',
@@ -197,7 +204,7 @@ class CompanyBrandingService
      */
     public static function saveAsset(int $companyId, ?int $branchId, string $type, array $file, ?int $userId = null): array
     {
-        if (!in_array($type, ['logo', 'signature', 'stamp'], true)) {
+        if (!in_array($type, ['logo', 'signature', 'stamp', 'qr'], true)) {
             return ['success' => false, 'message' => 'Invalid asset type specified.'];
         }
 
@@ -292,11 +299,12 @@ class CompanyBrandingService
             'logo' => $existing['logo_path'],
             'signature' => $existing['signature_path'],
             'stamp' => $existing['stamp_path'],
+            'qr' => $existing['qr_code_path'] ?? null,
         };
 
         // 9. Persist to company_brandings table
         self::ensureRecordExists($companyId, $branchId);
-        $colName = "{$type}_path";
+        $colName = ($type === 'qr') ? 'qr_code_path' : "{$type}_path";
         Database::execute(
             "UPDATE company_brandings SET {$colName} = ?, updated_by = ?, updated_at = NOW() WHERE company_id = ? AND (branch_id = ? OR (branch_id IS NULL AND ? IS NULL))",
             [$relativeWebPath, $userId, $companyId, $branchId, $branchId]
@@ -308,6 +316,8 @@ class CompanyBrandingService
                 Database::execute("UPDATE companies SET logo_url = ?, updated_at = NOW() WHERE id = ?", [$relativeWebPath, $companyId]);
             } elseif ($type === 'signature' || $type === 'stamp') {
                 Database::execute("UPDATE companies SET stamp_signature_url = ?, updated_at = NOW() WHERE id = ?", [$relativeWebPath, $companyId]);
+            } elseif ($type === 'qr') {
+                Database::execute("UPDATE companies SET qr_code_path = ?, updated_at = NOW() WHERE id = ?", [$relativeWebPath, $companyId]);
             }
         } else {
             if ($type === 'signature' || $type === 'stamp') {
@@ -339,7 +349,7 @@ class CompanyBrandingService
      */
     public static function removeAsset(int $companyId, ?int $branchId, string $type, ?int $userId = null): bool
     {
-        if (!in_array($type, ['logo', 'signature', 'stamp'], true)) {
+        if (!in_array($type, ['logo', 'signature', 'stamp', 'qr'], true)) {
             return false;
         }
 
@@ -348,6 +358,7 @@ class CompanyBrandingService
             'logo' => $existing['logo_path'],
             'signature' => $existing['signature_path'],
             'stamp' => $existing['stamp_path'],
+            'qr' => $existing['qr_code_path'] ?? null,
         };
 
         // If custom uploaded file on disk, remove it safely
@@ -358,7 +369,7 @@ class CompanyBrandingService
             }
         }
 
-        $colName = "{$type}_path";
+        $colName = ($type === 'qr') ? 'qr_code_path' : "{$type}_path";
         $resetVal = ($type === 'logo') ? self::DEFAULT_LOGO : null;
 
         self::ensureRecordExists($companyId, $branchId);
@@ -373,6 +384,8 @@ class CompanyBrandingService
                 Database::execute("UPDATE companies SET logo_url = ?, updated_at = NOW() WHERE id = ?", [$resetVal, $companyId]);
             } elseif ($type === 'signature' || $type === 'stamp') {
                 Database::execute("UPDATE companies SET stamp_signature_url = NULL, updated_at = NOW() WHERE id = ?", [$companyId]);
+            } elseif ($type === 'qr') {
+                Database::execute("UPDATE companies SET qr_code_path = NULL, updated_at = NOW() WHERE id = ?", [$companyId]);
             }
         }
 

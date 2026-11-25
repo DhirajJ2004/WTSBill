@@ -94,13 +94,16 @@ $companyLogoUrl = CompanyBrandingService::getCompanyLogo();
             margin-bottom: 2rem;
         }
         .brand-icon {
-            width: 36px; height: 36px;
-            border-radius: 50%;
-            overflow: hidden;
+            width: auto;
+            height: 40px;
+            max-width: 140px;
+            border-radius: 0;
+            overflow: visible;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+            background: transparent !important;
+            box-shadow: none !important;
         }
         .brand-title {
             font-size: 0.88rem;
@@ -242,18 +245,19 @@ $companyLogoUrl = CompanyBrandingService::getCompanyLogo();
         }
         .btn-login {
             width: 100%;
-            padding: 0.9rem 1.5rem;
-            background: #235347;
+            padding: 0.85rem 1.5rem;
+            background: #0284c7;
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
             color: #FFFFFF;
             border: none;
-            border-radius: 10px;
+            border-radius: 8px;
             font-family: inherit;
             font-size: 0.98rem;
-            font-weight: 700;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            text-transform: none;
             cursor: pointer;
-            box-shadow: 0 8px 20px -4px rgba(35, 83, 71, 0.4);
+            box-shadow: 0 4px 14px -2px rgba(2, 132, 199, 0.4);
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             align-items: center;
@@ -261,20 +265,26 @@ $companyLogoUrl = CompanyBrandingService::getCompanyLogo();
             gap: 0.55rem;
         }
         .btn-login:hover {
-            background: #163832;
-            box-shadow: 0 10px 24px -4px rgba(22, 56, 50, 0.5);
+            background: #0369a1;
+            box-shadow: 0 6px 18px -2px rgba(3, 105, 161, 0.5);
             transform: translateY(-1px);
         }
         .btn-login:active {
-            background: #0B2B26;
+            background: #075985;
             transform: translateY(0);
         }
         .login-footer {
             margin-top: 1.75rem;
-            font-size: 0.78rem;
-            color: #163832;
-            text-align: center;
-            opacity: 0.85;
+            padding-top: 1.25rem;
+            border-top: 1px solid #e2e8f0;
+            font-size: 0.8rem;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            flex-wrap: wrap;
+            gap: 0.75rem;
         }
         .illustration-container {
             width: 100%;
@@ -316,10 +326,10 @@ $companyLogoUrl = CompanyBrandingService::getCompanyLogo();
     <div class="login-container">
         <!-- LEFT COLUMN: Form -->
         <div class="login-col-form">
-            <!-- Brand Badge -->
+            <!-- Brand Badge with Transparent Logo -->
             <div class="brand-header">
                 <div class="brand-icon">
-                    <img src="<?= e($companyLogoUrl) ?>" alt="WTS Logo" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror=null; this.src='/assets/images/logo.png';">
+                    <img src="<?= e($companyLogoUrl) ?>" alt="WTS Logo" style="height: 38px; width: auto; max-width: 130px; object-fit: contain; background: transparent; display: block;" onerror="this.onerror=null; this.src='/assets/images/logo.png';">
                 </div>
                 <div class="brand-title"><?= e($appName) ?></div>
             </div>
@@ -369,14 +379,14 @@ $companyLogoUrl = CompanyBrandingService::getCompanyLogo();
 
                     <!-- Email / Username Field -->
                     <div class="form-group">
-                        <label for="email" class="form-label">Email Address / Username</label>
+                        <label for="email" class="form-label">Operator Username / Email</label>
                         <div class="input-wrapper">
                             <input 
-                                type="email" 
+                                type="text" 
                                 id="email" 
                                 name="email" 
                                 class="form-input" 
-                                placeholder="name@company.in" 
+                                placeholder="admin or name@company.in" 
                                 value="<?= e($_POST['email'] ?? '') ?>" 
                                 required 
                                 autofocus
@@ -429,18 +439,29 @@ $companyLogoUrl = CompanyBrandingService::getCompanyLogo();
 
                     <!-- Primary Submit Button -->
                     <button type="submit" id="btn-login-submit" class="btn-login">
-                        <span>Sign In</span>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                            <polyline points="12 5 19 12 12 19"></polyline>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                            <polyline points="10 17 15 12 10 7"></polyline>
+                            <line x1="15" y1="12" x2="3" y2="12"></line>
                         </svg>
+                        <span>Sign In to Terminal</span>
                     </button>
                 </form>
             </div>
 
-            <!-- Footer Compliance Indicators -->
+            <!-- Footer Attribution & Security -->
             <div class="login-footer">
-                <span>🔒 Enterprise SSL Encrypted &bull; ISO 27001 Certified</span>
+                <div class="footer-attribution" style="display: flex; align-items: center; gap: 7px; font-size: 0.8rem; color: #64748b;">
+                    <img src="<?= e($companyLogoUrl) ?>" alt="WTS" style="width: 18px; height: 18px; object-fit: contain; border-radius: 50%; vertical-align: middle;" onerror="this.onerror=null; this.src='/assets/images/logo.png';">
+                    <span>Designed &amp; Developed by <a href="https://wtsindia.co.in" target="_blank" rel="noopener noreferrer" style="color: #0284c7; font-weight: 700; text-decoration: none;">WTS</a> &copy; <?= date('Y') ?></span>
+                </div>
+                <div class="footer-security" style="display: flex; align-items: center; gap: 5px; font-size: 0.8rem; color: #64748b; font-weight: 500;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        <path d="m9 12 2 2 4-4"></path>
+                    </svg>
+                    <span>256-Bit Encrypted</span>
+                </div>
             </div>
         </div>
 

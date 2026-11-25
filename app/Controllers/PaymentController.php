@@ -195,6 +195,21 @@ class PaymentController
         $referenceNo = trim((string)($payload['reference_no'] ?? ''));
         $notes = trim((string)($payload['notes'] ?? ''));
 
+        if (!empty($referenceNo)) {
+            $existingRef = Database::selectOne(
+                "SELECT id, payment_number FROM `payments` WHERE company_id = ? AND (reference_no = ? OR reference_number = ?) AND deleted_at IS NULL LIMIT 1",
+                [$companyId, $referenceNo, $referenceNo]
+            );
+            if ($existingRef) {
+                $errMsg = "A payment with transaction reference '{$referenceNo}' already exists (Voucher: {$existingRef['payment_number']}).";
+                if ($this->expectsJson($req)) {
+                    return Response::json(['success' => false, 'message' => $errMsg], 422);
+                }
+                Session::flash('error', $errMsg);
+                return Response::redirect('/payments');
+            }
+        }
+
         // Generate serial voucher / receipt number
         $prefix = ($paymentType === 'RECEIPT') ? 'RCP' : 'PMT';
         $year = date('Y');

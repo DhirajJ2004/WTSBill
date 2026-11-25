@@ -29,24 +29,39 @@ class PdfGenerator
         $clean = preg_replace('/<div[^>]*id="wtsbill-share-modal"[\s\S]*?<\/div>\s*<\/div>\s*<\/div>/s', '', $clean);
         $clean = preg_replace('/<script\b[^>]*>(.*?)<\/script>/is', '', $clean);
 
-        // 3. Convert local image URLs into base64 data URIs
+        // 3. Remove inline JavaScript event attributes (like onerror, onclick)
+        $clean = preg_replace('/\s+on[a-z]+=["\'][^"\']*["\']/i', '', $clean);
+
+        // 4. Convert local image URLs into base64 data URIs
         $rootPath = defined('ROOT_PATH') ? ROOT_PATH : dirname(__DIR__, 2);
-        $clean = preg_replace_callback('/<img([^>]+)src=["\']([^"\']+)["\']([^>]*)>/i', function ($m) use ($rootPath) {
+        $clean = preg_replace_callback('/<img\b([^>]*?)\bsrc=["\']([^"\']+)["\']([^>]*?)>/i', function ($m) use ($rootPath) {
             $src = $m[2];
             if (str_starts_with($src, 'data:')) {
                 return $m[0];
             }
+            $cleanPath = parse_url($src, PHP_URL_PATH) ?: $src;
             $localPath = null;
-            if (str_starts_with($src, '/')) {
-                $localPath = $rootPath . '/public' . $src;
+            if (str_starts_with($cleanPath, '/')) {
+                $localPath = $rootPath . '/public' . $cleanPath;
                 if (!file_exists($localPath)) {
-                    $localPath = $rootPath . $src;
+                    $localPath = $rootPath . $cleanPath;
                 }
             } elseif (!filter_var($src, FILTER_VALIDATE_URL)) {
-                $localPath = $rootPath . '/public/' . $src;
+                $localPath = $rootPath . '/public/' . $cleanPath;
+                if (!file_exists($localPath)) {
+                    $localPath = $rootPath . '/' . $cleanPath;
+                }
             }
             if ($localPath && file_exists($localPath)) {
-                $mime = mime_content_type($localPath) ?: 'image/png';
+                $ext = strtolower(pathinfo($localPath, PATHINFO_EXTENSION));
+                $mime = match ($ext) {
+                    'jpg', 'jpeg' => 'image/jpeg',
+                    'png' => 'image/png',
+                    'gif' => 'image/gif',
+                    'webp' => 'image/webp',
+                    'svg' => 'image/svg+xml',
+                    default => (mime_content_type($localPath) ?: 'image/png'),
+                };
                 $base64 = base64_encode(file_get_contents($localPath));
                 return '<img' . $m[1] . 'src="data:' . $mime . ';base64,' . $base64 . '"' . $m[3] . '>';
             }
@@ -194,7 +209,7 @@ class PdfGenerator
         $lines[] = sprintf("%40s: INR %s", "Balance Outstanding", $amountDue);
         $lines[] = "----------------------------------------------------------";
         $lines[] = "Bank: KOTAK MAHINDRA BANK  |  A/C: 9881032297  |  IFSC: KKBK0001986";
-        $lines[] = "UPI ID: sashted@oksbi (WTS Technosavvy)";
+        $lines[] = "UPI ID: sashted@okhdfcbank (Dnyanesh Sashte)";
         $lines[] = "----------------------------------------------------------";
         $lines[] = "TERMS AND CONDITIONS:";
         $lines[] = "1. Payment: as agreed / against confirmation.";

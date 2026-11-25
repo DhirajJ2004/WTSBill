@@ -107,7 +107,7 @@ class ProductController
     }
 
     /**
-     * Retrieve single product details (JSON endpoint for View/Edit modal).
+     * Retrieve single product details (supports JSON for modals/API and HTML for direct page navigation).
      */
     public function show(Request $req, mixed $id = null): Response
     {
@@ -115,10 +115,37 @@ class ProductController
         $product = $this->productService->getProduct($productId);
 
         if (!$product) {
-            return Response::json(['success' => false, 'message' => 'Product not found.'], 404);
+            if ($this->expectsJson($req)) {
+                return Response::json(['success' => false, 'message' => 'Product not found.'], 404);
+            }
+            Session::flash('error', 'Product not found.');
+            return Response::redirect('/products');
         }
 
-        return Response::json(['success' => true, 'product' => $product]);
+        // If requested via AJAX or API with Accept: application/json
+        if ($this->expectsJson($req)) {
+            return Response::json(['success' => true, 'product' => $product]);
+        }
+
+        // If requested directly in browser (Accept: text/html), render rich Product Details page
+        $companyId = Session::getCompanyId() ?? 1;
+        $category = !empty($product['category_id']) 
+            ? Database::selectOne("SELECT name FROM categories WHERE id = ?", [$product['category_id']]) 
+            : null;
+        $product['category_name'] = $category['name'] ?? 'General';
+
+        $categories = Database::select("SELECT id, name FROM categories WHERE company_id = ? ORDER BY name ASC", [$companyId]);
+        $units = Database::select("SELECT id, name, short_name FROM units WHERE company_id = ? ORDER BY id ASC", [$companyId]);
+
+        $html = View::renderWithLayout('inventory/product_show', [
+            'title' => $product['name'] . ' — Product Details',
+            'currentUri' => '/products',
+            'product' => $product,
+            'categories' => $categories,
+            'units' => $units,
+        ], 'layouts/app');
+
+        return Response::html($html);
     }
 
     /**

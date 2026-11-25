@@ -271,10 +271,29 @@ class PartyService
         }
 
         $phone = trim((string)($input['phone'] ?? ($input['mobile_number'] ?? '')));
+        if (!empty($phone)) {
+            $existingPhone = Database::selectOne(
+                "SELECT id, name FROM parties WHERE company_id = ? AND phone = ? AND deleted_at IS NULL LIMIT 1",
+                [$companyId, $phone]
+            );
+            if ($existingPhone) {
+                return ['success' => false, 'message' => "A party ('{$existingPhone['name']}') with phone number '{$phone}' already exists."];
+            }
+        }
+
         $altPhone = trim((string)($input['alt_phone'] ?? ''));
         $email = strtolower(trim((string)($input['email'] ?? '')));
-        if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return ['success' => false, 'message' => 'Invalid email address format.'];
+        if (!empty($email)) {
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                return ['success' => false, 'message' => 'Invalid email address format.'];
+            }
+            $existingEmail = Database::selectOne(
+                "SELECT id, name FROM parties WHERE company_id = ? AND email = ? AND deleted_at IS NULL LIMIT 1",
+                [$companyId, $email]
+            );
+            if ($existingEmail) {
+                return ['success' => false, 'message' => "A party ('{$existingEmail['name']}') with email '{$email}' already exists."];
+            }
         }
 
         $companyName = trim((string)($input['company_name'] ?? $name));
@@ -402,8 +421,30 @@ class PartyService
         }
 
         $phone = trim((string)($input['phone'] ?? ($input['mobile_number'] ?? $party['phone'])));
+        if (!empty($phone)) {
+            $existingPhone = Database::selectOne(
+                "SELECT id, name FROM parties WHERE company_id = ? AND phone = ? AND id != ? AND deleted_at IS NULL LIMIT 1",
+                [$companyId, $phone, $id]
+            );
+            if ($existingPhone) {
+                return ['success' => false, 'message' => "Another party ('{$existingPhone['name']}') with phone number '{$phone}' already exists."];
+            }
+        }
+
         $altPhone = trim((string)($input['alt_phone'] ?? $party['alt_phone']));
         $email = strtolower(trim((string)($input['email'] ?? $party['email'])));
+        if (!empty($email)) {
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                return ['success' => false, 'message' => 'Invalid email address format.'];
+            }
+            $existingEmail = Database::selectOne(
+                "SELECT id, name FROM parties WHERE company_id = ? AND email = ? AND id != ? AND deleted_at IS NULL LIMIT 1",
+                [$companyId, $email, $id]
+            );
+            if ($existingEmail) {
+                return ['success' => false, 'message' => "Another party ('{$existingEmail['name']}') with email '{$email}' already exists."];
+            }
+        }
         $companyName = trim((string)($input['company_name'] ?? $party['company_name']));
         $contactPerson = trim((string)($input['contact_person'] ?? $party['contact_person']));
         $billingAddress = trim((string)($input['billing_address'] ?? ($input['address_line1'] ?? $party['billing_address'])));

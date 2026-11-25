@@ -377,6 +377,53 @@ class QrCodeService
     }
 
     /**
+     * Generate standalone base64 PNG data URI for any UPI or string payload.
+     * Compatible with Dompdf, email clients, and standard HTML <img> tags.
+     */
+    public static function generatePngDataUri(string $text, int $displaySize = 140): string
+    {
+        if (trim($text) === '') {
+            return '';
+        }
+
+        $qr = self::encode($text);
+        $size = $qr['size'];
+        $matrix = $qr['matrix'];
+        $margin = 2;
+        $totalSize = $size + ($margin * 2);
+
+        if (function_exists('imagecreatetruecolor')) {
+            $scale = max(3, (int)round($displaySize / $totalSize));
+            $imgSize = $totalSize * $scale;
+            $im = imagecreatetruecolor($imgSize, $imgSize);
+            $white = imagecolorallocate($im, 255, 255, 255);
+            $black = imagecolorallocate($im, 0, 0, 0);
+            imagefilledrectangle($im, 0, 0, $imgSize, $imgSize, $white);
+
+            for ($r = 0; $r < $size; $r++) {
+                for ($c = 0; $c < $size; $c++) {
+                    if ($matrix[$r][$c] === 1) {
+                        $x1 = ($c + $margin) * $scale;
+                        $y1 = ($r + $margin) * $scale;
+                        $x2 = $x1 + $scale - 1;
+                        $y2 = $y1 + $scale - 1;
+                        imagefilledrectangle($im, $x1, $y1, $x2, $y2, $black);
+                    }
+                }
+            }
+
+            ob_start();
+            imagepng($im);
+            $pngData = ob_get_clean();
+            imagedestroy($im);
+
+            return 'data:image/png;base64,' . base64_encode($pngData);
+        }
+
+        return '';
+    }
+
+    /**
      * Build standard UPI deep link string.
      * Enforces valid UPI ID format, positive outstanding amount, and URL-encoded payee/reference.
      */

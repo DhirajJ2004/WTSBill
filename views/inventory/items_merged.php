@@ -100,7 +100,7 @@ $tabs = [
                         <tbody>
                             <?php if (!empty($itemsList)): ?>
                                 <?php foreach ($itemsList as $it): ?>
-                                    <tr style="border-bottom: 1px solid #E8F5EB;">
+                                    <tr id="item-row-<?= (int)$it['id'] ?>" style="border-bottom: 1px solid #E8F5EB;">
                                         <td style="padding: 0.75rem 1rem; font-weight: 600; color: #051F20;">
                                             <?= htmlspecialchars($it['name']) ?>
                                         </td>
@@ -124,8 +124,16 @@ $tabs = [
                                                 <?= $stock ?> <?= htmlspecialchars(strtoupper($it['unit'] ?? 'PCS')) ?>
                                             </span>
                                         </td>
-                                        <td style="padding: 0.75rem 1rem; text-align: right;">
-                                            <a href="/products/<?= (int)$it['id'] ?>" class="btn btn-secondary" style="padding: 0.25rem 0.55rem; font-size: 0.75rem; border: 1px solid #8EB69B; background: #DAF1DE; color: #235347; border-radius: 4px; text-decoration: none; font-weight: 600;">Details</a>
+                                        <td style="padding: 0.75rem 1rem; text-align: right; white-space: nowrap;">
+                                            <div style="display: flex; gap: 0.4rem; justify-content: flex-end; align-items: center;">
+                                                <a href="/products/<?= (int)$it['id'] ?>" class="btn btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; border: 1px solid #8EB69B; background: #DAF1DE; color: #235347; border-radius: 5px; text-decoration: none; font-weight: 600;">Details</a>
+                                                <?php if (\WTSBill\Auth\Gate::can('items.delete') || \WTSBill\Auth\Gate::role() === 'admin'): ?>
+                                                    <button type="button" class="btn btn-outline-danger" onclick="deleteItem(<?= (int)$it['id'] ?>, '<?= e(addslashes($it['name'])) ?>')" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; border: 1px solid #FCA5A5; background: #FEF2F2; color: #DC2626; border-radius: 5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;" title="Delete item">
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                                        <span>Delete</span>
+                                                    </button>
+                                                <?php endif; ?>
+                                            </div>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -241,4 +249,51 @@ $tabs = [
         </div>
     <?php endif; ?>
 </div>
+
+<script>
+window.deleteItem = function(id, name) {
+    if (!confirm('Are you sure you want to delete product "' + (name || '#' + id) + '"? This will remove it from the catalog.')) {
+        return;
+    }
+
+    const metaToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    const formData = new FormData();
+    formData.append('_token', metaToken);
+
+    fetch('/products/' + id + '/delete', {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': metaToken
+        },
+        body: formData
+    })
+    .then(async res => {
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+            throw new Error(data.message || 'Failed to delete product.');
+        }
+        return data;
+    })
+    .then(data => {
+        if (window.WTSBill && window.WTSBill.Toast) {
+            window.WTSBill.Toast.show(data.message || 'Product deleted successfully.', 'success');
+        }
+
+        const row = document.getElementById('item-row-' + id);
+        if (row) {
+            row.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            row.style.opacity = '0';
+            row.style.transform = 'translateX(20px)';
+            setTimeout(() => row.remove(), 300);
+        } else {
+            window.location.reload();
+        }
+    })
+    .catch(err => {
+        alert(err.message || 'Error deleting product.');
+    });
+};
+</script>
 

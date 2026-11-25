@@ -812,36 +812,35 @@ $hasCustomSigOrStamp = !empty($sigUrl) || !empty($stampUrl);
                                 <tr>
                                     <td style="vertical-align: middle; padding: 0;">
                                         <div style="font-size: 7.2pt; color: #333333;">UPI ID:</div>
-                                        <div style="font-size: 8pt; font-weight: bold;"><?= e($merchantUpi ?: ($seller['upi_id'] ?? 'sashted@oksbi')) ?></div>
+                                        <div style="font-size: 8pt; font-weight: bold; font-family: monospace;"><?= e($merchantUpi ?: ($seller['upi_id'] ?? 'sashted@okhdfcbank')) ?></div>
+                                        <div style="font-size: 7.2pt; color: #555555; margin-top: 1px;">Payee: <?= e($merchantName ?: ($seller['upi_display_name'] ?? 'Dnyanesh Sashte')) ?></div>
                                         <?php if (($amountDue ?? ($invoice['amount_due'] ?? 0)) > 0.001): ?>
                                             <div style="font-size: 7.2pt; font-weight: bold; color: #b91c1c; margin-top: 2px;">
                                                 Pay Remaining: ₹<?= format_inr_amount($amountDue ?? $invoice['amount_due'], false, 2) ?>
                                             </div>
+                                        <?php else: ?>
+                                            <div style="font-size: 7.2pt; font-weight: bold; color: #047857; margin-top: 2px;">
+                                                ✓ Settled (Pay any amount)
+                                            </div>
                                         <?php endif; ?>
                                     </td>
-                                    <td style="width: 65px; text-align: right; vertical-align: middle; padding: 0;">
-                                        <div class="qr-code-box">
-                                            <?php if (!empty($qrSvg)): ?>
-                                                <?= $qrSvg ?>
-                                            <?php elseif (!empty($hasMerchantUpi)): ?>
-                                                <!-- Built-in vector QR Code -->
-                                                <svg viewBox="0 0 100 100" width="60" height="60" xmlns="http://www.w3.org/2000/svg" aria-label="UPI Payment QR Code">
-                                                    <rect width="100" height="100" fill="#ffffff"/>
-                                                    <path d="M10 10h30v30h-30z M60 10h30v30h-30z M10 60h30v30h-30z" fill="#000000"/>
-                                                    <rect x="18" y="18" width="14" height="14" fill="#ffffff"/>
-                                                    <rect x="68" y="18" width="14" height="14" fill="#ffffff"/>
-                                                    <rect x="18" y="68" width="14" height="14" fill="#ffffff"/>
-                                                    <rect x="22" y="22" width="6" height="6" fill="#000000"/>
-                                                    <rect x="72" y="22" width="6" height="6" fill="#000000"/>
-                                                    <rect x="22" y="72" width="6" height="6" fill="#000000"/>
-                                                    <path d="M50 15h5v20h-5z M15 50h20v5h-20z M45 45h20v10h-20z M70 50h15v5h-15z M50 70h10v20h-10z M70 70h20v20h-20z" fill="#000000"/>
-                                                </svg>
-                                            <?php else: ?>
-                                                <div style="border: 1px dashed #cbd5e1; border-radius: 4px; padding: 3px; font-size: 6.2pt; text-align: center; color: #64748b; line-height: 1.1;">
-                                                    <strong>UPI Not Configured</strong><br>
-                                                    <span>Configure Merchant UPI in Settings</span>
-                                                </div>
-                                            <?php endif; ?>
+                                    <td style="width: 78px; text-align: right; vertical-align: middle; padding: 0;">
+                                        <div class="qr-code-box" style="text-align: right;">
+                                            <?php
+                                                $vpaToUse = $merchantUpi ?: ($seller['upi_id'] ?? 'sashted@okhdfcbank');
+                                                $nameToUse = $merchantName ?: ($seller['upi_display_name'] ?? 'Dnyanesh Sashte');
+                                                $dueToUse = (float)($amountDue ?? ($invoice['amount_due'] ?? 0));
+                                                $invNumToUse = (string)($invoice['invoice_number'] ?? '');
+                                                $finalPayload = !empty($upiPayload) 
+                                                    ? $upiPayload 
+                                                    : ($dueToUse > 0.001 
+                                                        ? \WTSBill\Services\QrCodeService::buildUpiPayload($vpaToUse, $nameToUse, $dueToUse, $invNumToUse) 
+                                                        : "upi://pay?pa={$vpaToUse}&pn=" . rawurlencode($nameToUse) . "&aid=uGICAgIC156CAZw");
+                                                $qrPngUri = \WTSBill\Services\QrCodeService::generatePngDataUri($finalPayload, 150);
+                                                $customQrUrl = !empty($branding['qr_code_url']) ? $branding['qr_code_url'] : '/uploads/branding/company_1_upi_qr.png';
+                                                $qrImgSrc = !empty($qrPngUri) ? $qrPngUri : $customQrUrl;
+                                            ?>
+                                            <img src="<?= $qrImgSrc ?>" alt="UPI QR Code" style="width: 72px; height: 72px; object-fit: contain; display: inline-block; border-radius: 4px;" onerror="this.onerror=null; this.src='/uploads/branding/company_1_upi_qr.png';">
                                         </div>
                                     </td>
                                 </tr>

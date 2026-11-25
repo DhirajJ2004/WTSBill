@@ -17,6 +17,26 @@ use WTSBill\Services\PdfGenerator;
 class CommunicationController
 {
     /**
+     * Render Communication & Document Sharing settings page.
+     * Route: GET /settings/communication
+     */
+    public function index(Request $req): Response
+    {
+        $this->ensureAdmin();
+        $companyId = (int)(Session::getCompanyId() ?? 1);
+        $commSettings = CommunicationService::getSettings($companyId);
+
+        $html = \WTSBill\Core\View::renderWithLayout('settings/communication', [
+            'title' => 'Communication Settings',
+            'currentUri' => '/settings/communication',
+            'commSettings' => $commSettings,
+            'isAdmin' => true,
+        ], 'layouts/app');
+
+        return Response::html($html);
+    }
+
+    /**
      * Save communication channel preferences and API/SMTP configurations.
      * Route: POST /settings/communication
      */

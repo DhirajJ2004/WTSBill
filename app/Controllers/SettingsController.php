@@ -85,16 +85,18 @@ class SettingsController
         $lastBackup = $isAdmin ? \WTSBill\Services\BackupService::getLastSuccessful($companyId) : null;
         $nextBackup = $isAdmin ? \WTSBill\Services\BackupService::getNextScheduled($companyId) : [];
         $cleanupLogs = $isAdmin ? \WTSBill\Services\AuditCleanupService::getCleanupHistory($companyId) : [];
+        $branding = \WTSBill\Services\CompanyBrandingService::getCompanyBranding($companyId, $activeBranchId);
 
         $html = View::renderWithLayout('settings/index', [
-            'title' => $activeTab === 'audit' ? 'Security Audit Trail' : ($activeTab === 'communication' ? 'Communication Settings' : ($activeTab === 'backups' ? 'Backup & Disaster Recovery' : 'System Settings')),
-            'currentUri' => $activeTab === 'audit' ? '/settings/audit-logs' : '/settings',
+            'title' => 'Company Profile & Branding',
+            'currentUri' => '/settings',
             'company' => $company,
             'branches' => $branches,
             'allUsers' => $allUsers,
             'activeBranchId' => $activeBranchId,
             'isAdmin' => $isAdmin,
             'activeTab' => $activeTab,
+            'branding' => $branding,
             'auditLogs' => $auditLogs,
             'auditSummary' => $auditSummary,
             'commSettings' => $commSettings,
@@ -310,7 +312,31 @@ class SettingsController
             || str_contains(strtolower((string)$req->header('Accept')), 'application/json');
 
         if (!$isJsonExpected) {
-            return $this->index($req, 'audit');
+            $companyId = (int)(Session::getCompanyId() ?? 1);
+            $auditData = AuditService::getLogs([], 1, 50);
+            $totalRow = Database::selectOne("SELECT COUNT(*) as c FROM audit_logs WHERE company_id = ?", [$companyId]);
+            $todayRow = Database::selectOne("SELECT COUNT(*) as c FROM audit_logs WHERE company_id = ? AND DATE(created_at) = CURDATE()", [$companyId]);
+            $createsRow = Database::selectOne("SELECT COUNT(*) as c FROM audit_logs WHERE company_id = ? AND action = 'CREATE'", [$companyId]);
+            $updatesRow = Database::selectOne("SELECT COUNT(*) as c FROM audit_logs WHERE company_id = ? AND action IN ('UPDATE', 'SETTINGS_CHANGE')", [$companyId]);
+            $deletesRow = Database::selectOne("SELECT COUNT(*) as c FROM audit_logs WHERE company_id = ? AND action = 'DELETE'", [$companyId]);
+
+            $auditSummary = [
+                'total' => (int)($totalRow['c'] ?? 0),
+                'today' => (int)($todayRow['c'] ?? 0),
+                'creates' => (int)($createsRow['c'] ?? 0),
+                'updates' => (int)($updatesRow['c'] ?? 0),
+                'deletes' => (int)($deletesRow['c'] ?? 0),
+            ];
+
+            $html = View::renderWithLayout('settings/audit_logs', [
+                'title' => 'Security Audit Trail',
+                'currentUri' => '/settings/audit-logs',
+                'auditLogs' => $auditData['rows'],
+                'auditSummary' => $auditSummary,
+                'isAdmin' => true,
+            ], 'layouts/app');
+
+            return Response::html($html);
         }
 
         $filters = [
