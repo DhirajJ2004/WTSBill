@@ -65,6 +65,7 @@ $userTheme = \WTSBill\Core\Session::get('theme') ?? 'dark';
 
     <!-- Native Client Script -->
     <script src="/assets/js/app.js"></script>
+    <script src="/assets/js/jsQR.min.js"></script>
     <script src="/assets/js/qr-scanner.js"></script>
     <script src="/assets/js/session-idle.js"></script>
 </body>

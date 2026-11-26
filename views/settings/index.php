@@ -543,10 +543,11 @@ $selectedBranchId = $selectedBranchId ?? null;
                 </div>
 
                 <div style="font-size: 0.76rem; color: #4B5563; line-height: 1.4; margin-bottom: 1rem; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 0.6rem 0.75rem; border-radius: 6px;">
-                    <strong style="color: #051F20;">Active VPA:</strong> <code style="background: #E2E8F0; padding: 1px 4px; border-radius: 3px;"><?= e($company['upi_id'] ?? 'sashted@okhdfcbank') ?></code><br>
-                    <strong>Payee Name:</strong> <?= e($company['upi_display_name'] ?? 'Dnyanesh Sashte') ?><br>
+                    <strong style="color: #051F20;">Active VPA:</strong> <code id="preview-active-vpa" style="background: #E2E8F0; padding: 1px 4px; border-radius: 3px;"><?= e($company['upi_id'] ?? '') ?></code><br>
+                    <strong>Payee Name:</strong> <span id="preview-payee-name"><?= e($company['upi_display_name'] ?? '') ?></span><br>
                     <span style="color: #235347; font-weight: 500;">✓ Scannable by Google Pay, PhonePe, Paytm &amp; all BHIM UPI apps.</span>
                 </div>
+                <div id="qr-decode-status" style="display: none; font-size: 0.75rem; padding: 0.5rem 0.65rem; border-radius: 6px; margin-bottom: 0.75rem; line-height: 1.35;"></div>
             </div>
 
             <!-- Upload Form -->
@@ -554,9 +555,11 @@ $selectedBranchId = $selectedBranchId ?? null;
                 <input type="hidden" name="_token" value="<?= e($csrfToken) ?>">
                 <input type="hidden" name="type" value="qr">
                 <input type="hidden" name="branch_id" value="<?= e((string)($selectedBranchId ?? '')) ?>">
+                <input type="hidden" id="decoded-upi-id" name="decoded_upi_id" value="">
+                <input type="hidden" id="decoded-upi-name" name="decoded_upi_name" value="">
 
                 <div style="margin-bottom: 0.75rem;">
-                    <input type="file" id="file-qr" name="asset_file" accept=".png,.jpg,.jpeg,.webp" onchange="previewSelectedFile(this, 'img-preview-qr', 'img-preview-qr-empty')" style="display: none;">
+                    <input type="file" id="file-qr" name="asset_file" accept=".png,.jpg,.jpeg,.webp" onchange="handleQrUploadSelection(this)" style="display: none;">
                     <button type="button" class="btn btn-secondary" onclick="document.getElementById('file-qr').click()" style="width: 100%; border: 1px solid #8EB69B; background: #FFFFFF; color: #051F20; padding: 0.5rem; font-size: 0.84rem; font-weight: 600; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                         <span id="label-file-qr"><?= !empty($b['qr_code_url']) ? 'Replace QR Image...' : 'Choose QR Image...' ?></span>
@@ -1026,6 +1029,10 @@ function handleCompanyFormSubmit(e) {
         if (!result.ok || !result.data.success) {
             errBox.textContent = result.data.message || 'Failed to update company settings.';
             errBox.style.display = 'block';
+            try { errBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch(e) {}
+            if (window.Toast && window.Toast.error) {
+                window.Toast.error(errBox.textContent);
+            }
             return;
         }
 
@@ -1148,6 +1155,75 @@ function previewSelectedFile(input, imgId, emptyId) {
             }
         };
         reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function handleQrUploadSelection(input) {
+    previewSelectedFile(input, 'img-preview-qr', 'img-preview-qr-empty');
+    if (!input.files || !input.files[0]) return;
+
+    var statusEl = document.getElementById('qr-decode-status');
+    var labelEl = document.getElementById('label-file-qr');
+    if (labelEl) labelEl.textContent = input.files[0].name;
+
+    if (statusEl) {
+        statusEl.style.display = 'block';
+        statusEl.style.background = '#F0FDF4';
+        statusEl.style.border = '1px solid #8EB69B';
+        statusEl.style.color = '#163832';
+        statusEl.innerHTML = 'Scanning QR image for UPI details...';
+    }
+
+    if (window.WTSBill && window.WTSBill.QRScanner && typeof window.WTSBill.QRScanner.decodeFile === 'function') {
+        window.WTSBill.QRScanner.decodeFile(
+            input.files[0],
+            function(extracted) {
+                if (extracted && extracted.kind === 'upi' && extracted.details) {
+                    var vpa = extracted.details.vpa || '';
+                    var pname = extracted.details.name || '';
+                    var upiInput = document.getElementById('company-upi');
+                    var nameInput = document.getElementById('company-upi-name');
+                    var decUpi = document.getElementById('decoded-upi-id');
+                    var decName = document.getElementById('decoded-upi-name');
+                    var prevVpa = document.getElementById('preview-active-vpa');
+                    var prevName = document.getElementById('preview-payee-name');
+
+                    if (vpa && upiInput) upiInput.value = vpa;
+                    if (pname && nameInput) nameInput.value = pname;
+                    if (decUpi) decUpi.value = vpa;
+                    if (decName) decName.value = pname;
+                    if (vpa && prevVpa) prevVpa.textContent = vpa;
+                    if (pname && prevName) prevName.textContent = pname;
+
+                    if (statusEl) {
+                        statusEl.style.background = '#DAF1DE';
+                        statusEl.style.border = '1px solid #235347';
+                        statusEl.style.color = '#051F20';
+                        statusEl.innerHTML = '<strong>✓ QR Data Extracted:</strong><br>' +
+                            'Payee Name: <strong>' + (pname || 'Not specified') + '</strong><br>' +
+                            'UPI ID: <strong>' + (vpa || 'Not specified') + '</strong>';
+                    }
+                    if (window.Toast && window.Toast.success) {
+                        window.Toast.success('QR decoded: ' + (pname || vpa) + ' auto-filled!');
+                    }
+                } else {
+                    if (statusEl) {
+                        statusEl.style.background = '#FEF3C7';
+                        statusEl.style.border = '1px solid #F59E0B';
+                        statusEl.style.color = '#92400E';
+                        statusEl.innerHTML = 'QR decoded: <code>' + (extracted ? extracted.value : '') + '</code>';
+                    }
+                }
+            },
+            function(errMsg) {
+                if (statusEl) {
+                    statusEl.style.background = '#FEF2F2';
+                    statusEl.style.border = '1px solid #FCA5A5';
+                    statusEl.style.color = '#991B1B';
+                    statusEl.textContent = 'Could not auto-extract UPI details (' + errMsg + '). You can still upload the image.';
+                }
+            }
+        );
     }
 }
 

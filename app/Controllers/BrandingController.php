@@ -91,6 +91,26 @@ class BrandingController
 
         $result = CompanyBrandingService::saveAsset($companyId, $branchId, $type, $file, $userId);
 
+        // If a QR image was uploaded and decoded UPI metadata was extracted, persist it to company/branch
+        if ($result['success'] && $type === 'qr') {
+            $decodedUpi = trim((string)($req->input('decoded_upi_id') ?? ''));
+            $decodedName = trim((string)($req->input('decoded_upi_name') ?? ''));
+            if ($decodedUpi !== '' && preg_match('/^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/', $decodedUpi)) {
+                \WTSBill\Core\Database::execute(
+                    "UPDATE companies SET upi_id = ?, upi_display_name = COALESCE(NULLIF(?, ''), upi_display_name), updated_at = NOW() WHERE id = ?",
+                    [$decodedUpi, $decodedName, $companyId]
+                );
+                if ($branchId !== null && $branchId > 0) {
+                    \WTSBill\Core\Database::execute(
+                        "UPDATE branches SET upi_id = ?, updated_at = NOW() WHERE id = ? AND company_id = ?",
+                        [$decodedUpi, $branchId, $companyId]
+                    );
+                }
+                $result['decoded_upi_id'] = $decodedUpi;
+                $result['decoded_upi_name'] = $decodedName;
+            }
+        }
+
         $isAjax = $req->expectsJson() || strtolower((string)$req->header('X-Requested-With')) === 'xmlhttprequest';
         if ($isAjax) {
             return Response::json($result, $result['success'] ? 200 : 422);

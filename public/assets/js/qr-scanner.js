@@ -346,17 +346,20 @@
             };
 
             // 1. UPI Payment URI: upi://pay?pa=merchant@bank&pn=Merchant&am=150.00&tr=INV-001
-            if (trimmed.startsWith('upi://pay')) {
+            if (/^upi:\/\/pay/i.test(trimmed)) {
                 result.kind = 'upi';
                 try {
                     const url = new URL(trimmed);
                     const params = url.searchParams;
+                    const rawName = params.get('pn') || '';
+                    const decodedName = rawName.replace(/\+/g, ' ').trim();
                     result.details = {
-                        vpa: params.get('pa') || '',
-                        name: params.get('pn') || '',
-                        amount: params.get('am') || '',
-                        ref: params.get('tr') || '',
-                        note: params.get('tn') || '',
+                        vpa: (params.get('pa') || '').trim(),
+                        name: decodedName,
+                        amount: (params.get('am') || '').trim(),
+                        ref: (params.get('tr') || '').trim(),
+                        note: (params.get('tn') || '').replace(/\+/g, ' ').trim(),
+                        currency: (params.get('cu') || 'INR').trim(),
                     };
                     result.value = result.details.ref || result.details.vpa || trimmed;
                 } catch (e) {}
@@ -391,38 +394,88 @@
         },
 
         /**
-         * Handle local image file upload decode
+         * Standalone File Decode Helper for Upload Inputs (Settings, Payments, etc.)
          */
-        handleImageFile: function (input) {
-            if (!input.files || !input.files[0]) return;
-            const file = input.files[0];
+        decodeFile: function (file, onSuccess, onError) {
+            if (!file) {
+                if (typeof onError === 'function') onError('No file provided.');
+                return;
+            }
+            const self = this;
             const reader = new FileReader();
-
-            this.setStatus('Decoding image...', 'info');
-
-            reader.onload = (e) => {
+            reader.onload = function (e) {
                 const img = new Image();
-                img.onload = () => {
-                    // Try BarcodeDetector first
-                    if (this.detector) {
-                        this.detector.detect(img)
+                img.onload = function () {
+                    const tryJsQr = function () {
+                        if (typeof window.jsQR !== 'function') {
+                            if (typeof onError === 'function') onError('QR decoder library not loaded.');
+                            return;
+                        }
+                        const canvas = document.createElement('canvas');
+                        const maxDim = 1024;
+                        let w = img.width;
+                        let h = img.height;
+                        if (w > maxDim || h > maxDim) {
+                            const scale = Math.min(maxDim / w, maxDim / h);
+                            w = Math.round(w * scale);
+                            h = Math.round(h * scale);
+                        }
+                        canvas.width = w;
+                        canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(0, 0, w, h);
+                        ctx.drawImage(img, 0, 0, w, h);
+                        const imgData = ctx.getImageData(0, 0, w, h);
+                        const code = window.jsQR(imgData.data, imgData.width, imgData.height, {
+                            inversionAttempts: 'attemptBoth'
+                        });
+                        if (code && code.data) {
+                            const extracted = self.extractData(code.data, 'qr_code');
+                            if (typeof onSuccess === 'function') onSuccess(extracted);
+                        } else {
+                            if (typeof onError === 'function') onError('No readable QR code found in image.');
+                        }
+                    };
+
+                    if (self.detector) {
+                        self.detector.detect(img)
                             .then((barcodes) => {
-                                if (barcodes && barcodes.length > 0) {
-                                    this.handleScanSuccess(barcodes[0].rawValue, barcodes[0].format);
+                                if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
+                                    const extracted = self.extractData(barcodes[0].rawValue, barcodes[0].format);
+                                    if (typeof onSuccess === 'function') onSuccess(extracted);
                                 } else {
-                                    this.setStatus('No QR code or barcode detected in image. Please try another image.', 'error');
+                                    tryJsQr();
                                 }
                             })
-                            .catch(() => {
-                                this.decodeImageWithCanvas(img);
-                            });
+                            .catch(tryJsQr);
                     } else {
-                        this.decodeImageWithCanvas(img);
+                        tryJsQr();
                     }
+                };
+                img.onerror = function () {
+                    if (typeof onError === 'function') onError('Invalid image file.');
                 };
                 img.src = e.target.result;
             };
             reader.readAsDataURL(file);
+        },
+
+        /**
+         * Handle local image file upload decode
+         */
+        handleImageFile: function (input) {
+            if (!input.files || !input.files[0]) return;
+            this.setStatus('Decoding image...', 'info');
+            this.decodeFile(
+                input.files[0],
+                (extracted) => {
+                    this.handleScanSuccess(extracted.raw, extracted.format);
+                },
+                (errMsg) => {
+                    this.setStatus(errMsg || 'No readable QR code found in uploaded image.', 'error');
+                }
+            );
         },
 
         decodeImageWithCanvas: function (img) {
