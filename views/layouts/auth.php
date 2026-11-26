@@ -26,9 +26,9 @@ $csrfToken = Session::csrfToken();
             justify-content: center;
             min-height: 100vh;
             padding: 1.5rem;
-            background-color: #DAF1DE;
-            background: radial-gradient(circle at top, #DAF1DE 0%, #8EB69B 100%);
-            color: #051F20;
+            background-color: #EBF5FC;
+            background: radial-gradient(circle at top, #EBF5FC 0%, #7AAACE 100%);
+            color: #1E293B;
         }
         .auth-container {
             width: 100%;

@@ -20,7 +20,7 @@ $wtsUrl = !empty($company['website']) ? $company['website'] : '/dashboard';
     <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
         <span>&copy; <?= e($year) ?> <strong><?= e($appName) ?></strong></span>
         <span>&bull;</span>
-        <span>Designed &amp; Developed by <a href="<?= e($wtsUrl) ?>" <?= !empty($company['website']) ? 'target="_blank" rel="noopener noreferrer"' : '' ?> style="color: var(--color-primary, #235347); font-weight: 600; text-decoration: none;" title="<?= e($companyName) ?>">WTS</a></span>
+        <span>Designed &amp; Developed by <a href="<?= e($wtsUrl) ?>" <?= !empty($company['website']) ? 'target="_blank" rel="noopener noreferrer"' : '' ?> style="color: var(--color-primary, #355872); font-weight: 600; text-decoration: none;" title="<?= e($companyName) ?>">WTS</a></span>
         <span>&bull;</span>
         <span>All Rights Reserved.</span>
     </div>

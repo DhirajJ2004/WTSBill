@@ -1,12 +1,12 @@
 /* ==========================================================================
    WTSBill ERP — Premium Green Fintech Login Stylesheet
    Mandatory 6-Color Palette:
-   1. #DAF1DE – Main light background, soft surfaces and subtle highlights.
-   2. #8EB69B – Borders, secondary backgrounds, input focus and decorative elements.
-   3. #235347 – Primary buttons, active states and important actions.
-   4. #163832 – Secondary headings, illustration details and navigation accents.
-   5. #0B2B26 – Dark surfaces, illustration backgrounds and strong contrast.
-   6. #051F20 – Main text, darkest backgrounds and typography.
+   1. #EBF5FC – Main light background, soft surfaces and subtle highlights.
+   2. #7AAACE – Borders, secondary backgrounds, input focus and decorative elements.
+   3. #355872 – Primary buttons, active states and important actions.
+   4. #2A485E – Secondary headings, illustration details and navigation accents.
+   5. #253E52 – Dark surfaces, illustration backgrounds and strong contrast.
+   6. #1E293B – Main text, darkest backgrounds and typography.
    ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -23,8 +23,8 @@ html, body {
 
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    background-color: #DAF1DE;
-    color: #051F20;
+    background-color: #EBF5FC;
+    color: #1E293B;
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -49,7 +49,7 @@ body {
     height: 520px;
     top: -140px;
     left: -140px;
-    background: radial-gradient(circle, #8EB69B 0%, #DAF1DE 70%, rgba(218, 241, 222, 0) 100%);
+    background: radial-gradient(circle, #7AAACE 0%, #EBF5FC 70%, rgba(156, 213, 255, 0) 100%);
 }
 
 .bg-blob-2 {
@@ -57,7 +57,7 @@ body {
     height: 580px;
     bottom: -160px;
     right: -150px;
-    background: radial-gradient(circle, #8EB69B 0%, #DAF1DE 70%, rgba(218, 241, 222, 0) 100%);
+    background: radial-gradient(circle, #7AAACE 0%, #EBF5FC 70%, rgba(156, 213, 255, 0) 100%);
     opacity: 0.45;
 }
 
@@ -67,11 +67,11 @@ body {
     top: 45%;
     left: 82%;
     transform: translateY(-50%);
-    background: radial-gradient(circle, #8EB69B 0%, rgba(218, 241, 222, 0) 75%);
+    background: radial-gradient(circle, #7AAACE 0%, rgba(156, 213, 255, 0) 75%);
     opacity: 0.35;
 }
 
-/* 2. Main Login Container: 25px radius & thin #8EB69B border */
+/* 2. Main Login Container: 25px radius & thin #7AAACE border */
 .login-container {
     position: relative;
     z-index: 1;
@@ -79,9 +79,9 @@ body {
     max-width: 1060px;
     min-height: 590px;
     background: #FFFFFF;
-    border: 2px solid #8EB69B;
+    border: 2px solid #7AAACE;
     border-radius: 25px;
-    box-shadow: 0 20px 45px -10px rgba(11, 43, 38, 0.12), 0 10px 25px -5px rgba(5, 31, 32, 0.05);
+    box-shadow: 0 20px 45px -10px rgba(37, 62, 82, 0.12), 0 10px 25px -5px rgba(30, 41, 59, 0.05);
     display: flex;
     overflow: hidden;
     transition: all 0.25s ease;
@@ -101,8 +101,8 @@ body {
 /* 4. Right Section: Financial Analytics Illustration */
 .login-col-illustration {
     flex: 1 1 55%;
-    background: linear-gradient(135deg, #F4FAF6 0%, #DAF1DE 100%);
-    border-left: 1px solid #8EB69B;
+    background: linear-gradient(135deg, #F7F8F0 0%, #EBF5FC 100%);
+    border-left: 1px solid #7AAACE;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -136,14 +136,14 @@ body {
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: #163832;
+    color: #2A485E;
 }
 
 /* Headings & Subtitles */
 .login-heading {
     font-size: 2.15rem;
     font-weight: 800;
-    color: #051F20;
+    color: #1E293B;
     line-height: 1.15;
     margin-bottom: 0.45rem;
     letter-spacing: -0.02em;
@@ -152,7 +152,7 @@ body {
 .login-subtitle {
     font-size: 0.95rem;
     font-weight: 500;
-    color: #163832;
+    color: #2A485E;
     line-height: 1.45;
     margin-bottom: 1.75rem;
 }
@@ -171,25 +171,25 @@ body {
 
 .alert-error {
     background-color: #FFF5F5;
-    border: 1.5px solid #8EB69B;
-    color: #051F20;
+    border: 1.5px solid #7AAACE;
+    color: #1E293B;
 }
 
 .alert-error svg {
-    color: #163832;
+    color: #2A485E;
     flex-shrink: 0;
 }
 
 .alert-success {
-    background-color: #DAF1DE;
-    border: 1.5px solid #235347;
-    color: #051F20;
+    background-color: #EBF5FC;
+    border: 1.5px solid #355872;
+    color: #1E293B;
 }
 
 .alert-warning {
-    background-color: #DAF1DE;
-    border: 1.5px solid #8EB69B;
-    color: #163832;
+    background-color: #EBF5FC;
+    border: 1.5px solid #7AAACE;
+    color: #2A485E;
 }
 
 /* Form Groups & Inputs */
@@ -204,7 +204,7 @@ body {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #163832;
+    color: #2A485E;
     margin-bottom: 0.45rem;
     transition: color 0.15s ease;
 }
@@ -219,9 +219,9 @@ body {
     width: 100%;
     padding: 0.75rem 0.95rem;
     background: #FFFFFF;
-    border: 1.5px solid #8EB69B;
+    border: 1.5px solid #7AAACE;
     border-radius: 10px;
-    color: #051F20;
+    color: #1E293B;
     font-family: inherit;
     font-size: 0.98rem;
     outline: none;
@@ -229,18 +229,18 @@ body {
 }
 
 .form-input::placeholder {
-    color: #8EB69B;
+    color: #7AAACE;
     font-size: 0.92rem;
 }
 
 .form-input:focus {
-    border-color: #235347;
+    border-color: #355872;
     background: #FFFFFF;
-    box-shadow: 0 0 0 3px rgba(35, 83, 71, 0.15);
+    box-shadow: 0 0 0 3px rgba(53, 88, 114, 0.15);
 }
 
 .form-group:focus-within .form-label {
-    color: #235347;
+    color: #355872;
 }
 
 /* Password Toggle Icon Button */
@@ -251,7 +251,7 @@ body {
     transform: translateY(-50%);
     background: transparent;
     border: none;
-    color: #235347;
+    color: #355872;
     padding: 0.45rem;
     cursor: pointer;
     display: flex;
@@ -264,7 +264,7 @@ body {
 }
 
 .btn-toggle-password:hover {
-    color: #163832;
+    color: #2A485E;
 }
 
 .btn-toggle-password svg {
@@ -290,27 +290,27 @@ body {
     align-items: center;
     gap: 0.5rem;
     cursor: pointer;
-    color: #163832;
+    color: #2A485E;
     user-select: none;
     font-weight: 500;
 }
 
 .checkbox-container input[type="checkbox"] {
-    accent-color: #235347;
+    accent-color: #355872;
     width: 16px;
     height: 16px;
     cursor: pointer;
 }
 
 .forgot-link {
-    color: #235347;
+    color: #355872;
     text-decoration: none;
     font-weight: 600;
     transition: color 0.15s ease;
 }
 
 .forgot-link:hover {
-    color: #163832;
+    color: #2A485E;
     text-decoration: underline;
 }
 
@@ -348,13 +348,13 @@ body {
     transform: translateY(0);
     box-shadow: 0 2px 8px rgba(7, 89, 133, 0.35);
 }
-    background: #0B2B26;
+    background: #253E52;
     transform: translateY(0);
-    box-shadow: 0 4px 12px rgba(11, 43, 38, 0.35);
+    box-shadow: 0 4px 12px rgba(37, 62, 82, 0.35);
 }
 
 .btn-login:disabled {
-    background: #8EB69B;
+    background: #7AAACE;
     cursor: not-allowed;
     box-shadow: none;
     transform: none;
@@ -390,7 +390,7 @@ body {
     height: auto;
     max-height: 480px;
     object-fit: contain;
-    filter: drop-shadow(0 15px 30px rgba(11, 43, 38, 0.1));
+    filter: drop-shadow(0 15px 30px rgba(37, 62, 82, 0.1));
 }
 
 /* ==========================================================================
@@ -414,7 +414,7 @@ body {
     .login-col-illustration {
         flex: 1 1 100%;
         border-left: none;
-        border-top: 1px solid #8EB69B;
+        border-top: 1px solid #7AAACE;
         padding: 2rem;
     }
 

@@ -9,33 +9,33 @@
 ?>
 <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
     <div>
-        <h1 class="page-title" style="margin: 0; font-size: 1.5rem; font-weight: 700; color: var(--text-primary, #051F20);">Delivery Challans &amp; Dispatch</h1>
+        <h1 class="page-title" style="margin: 0; font-size: 1.5rem; font-weight: 700; color: var(--text-primary, #1E293B);">Delivery Challans &amp; Dispatch</h1>
         <p class="page-subtitle" style="margin: 0.25rem 0 0 0; color: var(--text-muted, #4B5563); font-size: 0.875rem;">
             Goods delivery notes, vehicle numbers, dispatch tracking, and invoice-to-challan conversion
         </p>
     </div>
     <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-        <input type="text" id="challan-search" class="form-control" placeholder="Search challan or customer..." style="width: 240px; padding: 0.45rem 0.75rem; font-size: 0.85rem; border: 1px solid #8EB69B; border-radius: 6px;">
-        <button type="button" class="btn btn-primary" onclick="window.openChallanModal('invoice')" style="display: flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.9rem; font-size: 0.85rem; background: #235347; color: #FFFFFF; border: none; border-radius: 6px;">
+        <input type="text" id="challan-search" class="form-control" placeholder="Search challan or customer..." style="width: 240px; padding: 0.45rem 0.75rem; font-size: 0.85rem; border: 1px solid #7AAACE; border-radius: 6px;">
+        <button type="button" class="btn btn-primary" onclick="window.openChallanModal('invoice')" style="display: flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.9rem; font-size: 0.85rem; background: #355872; color: #FFFFFF; border: none; border-radius: 6px;">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
             <span>+ Create from Invoice</span>
         </button>
-        <button type="button" class="btn btn-secondary" onclick="window.openChallanModal('direct')" style="display: flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.9rem; font-size: 0.85rem; border: 1px solid #8EB69B; background: #FFFFFF; color: #051F20; border-radius: 6px;">
+        <button type="button" class="btn btn-secondary" onclick="window.openChallanModal('direct')" style="display: flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.9rem; font-size: 0.85rem; border: 1px solid #7AAACE; background: #FFFFFF; color: #1E293B; border-radius: 6px;">
             <span>+ Direct Challan</span>
         </button>
     </div>
 </div>
 
-<div class="card" style="background: #FFFFFF; border: 1px solid #8EB69B; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
-    <div class="card-header" style="padding: 1rem 1.25rem; background: #DAF1DE; border-bottom: 1px solid rgba(142,182,155,0.3); display: flex; justify-content: space-between; align-items: center;">
-        <h3 class="card-title" style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #051F20;">
+<div class="card" style="background: #FFFFFF; border: 1px solid #7AAACE; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+    <div class="card-header" style="padding: 1rem 1.25rem; background: #EBF5FC; border-bottom: 1px solid rgba(122,170,206,0.3); display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card-title" style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #1E293B;">
             Dispatch Challan Registry (<span id="challans-count"><?= count($challans ?? []) ?></span> Records)
         </h3>
     </div>
     <div class="table-container" style="overflow-x: auto;">
         <table class="table" id="challans-table" style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
             <thead>
-                <tr style="background: #0B2B26; color: #FFFFFF;">
+                <tr style="background: #253E52; color: #FFFFFF;">
                     <th style="padding: 0.75rem 1rem; text-align: left;">Challan #</th>
                     <th style="padding: 0.75rem 1rem; text-align: left;">Linked Invoice</th>
                     <th style="padding: 0.75rem 1rem; text-align: left;">Customer Name</th>
@@ -50,11 +50,11 @@
                     <?php foreach ($challans as $ch): ?>
                         <tr style="border-bottom: 1px solid #E2E8F0;">
                             <td style="padding: 0.75rem 1rem;">
-                                <strong style="color: #235347;"><?= e($ch['challan_number']) ?></strong>
+                                <strong style="color: #355872;"><?= e($ch['challan_number']) ?></strong>
                             </td>
                             <td style="padding: 0.75rem 1rem;">
                                 <?php if (!empty($ch['invoice_number'])): ?>
-                                    <span style="background: #DAF1DE; color: #0B2B26; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 0.8rem;">
+                                    <span style="background: #EBF5FC; color: #253E52; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 0.8rem;">
                                         <?= e($ch['invoice_number']) ?>
                                     </span>
                                 <?php else: ?>
@@ -70,7 +70,7 @@
                                 </span>
                             </td>
                             <td style="padding: 0.75rem 1rem; text-align: right;">
-                                <a href="/sales/challans/<?= (int)$ch['id'] ?>/print" target="_blank" class="btn btn-sm" style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.65rem; font-size: 0.78rem; border: 1px solid #8EB69B; background: #FFFFFF; color: #235347; border-radius: 4px; text-decoration: none; font-weight: 600;">
+                                <a href="/sales/challans/<?= (int)$ch['id'] ?>/print" target="_blank" class="btn btn-sm" style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.65rem; font-size: 0.78rem; border: 1px solid #7AAACE; background: #FFFFFF; color: #355872; border-radius: 4px; text-decoration: none; font-weight: 600;">
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
                                     <span>Print</span>
                                 </a>
@@ -90,12 +90,12 @@
 <!-- Working Delivery Challan Creation Modal with Invoice Lookup -->
 <div id="challan-modal" class="modal-backdrop" role="dialog" aria-modal="true" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; padding:1rem;">
     <div class="modal-dialog" style="background:#FFFFFF; border-radius:10px; width:100%; max-width:680px; overflow:hidden; box-shadow:0 15px 35px rgba(0,0,0,0.25); display:flex; flex-direction:column; max-height:90vh;">
-        <div class="modal-header" style="padding:1rem 1.25rem; background:#DAF1DE; border-bottom:1px solid rgba(142,182,155,0.3); display:flex; justify-content:space-between; align-items:center;">
+        <div class="modal-header" style="padding:1rem 1.25rem; background:#EBF5FC; border-bottom:1px solid rgba(122,170,206,0.3); display:flex; justify-content:space-between; align-items:center;">
             <div style="display:flex; align-items:center; gap:0.5rem;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#235347" stroke-width="2"><polygon points="12 2 19 21 12 17 5 21 12 2"></polygon></svg>
-                <h3 id="challan-modal-title" style="margin:0; font-size:1.1rem; font-weight:700; color:#051F20;">Generate Delivery Challan</h3>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#355872" stroke-width="2"><polygon points="12 2 19 21 12 17 5 21 12 2"></polygon></svg>
+                <h3 id="challan-modal-title" style="margin:0; font-size:1.1rem; font-weight:700; color:#1E293B;">Generate Delivery Challan</h3>
             </div>
-            <button type="button" class="modal-close" onclick="window.closeChallanModal()" style="background:none; border:none; font-size:1.5rem; line-height:1; cursor:pointer; color:#051F20;">&times;</button>
+            <button type="button" class="modal-close" onclick="window.closeChallanModal()" style="background:none; border:none; font-size:1.5rem; line-height:1; cursor:pointer; color:#1E293B;">&times;</button>
         </div>
 
         <form id="challan-form" onsubmit="window.saveChallan(event)" style="display:flex; flex-direction:column; overflow:hidden;">
@@ -109,7 +109,7 @@
 
                 <!-- Mode Selector Pills -->
                 <div style="display:flex; gap:0.5rem; border-bottom:1px solid #E2E8F0; padding-bottom:0.75rem;">
-                    <button type="button" id="btn-mode-invoice" onclick="window.switchChallanMode('invoice')" style="padding:0.45rem 0.9rem; font-size:0.84rem; font-weight:600; border-radius:6px; border:none; background:#235347; color:#FFFFFF; cursor:pointer; display:flex; align-items:center; gap:0.4rem;">
+                    <button type="button" id="btn-mode-invoice" onclick="window.switchChallanMode('invoice')" style="padding:0.45rem 0.9rem; font-size:0.84rem; font-weight:600; border-radius:6px; border:none; background:#355872; color:#FFFFFF; cursor:pointer; display:flex; align-items:center; gap:0.4rem;">
                         <span>📄 Create from Existing Invoice</span>
                     </button>
                     <button type="button" id="btn-mode-direct" onclick="window.switchChallanMode('direct')" style="padding:0.45rem 0.9rem; font-size:0.84rem; font-weight:600; border-radius:6px; border:1px solid #CBD5E1; background:#FFFFFF; color:#4B5563; cursor:pointer;">
@@ -119,25 +119,25 @@
 
                 <!-- Invoice Search Block (Mode: Invoice) -->
                 <div id="sec-invoice-lookup" style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:1rem;">
-                    <label style="display:block; font-size:0.8rem; font-weight:700; color:#051F20; margin-bottom:0.4rem;">
+                    <label style="display:block; font-size:0.8rem; font-weight:700; color:#1E293B; margin-bottom:0.4rem;">
                         Enter or Search Tax Invoice Number:
                     </label>
                     <div style="display:flex; gap:0.5rem;">
-                        <input type="text" id="invoice-search-input" class="form-control" placeholder="e.g. INV-2026-0001" style="flex:1; padding:0.45rem 0.75rem; border:1px solid #8EB69B; border-radius:6px; font-size:0.88rem;">
-                        <button type="button" class="btn btn-secondary" data-qr-scan="#invoice-search-input" data-qr-type="invoice" style="border:1px solid #8EB69B; background:#FFFFFF; color:#235347; padding:0.45rem 0.75rem; border-radius:6px; font-size:0.82rem; cursor:pointer;" title="Scan Invoice QR Code">
+                        <input type="text" id="invoice-search-input" class="form-control" placeholder="e.g. INV-2026-0001" style="flex:1; padding:0.45rem 0.75rem; border:1px solid #7AAACE; border-radius:6px; font-size:0.88rem;">
+                        <button type="button" class="btn btn-secondary" data-qr-scan="#invoice-search-input" data-qr-type="invoice" style="border:1px solid #7AAACE; background:#FFFFFF; color:#355872; padding:0.45rem 0.75rem; border-radius:6px; font-size:0.82rem; cursor:pointer;" title="Scan Invoice QR Code">
                             📷 Scan QR
                         </button>
-                        <button type="button" onclick="window.lookupInvoice()" id="btn-lookup-invoice" style="background:#235347; color:#FFFFFF; border:none; padding:0.45rem 1rem; border-radius:6px; font-size:0.85rem; font-weight:600; cursor:pointer;">
+                        <button type="button" onclick="window.lookupInvoice()" id="btn-lookup-invoice" style="background:#355872; color:#FFFFFF; border:none; padding:0.45rem 1rem; border-radius:6px; font-size:0.85rem; font-weight:600; cursor:pointer;">
                             Retrieve Invoice
                         </button>
                     </div>
 
                     <!-- Retrieved Invoice Summary Card -->
-                    <div id="invoice-retrieved-card" style="display:none; margin-top:0.75rem; padding:0.75rem; background:#DAF1DE; border:1px solid #8EB69B; border-radius:6px;">
+                    <div id="invoice-retrieved-card" style="display:none; margin-top:0.75rem; padding:0.75rem; background:#EBF5FC; border:1px solid #7AAACE; border-radius:6px;">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <div>
                                 <span style="font-size:0.75rem; color:#4B5563; text-transform:uppercase; font-weight:600;">Verified Invoice</span>
-                                <div style="font-weight:700; color:#051F20; font-size:0.95rem;" id="retrieved-inv-number"></div>
+                                <div style="font-weight:700; color:#1E293B; font-size:0.95rem;" id="retrieved-inv-number"></div>
                             </div>
                             <div style="text-align:right;">
                                 <span style="font-size:0.75rem; color:#4B5563;">Date</span>
@@ -149,7 +149,7 @@
 
                 <!-- Customer Details -->
                 <div class="form-group">
-                    <label for="challan-customer" style="display:block; font-size:0.8rem; font-weight:600; color:#051F20; margin-bottom:0.3rem;">
+                    <label for="challan-customer" style="display:block; font-size:0.8rem; font-weight:600; color:#1E293B; margin-bottom:0.3rem;">
                         Customer / Consignee <span style="color:#EF4444;">*</span>
                     </label>
                     <select id="challan-customer" name="customer_id" class="form-control" required style="width:100%; padding:0.45rem 0.75rem; border:1px solid #CBD5E1; border-radius:6px; font-size:0.85rem;">
@@ -162,7 +162,7 @@
 
                 <!-- Products Table Preview (Populated from Invoice) -->
                 <div id="sec-challan-items" style="display:none;">
-                    <label style="display:block; font-size:0.8rem; font-weight:700; color:#051F20; margin-bottom:0.3rem;">
+                    <label style="display:block; font-size:0.8rem; font-weight:700; color:#1E293B; margin-bottom:0.3rem;">
                         Dispatched Products &amp; Quantities:
                     </label>
                     <div style="border:1px solid #E2E8F0; border-radius:6px; overflow:hidden;">
@@ -182,13 +182,13 @@
                 <!-- Transport & Delivery Info -->
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
                     <div>
-                        <label for="challan-transport" style="display:block; font-size:0.8rem; font-weight:600; color:#051F20; margin-bottom:0.3rem;">
+                        <label for="challan-transport" style="display:block; font-size:0.8rem; font-weight:600; color:#1E293B; margin-bottom:0.3rem;">
                             Transport &amp; Vehicle Details
                         </label>
                         <input type="text" id="challan-transport" name="transport_details" class="form-control" placeholder="e.g. MH-12-AB-9812 (Tata 407)" style="width:100%; padding:0.45rem 0.75rem; border:1px solid #CBD5E1; border-radius:6px; font-size:0.85rem;">
                     </div>
                     <div>
-                        <label for="challan-notes" style="display:block; font-size:0.8rem; font-weight:600; color:#051F20; margin-bottom:0.3rem;">
+                        <label for="challan-notes" style="display:block; font-size:0.8rem; font-weight:600; color:#1E293B; margin-bottom:0.3rem;">
                             Dispatch Note / Remarks
                         </label>
                         <input type="text" id="challan-notes" name="notes" class="form-control" value="Materials dispatched in good condition" style="width:100%; padding:0.45rem 0.75rem; border:1px solid #CBD5E1; border-radius:6px; font-size:0.85rem;">
@@ -196,7 +196,7 @@
                 </div>
 
                 <div>
-                    <label for="challan-address" style="display:block; font-size:0.8rem; font-weight:600; color:#051F20; margin-bottom:0.3rem;">
+                    <label for="challan-address" style="display:block; font-size:0.8rem; font-weight:600; color:#1E293B; margin-bottom:0.3rem;">
                         Site / Delivery Address
                     </label>
                     <textarea id="challan-address" name="delivery_address" class="form-control" rows="2" placeholder="Destination site or warehouse address" style="width:100%; padding:0.45rem 0.75rem; border:1px solid #CBD5E1; border-radius:6px; font-size:0.85rem;"></textarea>
@@ -205,7 +205,7 @@
 
             <div class="modal-footer" style="padding:0.85rem 1.25rem; background:#F8FAFC; border-top:1px solid #E2E8F0; display:flex; justify-content:flex-end; gap:0.5rem;">
                 <button type="button" class="btn btn-secondary" onclick="window.closeChallanModal()" style="padding:0.45rem 1rem; border:1px solid #CBD5E1; background:#FFFFFF; color:#4B5563; border-radius:6px; font-size:0.85rem; cursor:pointer;">Cancel</button>
-                <button type="submit" id="challan-submit-btn" class="btn btn-primary" style="padding:0.45rem 1.25rem; background:#235347; color:#FFFFFF; border:none; border-radius:6px; font-size:0.85rem; font-weight:600; cursor:pointer;">Create Delivery Challan</button>
+                <button type="submit" id="challan-submit-btn" class="btn btn-primary" style="padding:0.45rem 1.25rem; background:#355872; color:#FFFFFF; border:none; border-radius:6px; font-size:0.85rem; font-weight:600; cursor:pointer;">Create Delivery Challan</button>
             </div>
         </form>
     </div>
@@ -263,13 +263,13 @@
         const secLookup = document.getElementById('sec-invoice-lookup');
 
         if (mode === 'invoice') {
-            btnInv.style.background = '#235347';
+            btnInv.style.background = '#355872';
             btnInv.style.color = '#FFFFFF';
             btnDir.style.background = '#FFFFFF';
             btnDir.style.color = '#4B5563';
             secLookup.style.display = 'block';
         } else {
-            btnDir.style.background = '#235347';
+            btnDir.style.background = '#355872';
             btnDir.style.color = '#FFFFFF';
             btnInv.style.background = '#FFFFFF';
             btnInv.style.color = '#4B5563';

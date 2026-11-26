@@ -30,8 +30,8 @@ $unit = htmlspecialchars(strtoupper($product['unit'] ?? 'PCS'));
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
             <div>
                 <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                    <h1 style="font-size: 24px; font-weight: 700; color: #051F20; margin: 0;"><?= htmlspecialchars($product['name']) ?></h1>
-                    <span class="badge" style="background: <?= $isActive ? '#DAF1DE' : '#FEE2E2' ?>; color: <?= $isActive ? '#235347' : '#991B1B' ?>; border: 1px solid <?= $isActive ? '#8EB69B' : '#FCA5A5' ?>; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 6px;">
+                    <h1 style="font-size: 24px; font-weight: 700; color: #1E293B; margin: 0;"><?= htmlspecialchars($product['name']) ?></h1>
+                    <span class="badge" style="background: <?= $isActive ? '#EBF5FC' : '#FEE2E2' ?>; color: <?= $isActive ? '#355872' : '#991B1B' ?>; border: 1px solid <?= $isActive ? '#7AAACE' : '#FCA5A5' ?>; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 6px;">
                         <?= $isActive ? '● ACTIVE' : '○ INACTIVE' ?>
                     </span>
                     <span class="badge" style="background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 6px;">
@@ -45,14 +45,14 @@ $unit = htmlspecialchars(strtoupper($product['unit'] ?? 'PCS'));
                     <?php if (!empty($product['barcode'])): ?>
                         <span>Barcode: <strong style="color: #0f172a; font-family: monospace;"><?= htmlspecialchars($product['barcode']) ?></strong></span>
                     <?php endif; ?>
-                    <span>Category: <strong style="color: #235347;"><?= htmlspecialchars($product['category_name'] ?? 'General') ?></strong></span>
+                    <span>Category: <strong style="color: #355872;"><?= htmlspecialchars($product['category_name'] ?? 'General') ?></strong></span>
                 </div>
             </div>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <a href="/products" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; font-weight: 600; color: #334155; background: #fff; text-decoration: none;">
                     &larr; Back to Catalog
                 </a>
-                <button type="button" class="btn btn-primary" onclick="openEditModal()" style="display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; background: #235347; color: #fff; cursor: pointer; box-shadow: 0 2px 6px rgba(35,83,71,0.25);">
+                <button type="button" class="btn btn-primary" onclick="openEditModal()" style="display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; background: #355872; color: #fff; cursor: pointer; box-shadow: 0 2px 6px rgba(53, 88, 114,0.25);">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
                     <span>Edit Product</span>
                 </button>
@@ -69,10 +69,10 @@ $unit = htmlspecialchars(strtoupper($product['unit'] ?? 'PCS'));
     <!-- 4 KPI Summary Cards -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
         <!-- Selling Price -->
-        <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); border-left: 4px solid #235347;">
+        <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); border-left: 4px solid #355872;">
             <div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Selling Price (Rate)</div>
-            <div style="font-size: 26px; font-weight: 700; color: #051F20; margin-top: 6px;">₹ <?= number_format($salesPrice, 2) ?></div>
-            <div style="font-size: 12px; color: #163832; margin-top: 4px;">Per <?= $unit ?> (Tax Exclusive)</div>
+            <div style="font-size: 26px; font-weight: 700; color: #1E293B; margin-top: 6px;">₹ <?= number_format($salesPrice, 2) ?></div>
+            <div style="font-size: 12px; color: #2A485E; margin-top: 4px;">Per <?= $unit ?> (Tax Exclusive)</div>
         </div>
 
         <!-- Purchase Price & Margin -->
@@ -105,9 +105,9 @@ $unit = htmlspecialchars(strtoupper($product['unit'] ?? 'PCS'));
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px; margin-bottom: 24px;">
         <!-- Left: Commercial & Product Info -->
         <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-            <div style="padding: 16px 20px; background: #0B2B26; color: #fff; display: flex; align-items: center; justify-content: space-between;">
-                <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #DAF1DE;">General & Commercial Specifications</h3>
-                <span style="font-size: 12px; color: #8EB69B;">Master Data</span>
+            <div style="padding: 16px 20px; background: #253E52; color: #fff; display: flex; align-items: center; justify-content: space-between;">
+                <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #EBF5FC;">General & Commercial Specifications</h3>
+                <span style="font-size: 12px; color: #7AAACE;">Master Data</span>
             </div>
             <div style="padding: 20px;">
                 <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
@@ -122,7 +122,7 @@ $unit = htmlspecialchars(strtoupper($product['unit'] ?? 'PCS'));
                         </tr>
                         <tr style="border-bottom: 1px solid #f1f5f9;">
                             <td style="padding: 10px 0; color: #64748b;">Category</td>
-                            <td style="padding: 10px 0; font-weight: 600; color: #235347; text-align: right;"><?= htmlspecialchars($product['category_name'] ?? 'General') ?></td>
+                            <td style="padding: 10px 0; font-weight: 600; color: #355872; text-align: right;"><?= htmlspecialchars($product['category_name'] ?? 'General') ?></td>
                         </tr>
                         <tr style="border-bottom: 1px solid #f1f5f9;">
                             <td style="padding: 10px 0; color: #64748b;">HSN / SAC Code</td>
@@ -153,9 +153,9 @@ $unit = htmlspecialchars(strtoupper($product['unit'] ?? 'PCS'));
 
         <!-- Right: Inventory & Stock Control Policies -->
         <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-            <div style="padding: 16px 20px; background: #0B2B26; color: #fff; display: flex; align-items: center; justify-content: space-between;">
-                <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #DAF1DE;">Inventory Tracking & Reorder Settings</h3>
-                <span style="font-size: 12px; color: #8EB69B;">Stock Controls</span>
+            <div style="padding: 16px 20px; background: #253E52; color: #fff; display: flex; align-items: center; justify-content: space-between;">
+                <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #EBF5FC;">Inventory Tracking & Reorder Settings</h3>
+                <span style="font-size: 12px; color: #7AAACE;">Stock Controls</span>
             </div>
             <div style="padding: 20px;">
                 <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
@@ -218,9 +218,9 @@ $unit = htmlspecialchars(strtoupper($product['unit'] ?? 'PCS'));
 <!-- Product Edit Modal -->
 <div id="product-modal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1050; align-items: center; justify-content: center; padding: 20px;">
     <div style="background: #fff; width: 100%; max-width: 680px; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
-        <div style="padding: 18px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #0B2B26; color: #fff;">
-            <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #DAF1DE;">Edit Product</h3>
-            <button type="button" onclick="closeEditModal()" style="background: none; border: none; font-size: 22px; color: #8EB69B; cursor: pointer; line-height: 1;">&times;</button>
+        <div style="padding: 18px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #253E52; color: #fff;">
+            <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #EBF5FC;">Edit Product</h3>
+            <button type="button" onclick="closeEditModal()" style="background: none; border: none; font-size: 22px; color: #7AAACE; cursor: pointer; line-height: 1;">&times;</button>
         </div>
         <form id="edit-product-form" onsubmit="submitEditProduct(event)" style="padding: 24px;">
             <input type="hidden" name="id" value="<?= (int)$product['id'] ?>">
@@ -274,7 +274,7 @@ $unit = htmlspecialchars(strtoupper($product['unit'] ?? 'PCS'));
 
             <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #e2e8f0; padding-top: 16px;">
                 <button type="button" onclick="closeEditModal()" style="padding: 9px 18px; border: 1px solid #cbd5e1; background: #fff; color: #475569; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer;">Cancel</button>
-                <button type="submit" id="btn-save-edit" style="padding: 9px 24px; border: none; background: #235347; color: #fff; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer;">Save Changes</button>
+                <button type="submit" id="btn-save-edit" style="padding: 9px 24px; border: none; background: #355872; color: #fff; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer;">Save Changes</button>
             </div>
         </form>
     </div>

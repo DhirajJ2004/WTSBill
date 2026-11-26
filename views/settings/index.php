@@ -49,21 +49,21 @@ $selectedBranchId = $selectedBranchId ?? null;
 <!-- Header -->
 <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
     <div>
-        <h1 class="page-title" style="margin: 0; font-size: 1.5rem; font-weight: 700; color: var(--text-primary, #051F20);">Company Profile &amp; Branding</h1>
+        <h1 class="page-title" style="margin: 0; font-size: 1.5rem; font-weight: 700; color: var(--text-primary, #1E293B);">Company Profile &amp; Branding</h1>
         <p class="page-subtitle" style="margin: 0.25rem 0 0 0; color: var(--text-muted, #4B5563); font-size: 0.875rem;">
             Unified configuration for organization details, GSTIN master, operating branches, and document branding assets
         </p>
     </div>
     <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
         <?php if ($isAdmin): ?>
-            <button type="button" class="btn btn-secondary" onclick="openEditCompanyModal()" style="display: flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.9rem; font-size: 0.85rem; border: 1px solid #8EB69B; border-radius: 6px; background: #FFFFFF; color: #051F20;">
+            <button type="button" class="btn btn-secondary" onclick="openEditCompanyModal()" style="display: flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.9rem; font-size: 0.85rem; border: 1px solid #7AAACE; border-radius: 6px; background: #FFFFFF; color: #1E293B;">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                 </svg>
                 <span>Edit Profile</span>
             </button>
-            <button type="button" class="btn btn-primary" onclick="openCreateBranchModal()" style="display: flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.9rem; font-size: 0.85rem; background: #235347; color: #FFFFFF; border: none; border-radius: 6px;">
+            <button type="button" class="btn btn-primary" onclick="openCreateBranchModal()" style="display: flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.9rem; font-size: 0.85rem; background: #355872; color: #FFFFFF; border: none; border-radius: 6px;">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -75,24 +75,24 @@ $selectedBranchId = $selectedBranchId ?? null;
 </div>
 
 <!-- Settings Top Navigation Tabs (Audit, Communication, and Backup moved OUT into separate modules) -->
-<div class="tabs-nav" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid #8EB69B; padding-bottom: 0.5rem; flex-wrap: wrap;">
-    <a href="/settings" class="btn btn-primary active" style="font-size: 0.85rem; padding: 0.45rem 0.9rem; display: flex; align-items: center; gap: 0.4rem; text-decoration: none; border-radius: 6px; background: #235347; color: #FFFFFF;">
+<div class="tabs-nav" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid #7AAACE; padding-bottom: 0.5rem; flex-wrap: wrap;">
+    <a href="/settings" class="btn btn-primary active" style="font-size: 0.85rem; padding: 0.45rem 0.9rem; display: flex; align-items: center; gap: 0.4rem; text-decoration: none; border-radius: 6px; background: #355872; color: #FFFFFF;">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
         <span>Company Profile &amp; Branding</span>
     </a>
-    <a href="/users" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.45rem 0.9rem; display: flex; align-items: center; gap: 0.4rem; text-decoration: none; border-radius: 6px; border: 1px solid #8EB69B; background: #FFFFFF; color: #051F20;">
+    <a href="/users" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.45rem 0.9rem; display: flex; align-items: center; gap: 0.4rem; text-decoration: none; border-radius: 6px; border: 1px solid #7AAACE; background: #FFFFFF; color: #1E293B;">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
         <span>Users &amp; Roles</span>
     </a>
-    <a href="/settings/communication" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.45rem 0.9rem; display: flex; align-items: center; gap: 0.4rem; text-decoration: none; border-radius: 6px; border: 1px solid #8EB69B; background: #FFFFFF; color: #051F20;">
+    <a href="/settings/communication" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.45rem 0.9rem; display: flex; align-items: center; gap: 0.4rem; text-decoration: none; border-radius: 6px; border: 1px solid #7AAACE; background: #FFFFFF; color: #1E293B;">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
         <span>Communication</span>
     </a>
-    <a href="/settings/backups" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.45rem 0.9rem; display: flex; align-items: center; gap: 0.4rem; text-decoration: none; border-radius: 6px; border: 1px solid #8EB69B; background: #FFFFFF; color: #051F20;">
+    <a href="/settings/backups" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.45rem 0.9rem; display: flex; align-items: center; gap: 0.4rem; text-decoration: none; border-radius: 6px; border: 1px solid #7AAACE; background: #FFFFFF; color: #1E293B;">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
         <span>Backup &amp; Disaster Recovery</span>
     </a>
-    <a href="/settings/audit-logs" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.45rem 0.9rem; display: flex; align-items: center; gap: 0.4rem; text-decoration: none; border-radius: 6px; border: 1px solid #8EB69B; background: #FFFFFF; color: #051F20;">
+    <a href="/settings/audit-logs" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.45rem 0.9rem; display: flex; align-items: center; gap: 0.4rem; text-decoration: none; border-radius: 6px; border: 1px solid #7AAACE; background: #FFFFFF; color: #1E293B;">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
         <span>Audit Trail</span>
     </a>
@@ -104,20 +104,20 @@ $selectedBranchId = $selectedBranchId ?? null;
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
 
     <!-- 1. Tenant Organization Profile Card -->
-    <div class="card" style="background: #FFFFFF; border: 1px solid #8EB69B; border-radius: 10px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+    <div class="card" style="background: #FFFFFF; border: 1px solid #7AAACE; border-radius: 10px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
         <div>
-            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: 1px solid rgba(142,182,155,0.3); background: #DAF1DE;">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: 1px solid rgba(122,170,206,0.3); background: #EBF5FC;">
                 <div style="display: flex; align-items: center; gap: 0.6rem;">
-                    <span style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; background: #235347; color: #FFFFFF;">
+                    <span style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; background: #355872; color: #FFFFFF;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
                             <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
                         </svg>
                     </span>
-                    <h3 class="card-title" style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #051F20;">Company Information &amp; GSTIN</h3>
+                    <h3 class="card-title" style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #1E293B;">Company Information &amp; GSTIN</h3>
                 </div>
                 <?php if ($isAdmin): ?>
-                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="openEditCompanyModal()" title="Edit Organization Details" style="font-size: 0.75rem; padding: 0.25rem 0.65rem; border: 1px solid #235347; color: #235347; background: transparent; border-radius: 4px; cursor: pointer;">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="openEditCompanyModal()" title="Edit Organization Details" style="font-size: 0.75rem; padding: 0.25rem 0.65rem; border: 1px solid #355872; color: #355872; background: transparent; border-radius: 4px; cursor: pointer;">
                         Edit Profile
                     </button>
                 <?php endif; ?>
@@ -126,7 +126,7 @@ $selectedBranchId = $selectedBranchId ?? null;
             <div class="card-body" style="padding: 1.25rem;">
                 <div style="margin-bottom: 1rem;">
                     <label style="color: #4B5563; font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Legal Entity Name</label>
-                    <div id="disp-company-legal-name" style="font-size: 1.15rem; font-weight: 700; color: #051F20; margin-top: 0.15rem;"><?= e($compName) ?></div>
+                    <div id="disp-company-legal-name" style="font-size: 1.15rem; font-weight: 700; color: #1E293B; margin-top: 0.15rem;"><?= e($compName) ?></div>
                     <?php if (!empty($compTrade) && $compTrade !== $compName): ?>
                         <div style="font-size: 0.85rem; color: #4B5563;">Trade Name: <?= e($compTrade) ?></div>
                     <?php endif; ?>
@@ -137,7 +137,7 @@ $selectedBranchId = $selectedBranchId ?? null;
                         <label style="color: #4B5563; font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">GSTIN</label>
                         <div id="disp-company-gstin" style="margin-top: 0.15rem;">
                             <?php if (!empty($compGstin)): ?>
-                                <code style="font-size: 0.9rem; font-weight: 600; color: #235347; background: #DAF1DE; padding: 2px 6px; border-radius: 4px;"><?= e($compGstin) ?></code>
+                                <code style="font-size: 0.9rem; font-weight: 600; color: #355872; background: #EBF5FC; padding: 2px 6px; border-radius: 4px;"><?= e($compGstin) ?></code>
                                 <div style="font-size: 0.78rem; color: #4B5563; margin-top: 0.15rem;">State: <?= e($compState) ?> (<?= e($compStateCode) ?>)</div>
                             <?php else: ?>
                                 <span style="color: #4B5563;">&mdash;</span>
@@ -148,7 +148,7 @@ $selectedBranchId = $selectedBranchId ?? null;
                         <label style="color: #4B5563; font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">PAN</label>
                         <div id="disp-company-pan" style="margin-top: 0.15rem;">
                             <?php if (!empty($compPan)): ?>
-                                <code style="font-size: 0.9rem; font-weight: 600; color: #051F20; background: #F1F5F9; padding: 2px 6px; border-radius: 4px;"><?= e($compPan) ?></code>
+                                <code style="font-size: 0.9rem; font-weight: 600; color: #1E293B; background: #F1F5F9; padding: 2px 6px; border-radius: 4px;"><?= e($compPan) ?></code>
                             <?php else: ?>
                                 <span style="color: #4B5563;">&mdash;</span>
                             <?php endif; ?>
@@ -159,17 +159,17 @@ $selectedBranchId = $selectedBranchId ?? null;
                 <div style="margin-bottom: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div>
                         <label style="color: #4B5563; font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Phone / Contact</label>
-                        <div style="font-size: 0.88rem; color: #051F20; margin-top: 0.15rem;"><?= e($compPhone ?: '—') ?></div>
+                        <div style="font-size: 0.88rem; color: #1E293B; margin-top: 0.15rem;"><?= e($compPhone ?: '—') ?></div>
                     </div>
                     <div>
                         <label style="color: #4B5563; font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Official Email</label>
-                        <div style="font-size: 0.88rem; color: #051F20; margin-top: 0.15rem;"><?= e($compEmail ?: '—') ?></div>
+                        <div style="font-size: 0.88rem; color: #1E293B; margin-top: 0.15rem;"><?= e($compEmail ?: '—') ?></div>
                     </div>
                 </div>
 
                 <div style="margin-bottom: 1rem;">
                     <label style="color: #4B5563; font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Registered Office Address</label>
-                    <div style="font-size: 0.88rem; color: #051F20; margin-top: 0.15rem; line-height: 1.4;">
+                    <div style="font-size: 0.88rem; color: #1E293B; margin-top: 0.15rem; line-height: 1.4;">
                         <?= nl2br(e($compAddress ?: '—')) ?><br>
                         <?= e($compCity) ?>, <?= e($compState) ?> &mdash; <?= e($compPincode) ?>
                     </div>
@@ -178,13 +178,13 @@ $selectedBranchId = $selectedBranchId ?? null;
                 <div style="margin-bottom: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div>
                         <label style="color: #4B5563; font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">MSME / Udyam No</label>
-                        <div style="font-size: 0.85rem; color: #051F20; margin-top: 0.15rem;"><?= e($compMsme ?: '—') ?></div>
+                        <div style="font-size: 0.85rem; color: #1E293B; margin-top: 0.15rem;"><?= e($compMsme ?: '—') ?></div>
                     </div>
                     <div>
                         <label style="color: #4B5563; font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Website</label>
                         <div style="font-size: 0.85rem; margin-top: 0.15rem;">
                             <?php if ($compWebsite): ?>
-                                <a href="<?= e($compWebsite) ?>" target="_blank" rel="noopener" style="color: #235347; text-decoration: underline;"><?= e($compWebsite) ?></a>
+                                <a href="<?= e($compWebsite) ?>" target="_blank" rel="noopener" style="color: #355872; text-decoration: underline;"><?= e($compWebsite) ?></a>
                             <?php else: ?>
                                 <span style="color: #4B5563;">—</span>
                             <?php endif; ?>
@@ -195,7 +195,7 @@ $selectedBranchId = $selectedBranchId ?? null;
                 <div style="margin-bottom: 1rem; padding: 0.75rem 0.85rem; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
                     <div>
                         <label style="color: #4B5563; font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Merchant UPI Payment QR</label>
-                        <div style="font-size: 0.92rem; font-weight: 700; color: #235347; font-family: monospace; margin-top: 0.15rem;">
+                        <div style="font-size: 0.92rem; font-weight: 700; color: #355872; font-family: monospace; margin-top: 0.15rem;">
                             <?= e($compUpi ?: 'sashted@okhdfcbank') ?>
                         </div>
                         <div style="font-size: 0.78rem; color: #64748B;">Payee: <strong><?= e($compUpiName ?: 'Dnyanesh Sashte') ?></strong></div>
@@ -213,8 +213,8 @@ $selectedBranchId = $selectedBranchId ?? null;
         </div>
 
         <?php if ($isAdmin): ?>
-            <div class="card-footer" style="padding: 0.75rem 1.25rem; border-top: 1px solid rgba(142,182,155,0.3); background: #F8FAFC; text-align: right; border-radius: 0 0 10px 10px;">
-                <button type="button" class="btn btn-sm btn-outline-primary" onclick="openEditCompanyModal()" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; border: 1px solid #235347; color: #235347; background: transparent; border-radius: 4px; cursor: pointer;">
+            <div class="card-footer" style="padding: 0.75rem 1.25rem; border-top: 1px solid rgba(122,170,206,0.3); background: #F8FAFC; text-align: right; border-radius: 0 0 10px 10px;">
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="openEditCompanyModal()" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; border: 1px solid #355872; color: #355872; background: transparent; border-radius: 4px; cursor: pointer;">
                     Update Organization Details
                 </button>
             </div>
@@ -222,19 +222,19 @@ $selectedBranchId = $selectedBranchId ?? null;
     </div>
 
     <!-- 2. Operating Branches Card -->
-    <div class="card" style="background: #FFFFFF; border: 1px solid #8EB69B; border-radius: 10px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+    <div class="card" style="background: #FFFFFF; border: 1px solid #7AAACE; border-radius: 10px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
         <div>
-            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: 1px solid rgba(142,182,155,0.3); background: #DAF1DE;">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: 1px solid rgba(122,170,206,0.3); background: #EBF5FC;">
                 <div style="display: flex; align-items: center; gap: 0.6rem;">
-                    <span style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; background: #235347; color: #FFFFFF;">
+                    <span style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; background: #355872; color: #FFFFFF;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                             <polyline points="9 22 9 12 15 12 15 22"></polyline>
                         </svg>
                     </span>
-                    <h3 class="card-title" style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #051F20;">Operating Branches &amp; Locations</h3>
+                    <h3 class="card-title" style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #1E293B;">Operating Branches &amp; Locations</h3>
                 </div>
-                <span class="badge" style="background: #235347; color: #FFFFFF; font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;">
+                <span class="badge" style="background: #355872; color: #FFFFFF; font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;">
                     <?= count($branches) ?> Active
                 </span>
             </div>
@@ -255,8 +255,8 @@ $selectedBranchId = $selectedBranchId ?? null;
                             <div style="padding: 0.85rem; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
                                     <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                        <strong style="color: #051F20; font-size: 0.95rem;"><?= e($branch['name']) ?></strong>
-                                        <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 600; background: <?= $isMain ? '#235347' : '#8EB69B' ?>; color: #FFFFFF;">
+                                        <strong style="color: #1E293B; font-size: 0.95rem;"><?= e($branch['name']) ?></strong>
+                                        <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 600; background: <?= $isMain ? '#355872' : '#7AAACE' ?>; color: #FFFFFF;">
                                             <?= $isMain ? 'MAIN HQ' : 'REGIONAL' ?>
                                         </span>
                                         <?php if ($isCurrent): ?>
@@ -264,7 +264,7 @@ $selectedBranchId = $selectedBranchId ?? null;
                                         <?php endif; ?>
                                     </div>
                                     <?php if ($isAdmin): ?>
-                                        <button type="button" class="btn btn-sm" onclick="openEditBranchModal(<?= $bId ?>)" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; border: 1px solid #CBD5E1; background: #FFFFFF; color: #051F20; border-radius: 4px; cursor: pointer;">
+                                        <button type="button" class="btn btn-sm" onclick="openEditBranchModal(<?= $bId ?>)" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; border: 1px solid #CBD5E1; background: #FFFFFF; color: #1E293B; border-radius: 4px; cursor: pointer;">
                                             Edit
                                         </button>
                                     <?php endif; ?>
@@ -286,8 +286,8 @@ $selectedBranchId = $selectedBranchId ?? null;
         </div>
 
         <?php if ($isAdmin): ?>
-            <div class="card-footer" style="padding: 0.75rem 1.25rem; border-top: 1px solid rgba(142,182,155,0.3); background: #F8FAFC; text-align: right; border-radius: 0 0 10px 10px;">
-                <button type="button" class="btn btn-sm btn-primary" onclick="openCreateBranchModal()" style="display: inline-flex; align-items: center; gap: 0.35rem; background: #235347; color: #FFFFFF; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; font-size: 0.8rem; cursor: pointer;">
+            <div class="card-footer" style="padding: 0.75rem 1.25rem; border-top: 1px solid rgba(122,170,206,0.3); background: #F8FAFC; text-align: right; border-radius: 0 0 10px 10px;">
+                <button type="button" class="btn btn-sm btn-primary" onclick="openCreateBranchModal()" style="display: inline-flex; align-items: center; gap: 0.35rem; background: #355872; color: #FFFFFF; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; font-size: 0.8rem; cursor: pointer;">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     <span>Add Branch</span>
                 </button>
@@ -299,15 +299,15 @@ $selectedBranchId = $selectedBranchId ?? null;
 <!-- ======================================================== -->
 <!-- SECTION 2: COMPANY BRANDING ASSETS (LOGO, SIGNATURE, STAMP) -->
 <!-- ======================================================== -->
-<div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; border-top: 2px solid #DAF1DE; padding-top: 1.5rem;">
+<div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; border-top: 2px solid #EBF5FC; padding-top: 1.5rem;">
     <div>
-        <h2 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #051F20;">Company Branding &amp; Visual Identity</h2>
+        <h2 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #1E293B;">Company Branding &amp; Visual Identity</h2>
         <p style="margin: 0.2rem 0 0 0; color: #4B5563; font-size: 0.82rem;">Centralized asset management for Company Logo, Authorized Signature, and Stamp across all layouts and PDFs</p>
     </div>
     <!-- Branch Scope Selector -->
     <div style="display: flex; gap: 0.5rem; align-items: center;">
-        <label for="branding-branch-select" style="font-size: 0.82rem; font-weight: 600; color: #051F20;">Branding Scope:</label>
-        <select id="branding-branch-select" onchange="window.location.href='/settings' + (this.value ? '?branch_id=' + this.value : '')" style="padding: 0.4rem 0.75rem; font-size: 0.85rem; border: 1px solid #8EB69B; border-radius: 6px; background: #FFFFFF; color: #051F20;">
+        <label for="branding-branch-select" style="font-size: 0.82rem; font-weight: 600; color: #1E293B;">Branding Scope:</label>
+        <select id="branding-branch-select" onchange="window.location.href='/settings' + (this.value ? '?branch_id=' + this.value : '')" style="padding: 0.4rem 0.75rem; font-size: 0.85rem; border: 1px solid #7AAACE; border-radius: 6px; background: #FFFFFF; color: #1E293B;">
             <option value="" <?= empty($selectedBranchId) ? 'selected' : '' ?>>🏢 Company-Wide Default</option>
             <?php foreach ($branches as $br): ?>
                 <option value="<?= (int)$br['id'] ?>" <?= ($selectedBranchId === (int)$br['id']) ? 'selected' : '' ?>>
@@ -321,15 +321,15 @@ $selectedBranchId = $selectedBranchId ?? null;
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
 
     <!-- CARD 1: COMPANY LOGO -->
-    <div class="card" style="background: #FFFFFF; border: 1px solid #8EB69B; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
-        <div style="padding: 1.1rem 1.25rem; border-bottom: 1px solid rgba(142,182,155,0.3); background: #DAF1DE; display: flex; align-items: center; justify-content: space-between;">
+    <div class="card" style="background: #FFFFFF; border: 1px solid #7AAACE; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+        <div style="padding: 1.1rem 1.25rem; border-bottom: 1px solid rgba(122,170,206,0.3); background: #EBF5FC; display: flex; align-items: center; justify-content: space-between;">
             <div style="display: flex; align-items: center; gap: 0.6rem;">
-                <span style="display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 6px; background: #235347; color: #FFFFFF;">
+                <span style="display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 6px; background: #355872; color: #FFFFFF;">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
                 </span>
-                <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #051F20;">1. Company Logo</h3>
+                <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #1E293B;">1. Company Logo</h3>
             </div>
-            <span class="badge" style="background: <?= ($b['is_custom_logo'] ?? false) ? '#235347' : '#8EB69B' ?>; color: #FFFFFF; font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;">
+            <span class="badge" style="background: <?= ($b['is_custom_logo'] ?? false) ? '#355872' : '#7AAACE' ?>; color: #FFFFFF; font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;">
                 <?= ($b['is_custom_logo'] ?? false) ? 'Custom Logo' : 'Default Logo' ?>
             </span>
         </div>
@@ -338,16 +338,16 @@ $selectedBranchId = $selectedBranchId ?? null;
             <div>
                 <!-- Logo Preview Box -->
                 <div style="margin-bottom: 1rem;">
-                    <div style="font-size: 0.8rem; font-weight: 600; color: #163832; margin-bottom: 0.4rem;">Live Preview:</div>
-                    <div id="preview-box-logo" style="width: 100%; height: 130px; border: 2px dashed #8EB69B; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: repeating-conic-gradient(#f8fafc 0% 25%, #ffffff 0% 50%) 50% / 16px 16px; overflow: hidden; padding: 10px;">
+                    <div style="font-size: 0.8rem; font-weight: 600; color: #2A485E; margin-bottom: 0.4rem;">Live Preview:</div>
+                    <div id="preview-box-logo" style="width: 100%; height: 130px; border: 2px dashed #7AAACE; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: repeating-conic-gradient(#f8fafc 0% 25%, #ffffff 0% 50%) 50% / 16px 16px; overflow: hidden; padding: 10px;">
                         <img id="img-preview-logo" src="<?= e($b['logo_url'] ?? '/assets/images/logo.png') ?>" alt="Company Logo" style="max-height: 100px; max-width: 90%; object-fit: contain; background: transparent;">
                     </div>
                 </div>
 
                 <div style="font-size: 0.76rem; color: #4B5563; line-height: 1.4; margin-bottom: 1rem; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 0.6rem 0.75rem; border-radius: 6px;">
-                    <strong style="color: #051F20;">Recommended:</strong> Square or rectangular transparent PNG, WebP, or SVG.<br>
+                    <strong style="color: #1E293B;">Recommended:</strong> Square or rectangular transparent PNG, WebP, or SVG.<br>
                     <strong>Min dimensions:</strong> 200 × 200px. <strong>Max size:</strong> 2 MB.<br>
-                    <span style="color: #235347; font-weight: 500;">✓ Updates in Sidebar, Header, Login, Invoices &amp; Quotations.</span>
+                    <span style="color: #355872; font-weight: 500;">✓ Updates in Sidebar, Header, Login, Invoices &amp; Quotations.</span>
                 </div>
             </div>
 
@@ -359,14 +359,14 @@ $selectedBranchId = $selectedBranchId ?? null;
 
                 <div style="margin-bottom: 0.75rem;">
                     <input type="file" id="file-logo" name="asset_file" accept=".png,.jpg,.jpeg,.webp,.svg" onchange="previewSelectedFile(this, 'img-preview-logo')" style="display: none;">
-                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('file-logo').click()" style="width: 100%; border: 1px solid #8EB69B; background: #FFFFFF; color: #051F20; padding: 0.5rem; font-size: 0.84rem; font-weight: 600; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('file-logo').click()" style="width: 100%; border: 1px solid #7AAACE; background: #FFFFFF; color: #1E293B; padding: 0.5rem; font-size: 0.84rem; font-weight: 600; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                         <span id="label-file-logo">Choose New Logo File...</span>
                     </button>
                 </div>
 
                 <div style="display: flex; gap: 0.5rem;">
-                    <button type="submit" id="btn-save-logo" class="btn btn-primary" style="flex: 1; background: #235347; color: #FFFFFF; border: none; padding: 0.55rem; font-size: 0.85rem; font-weight: 600; border-radius: 6px; cursor: pointer;">
+                    <button type="submit" id="btn-save-logo" class="btn btn-primary" style="flex: 1; background: #355872; color: #FFFFFF; border: none; padding: 0.55rem; font-size: 0.85rem; font-weight: 600; border-radius: 6px; cursor: pointer;">
                         Upload &amp; Apply
                     </button>
                     <?php if ($b['is_custom_logo'] ?? false): ?>
@@ -380,15 +380,15 @@ $selectedBranchId = $selectedBranchId ?? null;
     </div>
 
     <!-- CARD 2: AUTHORIZED SIGNATURE -->
-    <div class="card" style="background: #FFFFFF; border: 1px solid #8EB69B; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
-        <div style="padding: 1.1rem 1.25rem; border-bottom: 1px solid rgba(142,182,155,0.3); background: #DAF1DE; display: flex; align-items: center; justify-content: space-between;">
+    <div class="card" style="background: #FFFFFF; border: 1px solid #7AAACE; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+        <div style="padding: 1.1rem 1.25rem; border-bottom: 1px solid rgba(122,170,206,0.3); background: #EBF5FC; display: flex; align-items: center; justify-content: space-between;">
             <div style="display: flex; align-items: center; gap: 0.6rem;">
-                <span style="display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 6px; background: #235347; color: #FFFFFF;">
+                <span style="display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 6px; background: #355872; color: #FFFFFF;">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
                 </span>
-                <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #051F20;">2. Authorized Signature</h3>
+                <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #1E293B;">2. Authorized Signature</h3>
             </div>
-            <span class="badge" style="background: (!empty($b['signature_url'])) ? '#235347' : '#94A3B8'; color: #FFFFFF; font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;">
+            <span class="badge" style="background: (!empty($b['signature_url'])) ? '#355872' : '#94A3B8'; color: #FFFFFF; font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;">
                 <?= (!empty($b['signature_url'])) ? 'Configured' : 'Not Set' ?>
             </span>
         </div>
@@ -397,8 +397,8 @@ $selectedBranchId = $selectedBranchId ?? null;
             <div>
                 <!-- Signature Preview Box -->
                 <div style="margin-bottom: 1rem;">
-                    <div style="font-size: 0.8rem; font-weight: 600; color: #163832; margin-bottom: 0.4rem;">Live Preview:</div>
-                    <div id="preview-box-sig" style="width: 100%; height: 130px; border: 2px dashed #8EB69B; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: repeating-conic-gradient(#f8fafc 0% 25%, #ffffff 0% 50%) 50% / 16px 16px; overflow: hidden; padding: 10px;">
+                    <div style="font-size: 0.8rem; font-weight: 600; color: #2A485E; margin-bottom: 0.4rem;">Live Preview:</div>
+                    <div id="preview-box-sig" style="width: 100%; height: 130px; border: 2px dashed #7AAACE; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: repeating-conic-gradient(#f8fafc 0% 25%, #ffffff 0% 50%) 50% / 16px 16px; overflow: hidden; padding: 10px;">
                         <?php if (!empty($b['signature_url'])): ?>
                             <img id="img-preview-sig" src="<?= e($b['signature_url']) ?>" alt="Signature" style="max-height: 80px; max-width: 90%; object-fit: contain;">
                         <?php else: ?>
@@ -411,9 +411,9 @@ $selectedBranchId = $selectedBranchId ?? null;
                 </div>
 
                 <div style="font-size: 0.76rem; color: #4B5563; line-height: 1.4; margin-bottom: 1rem; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 0.6rem 0.75rem; border-radius: 6px;">
-                    <strong style="color: #051F20;">Recommended:</strong> Clean dark signature on transparent PNG.<br>
+                    <strong style="color: #1E293B;">Recommended:</strong> Clean dark signature on transparent PNG.<br>
                     <strong>Max size:</strong> 2 MB.<br>
-                    <span style="color: #235347; font-weight: 500;">✓ Renders dynamically in the Signatory block of bills &amp; quotes.</span>
+                    <span style="color: #355872; font-weight: 500;">✓ Renders dynamically in the Signatory block of bills &amp; quotes.</span>
                 </div>
             </div>
 
@@ -425,14 +425,14 @@ $selectedBranchId = $selectedBranchId ?? null;
 
                 <div style="margin-bottom: 0.75rem;">
                     <input type="file" id="file-sig" name="asset_file" accept=".png,.jpg,.jpeg,.webp" onchange="previewSelectedFile(this, 'img-preview-sig', 'img-preview-sig-empty')" style="display: none;">
-                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('file-sig').click()" style="width: 100%; border: 1px solid #8EB69B; background: #FFFFFF; color: #051F20; padding: 0.5rem; font-size: 0.84rem; font-weight: 600; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('file-sig').click()" style="width: 100%; border: 1px solid #7AAACE; background: #FFFFFF; color: #1E293B; padding: 0.5rem; font-size: 0.84rem; font-weight: 600; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                         <span id="label-file-sig"><?= !empty($b['signature_url']) ? 'Replace Signature File...' : 'Choose Signature Image...' ?></span>
                     </button>
                 </div>
 
                 <div style="display: flex; gap: 0.5rem;">
-                    <button type="submit" id="btn-save-sig" class="btn btn-primary" style="flex: 1; background: #235347; color: #FFFFFF; border: none; padding: 0.55rem; font-size: 0.85rem; font-weight: 600; border-radius: 6px; cursor: pointer;">
+                    <button type="submit" id="btn-save-sig" class="btn btn-primary" style="flex: 1; background: #355872; color: #FFFFFF; border: none; padding: 0.55rem; font-size: 0.85rem; font-weight: 600; border-radius: 6px; cursor: pointer;">
                         Upload &amp; Apply
                     </button>
                     <?php if (!empty($b['signature_url'])): ?>
@@ -446,15 +446,15 @@ $selectedBranchId = $selectedBranchId ?? null;
     </div>
 
     <!-- CARD 3: COMPANY STAMP / SEAL -->
-    <div class="card" style="background: #FFFFFF; border: 1px solid #8EB69B; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
-        <div style="padding: 1.1rem 1.25rem; border-bottom: 1px solid rgba(142,182,155,0.3); background: #DAF1DE; display: flex; align-items: center; justify-content: space-between;">
+    <div class="card" style="background: #FFFFFF; border: 1px solid #7AAACE; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+        <div style="padding: 1.1rem 1.25rem; border-bottom: 1px solid rgba(122,170,206,0.3); background: #EBF5FC; display: flex; align-items: center; justify-content: space-between;">
             <div style="display: flex; align-items: center; gap: 0.6rem;">
-                <span style="display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 6px; background: #235347; color: #FFFFFF;">
+                <span style="display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 6px; background: #355872; color: #FFFFFF;">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 3"></path></svg>
                 </span>
-                <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #051F20;">3. Company Official Stamp</h3>
+                <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #1E293B;">3. Company Official Stamp</h3>
             </div>
-            <span class="badge" style="background: (!empty($b['stamp_url'])) ? '#235347' : '#94A3B8'; color: #FFFFFF; font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;">
+            <span class="badge" style="background: (!empty($b['stamp_url'])) ? '#355872' : '#94A3B8'; color: #FFFFFF; font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;">
                 <?= (!empty($b['stamp_url'])) ? 'Configured' : 'Not Set' ?>
             </span>
         </div>
@@ -463,8 +463,8 @@ $selectedBranchId = $selectedBranchId ?? null;
             <div>
                 <!-- Stamp Preview Box -->
                 <div style="margin-bottom: 1rem;">
-                    <div style="font-size: 0.8rem; font-weight: 600; color: #163832; margin-bottom: 0.4rem;">Live Preview:</div>
-                    <div id="preview-box-stamp" style="width: 100%; height: 130px; border: 2px dashed #8EB69B; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: repeating-conic-gradient(#f8fafc 0% 25%, #ffffff 0% 50%) 50% / 16px 16px; overflow: hidden; padding: 10px;">
+                    <div style="font-size: 0.8rem; font-weight: 600; color: #2A485E; margin-bottom: 0.4rem;">Live Preview:</div>
+                    <div id="preview-box-stamp" style="width: 100%; height: 130px; border: 2px dashed #7AAACE; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: repeating-conic-gradient(#f8fafc 0% 25%, #ffffff 0% 50%) 50% / 16px 16px; overflow: hidden; padding: 10px;">
                         <?php if (!empty($b['stamp_url'])): ?>
                             <img id="img-preview-stamp" src="<?= e($b['stamp_url']) ?>" alt="Company Stamp" style="max-height: 90px; max-width: 90%; object-fit: contain;">
                         <?php else: ?>
@@ -477,9 +477,9 @@ $selectedBranchId = $selectedBranchId ?? null;
                 </div>
 
                 <div style="font-size: 0.76rem; color: #4B5563; line-height: 1.4; margin-bottom: 1rem; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 0.6rem 0.75rem; border-radius: 6px;">
-                    <strong style="color: #051F20;">Recommended:</strong> Circular or oval transparent PNG seal.<br>
+                    <strong style="color: #1E293B;">Recommended:</strong> Circular or oval transparent PNG seal.<br>
                     <strong>Max size:</strong> 2 MB.<br>
-                    <span style="color: #235347; font-weight: 500;">✓ Pairs neatly with the signature on invoices, quotes, &amp; POs.</span>
+                    <span style="color: #355872; font-weight: 500;">✓ Pairs neatly with the signature on invoices, quotes, &amp; POs.</span>
                 </div>
             </div>
 
@@ -491,14 +491,14 @@ $selectedBranchId = $selectedBranchId ?? null;
 
                 <div style="margin-bottom: 0.75rem;">
                     <input type="file" id="file-stamp" name="asset_file" accept=".png,.jpg,.jpeg,.webp" onchange="previewSelectedFile(this, 'img-preview-stamp', 'img-preview-stamp-empty')" style="display: none;">
-                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('file-stamp').click()" style="width: 100%; border: 1px solid #8EB69B; background: #FFFFFF; color: #051F20; padding: 0.5rem; font-size: 0.84rem; font-weight: 600; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('file-stamp').click()" style="width: 100%; border: 1px solid #7AAACE; background: #FFFFFF; color: #1E293B; padding: 0.5rem; font-size: 0.84rem; font-weight: 600; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                         <span id="label-file-stamp"><?= !empty($b['stamp_url']) ? 'Replace Stamp File...' : 'Choose Stamp Image...' ?></span>
                     </button>
                 </div>
 
                 <div style="display: flex; gap: 0.5rem;">
-                    <button type="submit" id="btn-save-stamp" class="btn btn-primary" style="flex: 1; background: #235347; color: #FFFFFF; border: none; padding: 0.55rem; font-size: 0.85rem; font-weight: 600; border-radius: 6px; cursor: pointer;">
+                    <button type="submit" id="btn-save-stamp" class="btn btn-primary" style="flex: 1; background: #355872; color: #FFFFFF; border: none; padding: 0.55rem; font-size: 0.85rem; font-weight: 600; border-radius: 6px; cursor: pointer;">
                         Upload &amp; Apply
                     </button>
                     <?php if (!empty($b['stamp_url'])): ?>
@@ -512,15 +512,15 @@ $selectedBranchId = $selectedBranchId ?? null;
     </div>
 
     <!-- CARD 4: UPI PAYMENT QR CODE -->
-    <div class="card" style="background: #FFFFFF; border: 1px solid #8EB69B; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
-        <div style="padding: 1.1rem 1.25rem; border-bottom: 1px solid rgba(142,182,155,0.3); background: #DAF1DE; display: flex; align-items: center; justify-content: space-between;">
+    <div class="card" style="background: #FFFFFF; border: 1px solid #7AAACE; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+        <div style="padding: 1.1rem 1.25rem; border-bottom: 1px solid rgba(122,170,206,0.3); background: #EBF5FC; display: flex; align-items: center; justify-content: space-between;">
             <div style="display: flex; align-items: center; gap: 0.6rem;">
-                <span style="display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 6px; background: #235347; color: #FFFFFF;">
+                <span style="display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 6px; background: #355872; color: #FFFFFF;">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                 </span>
-                <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #051F20;">4. UPI Payment QR Code</h3>
+                <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #1E293B;">4. UPI Payment QR Code</h3>
             </div>
-            <span class="badge" style="background: <?= (!empty($b['qr_code_url'])) ? '#235347' : '#8EB69B' ?>; color: #FFFFFF; font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;">
+            <span class="badge" style="background: <?= (!empty($b['qr_code_url'])) ? '#355872' : '#7AAACE' ?>; color: #FFFFFF; font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;">
                 <?= (!empty($b['qr_code_url'])) ? 'Custom QR Active' : 'Dynamic Auto-Generated' ?>
             </span>
         </div>
@@ -529,8 +529,8 @@ $selectedBranchId = $selectedBranchId ?? null;
             <div>
                 <!-- QR Code Preview Box -->
                 <div style="margin-bottom: 1rem;">
-                    <div style="font-size: 0.8rem; font-weight: 600; color: #163832; margin-bottom: 0.4rem;">Live Scannable QR:</div>
-                    <div style="height: 120px; background: #FFFFFF; border: 1.5px dashed #8EB69B; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 0.5rem; overflow: hidden;">
+                    <div style="font-size: 0.8rem; font-weight: 600; color: #2A485E; margin-bottom: 0.4rem;">Live Scannable QR:</div>
+                    <div style="height: 120px; background: #FFFFFF; border: 1.5px dashed #7AAACE; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 0.5rem; overflow: hidden;">
                         <?php if (!empty($b['qr_code_url'])): ?>
                             <img id="img-preview-qr" src="<?= e($b['qr_code_url']) ?>" alt="UPI QR Code" style="max-height: 105px; max-width: 90%; object-fit: contain; border-radius: 4px;">
                         <?php else: ?>
@@ -543,9 +543,9 @@ $selectedBranchId = $selectedBranchId ?? null;
                 </div>
 
                 <div style="font-size: 0.76rem; color: #4B5563; line-height: 1.4; margin-bottom: 1rem; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 0.6rem 0.75rem; border-radius: 6px;">
-                    <strong style="color: #051F20;">Active VPA:</strong> <code id="preview-active-vpa" style="background: #E2E8F0; padding: 1px 4px; border-radius: 3px;"><?= e($company['upi_id'] ?? '') ?></code><br>
+                    <strong style="color: #1E293B;">Active VPA:</strong> <code id="preview-active-vpa" style="background: #E2E8F0; padding: 1px 4px; border-radius: 3px;"><?= e($company['upi_id'] ?? '') ?></code><br>
                     <strong>Payee Name:</strong> <span id="preview-payee-name"><?= e($company['upi_display_name'] ?? '') ?></span><br>
-                    <span style="color: #235347; font-weight: 500;">✓ Scannable by Google Pay, PhonePe, Paytm &amp; all BHIM UPI apps.</span>
+                    <span style="color: #355872; font-weight: 500;">✓ Scannable by Google Pay, PhonePe, Paytm &amp; all BHIM UPI apps.</span>
                 </div>
                 <div id="qr-decode-status" style="display: none; font-size: 0.75rem; padding: 0.5rem 0.65rem; border-radius: 6px; margin-bottom: 0.75rem; line-height: 1.35;"></div>
             </div>
@@ -560,14 +560,14 @@ $selectedBranchId = $selectedBranchId ?? null;
 
                 <div style="margin-bottom: 0.75rem;">
                     <input type="file" id="file-qr" name="asset_file" accept=".png,.jpg,.jpeg,.webp" onchange="handleQrUploadSelection(this)" style="display: none;">
-                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('file-qr').click()" style="width: 100%; border: 1px solid #8EB69B; background: #FFFFFF; color: #051F20; padding: 0.5rem; font-size: 0.84rem; font-weight: 600; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('file-qr').click()" style="width: 100%; border: 1px solid #7AAACE; background: #FFFFFF; color: #1E293B; padding: 0.5rem; font-size: 0.84rem; font-weight: 600; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                         <span id="label-file-qr"><?= !empty($b['qr_code_url']) ? 'Replace QR Image...' : 'Choose QR Image...' ?></span>
                     </button>
                 </div>
 
                 <div style="display: flex; gap: 0.5rem;">
-                    <button type="submit" id="btn-save-qr" class="btn btn-primary" style="flex: 1; background: #235347; color: #FFFFFF; border: none; padding: 0.55rem; font-size: 0.85rem; font-weight: 600; border-radius: 6px; cursor: pointer;">
+                    <button type="submit" id="btn-save-qr" class="btn btn-primary" style="flex: 1; background: #355872; color: #FFFFFF; border: none; padding: 0.55rem; font-size: 0.85rem; font-weight: 600; border-radius: 6px; cursor: pointer;">
                         Upload &amp; Apply
                     </button>
                     <?php if (!empty($b['qr_code_url'])): ?>
@@ -584,13 +584,13 @@ $selectedBranchId = $selectedBranchId ?? null;
 <!-- ======================================================== -->
 <!-- SECTION 3: INVOICE BRANDING & DOCUMENT DISPLAY SETTINGS   -->
 <!-- ======================================================== -->
-<div class="card" style="background: #FFFFFF; border: 1px solid #8EB69B; border-radius: 10px; margin-bottom: 2rem; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
-    <div style="padding: 1.1rem 1.25rem; border-bottom: 1px solid rgba(142,182,155,0.3); background: #0B2B26; color: #FFFFFF; border-radius: 10px 10px 0 0; display: flex; align-items: center; justify-content: space-between;">
+<div class="card" style="background: #FFFFFF; border: 1px solid #7AAACE; border-radius: 10px; margin-bottom: 2rem; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+    <div style="padding: 1.1rem 1.25rem; border-bottom: 1px solid rgba(122,170,206,0.3); background: #253E52; color: #FFFFFF; border-radius: 10px 10px 0 0; display: flex; align-items: center; justify-content: space-between;">
         <div style="display: flex; align-items: center; gap: 0.6rem;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8EB69B" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-            <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #DAF1DE;">Invoice Branding &amp; Document Display Settings</h3>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7AAACE" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #EBF5FC;">Invoice Branding &amp; Document Display Settings</h3>
         </div>
-        <span style="font-size: 0.75rem; color: #8EB69B;">Fine-tune sizing and document-level inclusion rules</span>
+        <span style="font-size: 0.75rem; color: #7AAACE;">Fine-tune sizing and document-level inclusion rules</span>
     </div>
 
     <form method="POST" action="/settings/branding/settings" style="padding: 1.5rem;">
@@ -600,7 +600,7 @@ $selectedBranchId = $selectedBranchId ?? null;
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
             <!-- Sizing: Signature -->
             <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 1.1rem; border-radius: 8px;">
-                <h4 style="margin: 0 0 0.75rem 0; font-size: 0.95rem; font-weight: 700; color: #163832; display: flex; align-items: center; gap: 0.4rem;">
+                <h4 style="margin: 0 0 0.75rem 0; font-size: 0.95rem; font-weight: 700; color: #2A485E; display: flex; align-items: center; gap: 0.4rem;">
                     <span>✍️</span> Signature Sizing &amp; Position
                 </h4>
                 <div style="display: flex; gap: 0.75rem; margin-bottom: 0.75rem;">
@@ -625,7 +625,7 @@ $selectedBranchId = $selectedBranchId ?? null;
 
             <!-- Sizing: Stamp -->
             <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 1.1rem; border-radius: 8px;">
-                <h4 style="margin: 0 0 0.75rem 0; font-size: 0.95rem; font-weight: 700; color: #163832; display: flex; align-items: center; gap: 0.4rem;">
+                <h4 style="margin: 0 0 0.75rem 0; font-size: 0.95rem; font-weight: 700; color: #2A485E; display: flex; align-items: center; gap: 0.4rem;">
                     <span>⭕</span> Stamp Sizing &amp; Position
                 </h4>
                 <div style="display: flex; gap: 0.75rem; margin-bottom: 0.75rem;">
@@ -650,11 +650,11 @@ $selectedBranchId = $selectedBranchId ?? null;
 
             <!-- Document Visibility Toggles -->
             <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 1.1rem; border-radius: 8px;">
-                <h4 style="margin: 0 0 0.75rem 0; font-size: 0.95rem; font-weight: 700; color: #163832; display: flex; align-items: center; gap: 0.4rem;">
+                <h4 style="margin: 0 0 0.75rem 0; font-size: 0.95rem; font-weight: 700; color: #2A485E; display: flex; align-items: center; gap: 0.4rem;">
                     <span>📄</span> Document Inclusions
                 </h4>
                 <div style="font-size: 0.8rem; margin-bottom: 0.6rem;">
-                    <strong style="color: #051F20;">Authorized Signature:</strong>
+                    <strong style="color: #1E293B;">Authorized Signature:</strong>
                     <div style="margin: 0.35rem 0 0.5rem 0.2rem; display: flex; flex-direction: column; gap: 0.35rem;">
                         <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
                             <input type="checkbox" name="show_signature_invoice" value="1" <?= (!empty($b['show_signature_invoice'])) ? 'checked' : '' ?>>
@@ -672,7 +672,7 @@ $selectedBranchId = $selectedBranchId ?? null;
                 </div>
 
                 <div style="font-size: 0.8rem;">
-                    <strong style="color: #051F20;">Official Stamp:</strong>
+                    <strong style="color: #1E293B;">Official Stamp:</strong>
                     <div style="margin: 0.35rem 0 0 0.2rem; display: flex; flex-direction: column; gap: 0.35rem;">
                         <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
                             <input type="checkbox" name="show_stamp_invoice" value="1" <?= (!empty($b['show_stamp_invoice'])) ? 'checked' : '' ?>>
@@ -692,7 +692,7 @@ $selectedBranchId = $selectedBranchId ?? null;
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid #E2E8F0; padding-top: 1rem;">
-            <button type="submit" class="btn btn-primary" style="background: #235347; color: #FFFFFF; border: none; padding: 0.6rem 1.4rem; font-size: 0.88rem; font-weight: 600; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+            <button type="submit" class="btn btn-primary" style="background: #355872; color: #FFFFFF; border: none; padding: 0.6rem 1.4rem; font-size: 0.88rem; font-weight: 600; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
                 <span>Save Invoice Branding Settings</span>
             </button>
@@ -1169,8 +1169,8 @@ function handleQrUploadSelection(input) {
     if (statusEl) {
         statusEl.style.display = 'block';
         statusEl.style.background = '#F0FDF4';
-        statusEl.style.border = '1px solid #8EB69B';
-        statusEl.style.color = '#163832';
+        statusEl.style.border = '1px solid #7AAACE';
+        statusEl.style.color = '#2A485E';
         statusEl.innerHTML = 'Scanning QR image for UPI details...';
     }
 
@@ -1196,9 +1196,9 @@ function handleQrUploadSelection(input) {
                     if (pname && prevName) prevName.textContent = pname;
 
                     if (statusEl) {
-                        statusEl.style.background = '#DAF1DE';
-                        statusEl.style.border = '1px solid #235347';
-                        statusEl.style.color = '#051F20';
+                        statusEl.style.background = '#EBF5FC';
+                        statusEl.style.border = '1px solid #355872';
+                        statusEl.style.color = '#1E293B';
                         statusEl.innerHTML = '<strong>✓ QR Data Extracted:</strong><br>' +
                             'Payee Name: <strong>' + (pname || 'Not specified') + '</strong><br>' +
                             'UPI ID: <strong>' + (vpa || 'Not specified') + '</strong>';

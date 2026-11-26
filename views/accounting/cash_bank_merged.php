@@ -22,19 +22,19 @@ $tabs = [
     <!-- Page Header -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
         <div>
-            <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: #163832; margin-bottom: 0.25rem;">
-                <span style="color: #235347; font-weight: 500;">Money & Liquidity</span>
+            <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: #2A485E; margin-bottom: 0.25rem;">
+                <span style="color: #355872; font-weight: 500;">Money & Liquidity</span>
                 <span>/</span>
-                <span style="color: #051F20; font-weight: 600;">Cash & Bank</span>
+                <span style="color: #1E293B; font-weight: 600;">Cash & Bank</span>
             </div>
-            <h1 style="font-size: 1.5rem; font-weight: 700; color: #051F20; margin: 0;">Cash & Bank Books</h1>
-            <p style="font-size: 0.85rem; color: #163832; margin: 0.25rem 0 0 0;">Unified treasury registers for counter cash collections, petty cash, bank ledger accounts, and deposits.</p>
+            <h1 style="font-size: 1.5rem; font-weight: 700; color: #1E293B; margin: 0;">Cash & Bank Books</h1>
+            <p style="font-size: 0.85rem; color: #2A485E; margin: 0.25rem 0 0 0;">Unified treasury registers for counter cash collections, petty cash, bank ledger accounts, and deposits.</p>
         </div>
         <div style="display: flex; gap: 0.65rem;">
-            <button type="button" onclick="window.print()" class="btn btn-secondary" style="background: #DAF1DE; border: 1.5px solid #8EB69B; color: #235347; padding: 0.55rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">
+            <button type="button" onclick="window.print()" class="btn btn-secondary" style="background: #EBF5FC; border: 1.5px solid #7AAACE; color: #355872; padding: 0.55rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">
                 Print Register
             </button>
-            <a href="/payments" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1.15rem; border-radius: 8px; font-weight: 600; background: #235347; color: #FFFFFF; text-decoration: none; font-size: 0.85rem;">
+            <a href="/payments" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1.15rem; border-radius: 8px; font-weight: 600; background: #355872; color: #FFFFFF; text-decoration: none; font-size: 0.85rem;">
                 + Record Payment / Receipt
             </a>
         </div>

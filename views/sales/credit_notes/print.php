@@ -54,7 +54,7 @@ if ($subTotal <= 0 && $grandTotal > 0) {
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             font-size: 12px;
-            color: #051F20;
+            color: #1E293B;
             background: #F1F5F9;
             margin: 0;
             padding: 20px;
@@ -87,14 +87,14 @@ if ($subTotal <= 0 && $grandTotal > 0) {
         .cn-title-block h1 {
             margin: 0;
             font-size: 22px;
-            color: #235347;
+            color: #355872;
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
         .cn-number-pill {
             display: inline-block;
-            background: #DAF1DE;
-            color: #0B2B26;
+            background: #EBF5FC;
+            color: #253E52;
             font-weight: 700;
             font-size: 13px;
             padding: 4px 10px;
@@ -106,8 +106,8 @@ if ($subTotal <= 0 && $grandTotal > 0) {
             grid-template-columns: 1fr 1fr;
             gap: 20px;
             margin-bottom: 22px;
-            border-top: 2px solid #DAF1DE;
-            border-bottom: 2px solid #DAF1DE;
+            border-top: 2px solid #EBF5FC;
+            border-bottom: 2px solid #EBF5FC;
             padding: 14px 0;
         }
         .info-col h4 {
@@ -123,7 +123,7 @@ if ($subTotal <= 0 && $grandTotal > 0) {
             margin-bottom: 20px;
         }
         .items-table th {
-            background: #0B2B26;
+            background: #253E52;
             color: #ffffff;
             text-align: left;
             padding: 8px 10px;
@@ -170,12 +170,12 @@ if ($subTotal <= 0 && $grandTotal > 0) {
             padding: 6px 10px;
         }
         .totals-table tr.grand-total-row td {
-            background: #DAF1DE;
-            color: #051F20;
+            background: #EBF5FC;
+            color: #1E293B;
             font-size: 14px;
             font-weight: 700;
-            border-top: 2px solid #235347;
-            border-bottom: 2px solid #235347;
+            border-top: 2px solid #355872;
+            border-bottom: 2px solid #355872;
         }
         .signatory-section {
             display: flex;
@@ -217,8 +217,8 @@ if ($subTotal <= 0 && $grandTotal > 0) {
             cursor: pointer;
             text-decoration: none;
         }
-        .btn-print { background: #235347; color: #ffffff; border: none; }
-        .btn-back { background: #ffffff; color: #051F20; border: 1px solid #CBD5E1; }
+        .btn-print { background: #355872; color: #ffffff; border: none; }
+        .btn-back { background: #ffffff; color: #1E293B; border: 1px solid #CBD5E1; }
         @media print {
             body { background: #ffffff; padding: 0; }
             .cn-wrapper { box-shadow: none; border: none; padding: 0; }
@@ -244,7 +244,7 @@ if ($subTotal <= 0 && $grandTotal > 0) {
                     <?php if (!empty($logoUrl)): ?>
                         <img src="<?= htmlspecialchars($logoUrl) ?>" alt="Logo" class="company-logo"><br>
                     <?php endif; ?>
-                    <strong style="font-size: 15px; color: #051F20;"><?= htmlspecialchars($compName) ?></strong><br>
+                    <strong style="font-size: 15px; color: #1E293B;"><?= htmlspecialchars($compName) ?></strong><br>
                     <span style="color: #4B5563; font-size: 11px;">
                         <?= htmlspecialchars($compAddress) ?><?= !empty($compCity) ? ', ' . htmlspecialchars($compCity) : '' ?>, <?= htmlspecialchars($compState) ?> <?= htmlspecialchars($compPincode) ?><br>
                         <?php if ($compGstin): ?>GSTIN: <strong><?= htmlspecialchars($compGstin) ?></strong> &bull; <?php endif; ?>
@@ -257,7 +257,7 @@ if ($subTotal <= 0 && $grandTotal > 0) {
                     <div class="cn-number-pill"><?= htmlspecialchars($cn['credit_note_number'] ?? 'CN') ?></div>
                     <div style="margin-top: 6px; font-size: 12px; color: #4B5563;">
                         Credit Note Date: <strong><?= date('d M Y', strtotime($cn['credit_note_date'] ?? 'now')) ?></strong><br>
-                        Original Invoice: <strong style="color: #235347;"><?= htmlspecialchars($cn['invoice_number'] ?? 'N/A') ?></strong><br>
+                        Original Invoice: <strong style="color: #355872;"><?= htmlspecialchars($cn['invoice_number'] ?? 'N/A') ?></strong><br>
                         Status: <strong style="color: #10B981;"><?= htmlspecialchars(strtoupper($cn['status'] ?? 'APPROVED')) ?></strong>
                     </div>
                 </td>
@@ -268,7 +268,7 @@ if ($subTotal <= 0 && $grandTotal > 0) {
         <div class="details-grid">
             <div class="info-col">
                 <h4>Issued To (Customer / Buyer):</h4>
-                <strong style="font-size: 14px; color: #051F20;"><?= htmlspecialchars($cn['customer_name'] ?? 'Direct Customer') ?></strong><br>
+                <strong style="font-size: 14px; color: #1E293B;"><?= htmlspecialchars($cn['customer_name'] ?? 'Direct Customer') ?></strong><br>
                 <span style="color: #4B5563; font-size: 12px;">
                     <?php if (!empty($cn['customer_company']) && $cn['customer_company'] !== $cn['customer_name']): ?>
                         <?= htmlspecialchars($cn['customer_company']) ?><br>
@@ -282,7 +282,7 @@ if ($subTotal <= 0 && $grandTotal > 0) {
 
             <div class="info-col">
                 <h4>Adjustment &amp; Reversal Details:</h4>
-                <span style="font-size: 12px; color: #051F20;">
+                <span style="font-size: 12px; color: #1E293B;">
                     Reason for Issuance: <strong><?= htmlspecialchars($cn['reason'] ?: 'Sales Return / Commercial Adjustment') ?></strong><br>
                     Original Tax Invoice #: <strong><?= htmlspecialchars($cn['invoice_number'] ?? 'N/A') ?></strong><br>
                     Place of Supply: <strong><?= htmlspecialchars($cn['customer_state'] ?? 'Maharashtra') ?></strong><br>
@@ -388,7 +388,7 @@ if ($subTotal <= 0 && $grandTotal > 0) {
                         <tr style="background: #F8FAFC; font-weight: 700;">
                             <td>Total Reversible Tax</td>
                             <td></td>
-                            <td style="text-align: right; color: #235347;">₹<?= number_format($totalTax, 2) ?></td>
+                            <td style="text-align: right; color: #355872;">₹<?= number_format($totalTax, 2) ?></td>
                         </tr>
                     </tbody>
                 </table>
@@ -423,7 +423,7 @@ if ($subTotal <= 0 && $grandTotal > 0) {
                 <div style="height: 55px; display: flex; align-items: flex-end; justify-content: center;">
                     <span style="border-bottom: 1px solid #CBD5E1; width: 150px; display: block;"></span>
                 </div>
-                <div style="font-size: 11px; font-weight: 600; color: #051F20; margin-top: 6px;">Receiver's Acknowledgment</div>
+                <div style="font-size: 11px; font-weight: 600; color: #1E293B; margin-top: 6px;">Receiver's Acknowledgment</div>
             </div>
 
             <div class="signatory-box">
@@ -435,7 +435,7 @@ if ($subTotal <= 0 && $grandTotal > 0) {
                         <img src="<?= htmlspecialchars($sigUrl) ?>" alt="Signature" class="sig-img">
                     <?php endif; ?>
                 </div>
-                <div style="font-size: 11px; font-weight: 600; color: #051F20; margin-top: 6px;">
+                <div style="font-size: 11px; font-weight: 600; color: #1E293B; margin-top: 6px;">
                     For <?= htmlspecialchars($compName) ?><br>
                     <span style="font-weight: 400; color: #64748B;">Authorized Signatory</span>
                 </div>

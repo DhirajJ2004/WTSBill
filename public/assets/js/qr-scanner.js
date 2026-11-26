@@ -81,15 +81,15 @@
             if (document.getElementById('wtsbill-qr-modal')) return;
 
             const modalHtml = `
-            <div id="wtsbill-qr-modal" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(5,31,32,0.85); backdrop-filter:blur(4px); align-items:center; justify-content:center; padding:1rem;">
-                <div style="background:#FFFFFF; border-radius:12px; width:100%; max-width:480px; overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,0.4); border:1px solid #8EB69B; display:flex; flex-direction:column;">
+            <div id="wtsbill-qr-modal" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(30, 41, 59,0.85); backdrop-filter:blur(4px); align-items:center; justify-content:center; padding:1rem;">
+                <div style="background:#FFFFFF; border-radius:12px; width:100%; max-width:480px; overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,0.4); border:1px solid #7AAACE; display:flex; flex-direction:column;">
                     <!-- Modal Header -->
-                    <div style="padding:1rem 1.25rem; background:#0B2B26; color:#DAF1DE; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="padding:1rem 1.25rem; background:#253E52; color:#EBF5FC; display:flex; justify-content:space-between; align-items:center;">
                         <div style="display:flex; align-items:center; gap:0.5rem;">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8EB69B" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7AAACE" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
                             <h3 id="wtsbill-qr-title" style="margin:0; font-size:1.05rem; font-weight:700; color:#FFFFFF;">Scan QR / Barcode</h3>
                         </div>
-                        <button type="button" onclick="WTSBill.QRScanner.close()" style="background:none; border:none; color:#DAF1DE; font-size:1.5rem; line-height:1; cursor:pointer; padding:0 0.25rem;">&times;</button>
+                        <button type="button" onclick="WTSBill.QRScanner.close()" style="background:none; border:none; color:#EBF5FC; font-size:1.5rem; line-height:1; cursor:pointer; padding:0 0.25rem;">&times;</button>
                     </div>
 
                     <!-- Viewport Wrap -->
@@ -98,16 +98,16 @@
                         <canvas id="wtsbill-qr-canvas" style="display:none;"></canvas>
 
                         <!-- Scanning Box Overlay -->
-                        <div id="wtsbill-qr-reticle" style="position:absolute; width:220px; height:220px; border:2px solid #8EB69B; border-radius:12px; box-shadow:0 0 0 4000px rgba(0,0,0,0.45); pointer-events:none;">
-                            <div style="position:absolute; top:0; left:0; width:20px; height:20px; border-top:4px solid #DAF1DE; border-left:4px solid #DAF1DE; border-top-left-radius:8px;"></div>
-                            <div style="position:absolute; top:0; right:0; width:20px; height:20px; border-top:4px solid #DAF1DE; border-right:4px solid #DAF1DE; border-top-right-radius:8px;"></div>
-                            <div style="position:absolute; bottom:0; left:0; width:20px; height:20px; border-bottom:4px solid #DAF1DE; border-left:4px solid #DAF1DE; border-bottom-left-radius:8px;"></div>
-                            <div style="position:absolute; bottom:0; right:0; width:20px; height:20px; border-bottom:4px solid #DAF1DE; border-right:4px solid #DAF1DE; border-bottom-right-radius:8px;"></div>
+                        <div id="wtsbill-qr-reticle" style="position:absolute; width:220px; height:220px; border:2px solid #7AAACE; border-radius:12px; box-shadow:0 0 0 4000px rgba(0,0,0,0.45); pointer-events:none;">
+                            <div style="position:absolute; top:0; left:0; width:20px; height:20px; border-top:4px solid #EBF5FC; border-left:4px solid #EBF5FC; border-top-left-radius:8px;"></div>
+                            <div style="position:absolute; top:0; right:0; width:20px; height:20px; border-top:4px solid #EBF5FC; border-right:4px solid #EBF5FC; border-top-right-radius:8px;"></div>
+                            <div style="position:absolute; bottom:0; left:0; width:20px; height:20px; border-bottom:4px solid #EBF5FC; border-left:4px solid #EBF5FC; border-bottom-left-radius:8px;"></div>
+                            <div style="position:absolute; bottom:0; right:0; width:20px; height:20px; border-bottom:4px solid #EBF5FC; border-right:4px solid #EBF5FC; border-bottom-right-radius:8px;"></div>
                             <div id="wtsbill-qr-laser" style="position:absolute; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, #10B981, transparent); animation:qrScanLaser 2s linear infinite;"></div>
                         </div>
 
                         <!-- Status Message -->
-                        <div id="wtsbill-qr-status" style="position:absolute; bottom:12px; left:16px; right:16px; background:rgba(5,31,32,0.85); color:#DAF1DE; padding:0.4rem 0.75rem; border-radius:6px; font-size:0.75rem; text-align:center;">
+                        <div id="wtsbill-qr-status" style="position:absolute; bottom:12px; left:16px; right:16px; background:rgba(30, 41, 59,0.85); color:#EBF5FC; padding:0.4rem 0.75rem; border-radius:6px; font-size:0.75rem; text-align:center;">
                             Point camera at a QR code or barcode...
                         </div>
                     </div>
@@ -118,7 +118,7 @@
                             <button type="button" id="wtsbill-qr-switch-btn" onclick="WTSBill.QRScanner.switchCamera()" class="btn btn-sm" style="display:none; padding:0.4rem 0.75rem; font-size:0.78rem; border:1px solid #CBD5E1; background:#FFFFFF; border-radius:6px; cursor:pointer;" title="Switch Camera">
                                 🔄 Flip Camera
                             </button>
-                            <label style="display:inline-flex; align-items:center; gap:0.35rem; padding:0.4rem 0.75rem; font-size:0.78rem; border:1px solid #8EB69B; background:#FFFFFF; color:#235347; border-radius:6px; cursor:pointer; font-weight:600;">
+                            <label style="display:inline-flex; align-items:center; gap:0.35rem; padding:0.4rem 0.75rem; font-size:0.78rem; border:1px solid #7AAACE; background:#FFFFFF; color:#355872; border-radius:6px; cursor:pointer; font-weight:600;">
                                 <input type="file" id="wtsbill-qr-file-input" accept="image/*" style="display:none;" onchange="WTSBill.QRScanner.handleImageFile(this)">
                                 📁 Upload Image
                             </label>
@@ -324,7 +324,7 @@
             if (reticle) {
                 reticle.style.borderColor = '#10B981';
                 setTimeout(() => {
-                    reticle.style.borderColor = '#8EB69B';
+                    reticle.style.borderColor = '#7AAACE';
                     this.close();
                 }, 400);
             } else {
@@ -542,8 +542,8 @@
                 statusEl.style.background = 'rgba(16, 185, 129, 0.95)';
                 statusEl.style.color = '#FFFFFF';
             } else {
-                statusEl.style.background = 'rgba(5, 31, 32, 0.85)';
-                statusEl.style.color = '#DAF1DE';
+                statusEl.style.background = 'rgba(30, 41, 59, 0.85)';
+                statusEl.style.color = '#EBF5FC';
             }
         },
 

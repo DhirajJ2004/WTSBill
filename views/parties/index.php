@@ -34,7 +34,7 @@ $cities = $cities ?? [];
             </p>
         </div>
         <div style="display: flex; gap: 0.75rem; align-items: center;">
-            <button type="button" class="btn btn-primary" onclick="window.openPartyModal()" style="display: inline-flex; align-items: center; gap: 0.5rem; background: #235347; border: none; padding: 0.6rem 1.15rem; font-size: 0.88rem; font-weight: 600; border-radius: 8px; color: #FFFFFF; cursor: pointer; box-shadow: 0 2px 4px rgba(35,83,71,0.25);">
+            <button type="button" class="btn btn-primary" onclick="window.openPartyModal()" style="display: inline-flex; align-items: center; gap: 0.5rem; background: #355872; border: none; padding: 0.6rem 1.15rem; font-size: 0.88rem; font-weight: 600; border-radius: 8px; color: #FFFFFF; cursor: pointer; box-shadow: 0 2px 4px rgba(53, 88, 114,0.25);">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 <span>Add New Party</span>
             </button>
@@ -43,19 +43,19 @@ $cities = $cities ?? [];
 
     <!-- TYPE PILL TABS -->
     <div style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; border-bottom: 2px solid #E2E8F0; padding-bottom: 0.75rem;">
-        <a href="<?= e(buildPartyFilterUrl(['type' => 'all', 'page' => 1])) ?>" class="party-tab-pill <?= $currentType === 'all' ? 'active' : '' ?>" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.86rem; font-weight: 600; text-decoration: none; <?= $currentType === 'all' ? 'background: #235347; color: #FFFFFF;' : 'background: #F1F5F9; color: #475569;' ?>">
+        <a href="<?= e(buildPartyFilterUrl(['type' => 'all', 'page' => 1])) ?>" class="party-tab-pill <?= $currentType === 'all' ? 'active' : '' ?>" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.86rem; font-weight: 600; text-decoration: none; <?= $currentType === 'all' ? 'background: #355872; color: #FFFFFF;' : 'background: #F1F5F9; color: #475569;' ?>">
             <span>All Parties</span>
             <span style="font-size: 0.75rem; padding: 2px 7px; border-radius: 10px; <?= $currentType === 'all' ? 'background: rgba(255,255,255,0.25); color: #fff;' : 'background: #E2E8F0; color: #64748B;' ?>"><?= (int)$counts['all'] ?></span>
         </a>
-        <a href="<?= e(buildPartyFilterUrl(['type' => 'customer', 'page' => 1])) ?>" class="party-tab-pill <?= $currentType === 'customer' ? 'active' : '' ?>" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.86rem; font-weight: 600; text-decoration: none; <?= $currentType === 'customer' ? 'background: #235347; color: #FFFFFF;' : 'background: #F1F5F9; color: #475569;' ?>">
+        <a href="<?= e(buildPartyFilterUrl(['type' => 'customer', 'page' => 1])) ?>" class="party-tab-pill <?= $currentType === 'customer' ? 'active' : '' ?>" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.86rem; font-weight: 600; text-decoration: none; <?= $currentType === 'customer' ? 'background: #355872; color: #FFFFFF;' : 'background: #F1F5F9; color: #475569;' ?>">
             <span>Customers</span>
             <span style="font-size: 0.75rem; padding: 2px 7px; border-radius: 10px; <?= $currentType === 'customer' ? 'background: rgba(255,255,255,0.25); color: #fff;' : 'background: #E2E8F0; color: #64748B;' ?>"><?= (int)$counts['customers'] ?></span>
         </a>
-        <a href="<?= e(buildPartyFilterUrl(['type' => 'supplier', 'page' => 1])) ?>" class="party-tab-pill <?= $currentType === 'supplier' ? 'active' : '' ?>" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.86rem; font-weight: 600; text-decoration: none; <?= $currentType === 'supplier' ? 'background: #235347; color: #FFFFFF;' : 'background: #F1F5F9; color: #475569;' ?>">
+        <a href="<?= e(buildPartyFilterUrl(['type' => 'supplier', 'page' => 1])) ?>" class="party-tab-pill <?= $currentType === 'supplier' ? 'active' : '' ?>" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.86rem; font-weight: 600; text-decoration: none; <?= $currentType === 'supplier' ? 'background: #355872; color: #FFFFFF;' : 'background: #F1F5F9; color: #475569;' ?>">
             <span>Suppliers</span>
             <span style="font-size: 0.75rem; padding: 2px 7px; border-radius: 10px; <?= $currentType === 'supplier' ? 'background: rgba(255,255,255,0.25); color: #fff;' : 'background: #E2E8F0; color: #64748B;' ?>"><?= (int)$counts['suppliers'] ?></span>
         </a>
-        <a href="<?= e(buildPartyFilterUrl(['type' => 'both', 'page' => 1])) ?>" class="party-tab-pill <?= $currentType === 'both' ? 'active' : '' ?>" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.86rem; font-weight: 600; text-decoration: none; <?= $currentType === 'both' ? 'background: #235347; color: #FFFFFF;' : 'background: #F1F5F9; color: #475569;' ?>">
+        <a href="<?= e(buildPartyFilterUrl(['type' => 'both', 'page' => 1])) ?>" class="party-tab-pill <?= $currentType === 'both' ? 'active' : '' ?>" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.86rem; font-weight: 600; text-decoration: none; <?= $currentType === 'both' ? 'background: #355872; color: #FFFFFF;' : 'background: #F1F5F9; color: #475569;' ?>">
             <span>Both (Customer &amp; Supplier)</span>
             <span style="font-size: 0.75rem; padding: 2px 7px; border-radius: 10px; <?= $currentType === 'both' ? 'background: rgba(255,255,255,0.25); color: #fff;' : 'background: #E2E8F0; color: #64748B;' ?>"><?= (int)$counts['both'] ?></span>
         </a>
@@ -116,7 +116,7 @@ $cities = $cities ?? [];
 
             <!-- Action Buttons -->
             <div style="display: flex; gap: 0.5rem;">
-                <button type="submit" class="btn" style="background: #235347; color: #FFFFFF; font-size: 0.85rem; font-weight: 600; padding: 0.5rem 1rem; border-radius: 6px; border: none; cursor: pointer;">
+                <button type="submit" class="btn" style="background: #355872; color: #FFFFFF; font-size: 0.85rem; font-weight: 600; padding: 0.5rem 1rem; border-radius: 6px; border: none; cursor: pointer;">
                     Filter
                 </button>
                 <a href="/parties" class="btn btn-secondary" style="background: #E2E8F0; color: #475569; font-size: 0.85rem; font-weight: 600; padding: 0.5rem 0.85rem; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;" title="Clear all filters">
@@ -132,7 +132,7 @@ $cities = $cities ?? [];
         <div class="party-table-responsive" id="partyTableWrapper" style="overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch;">
             <table class="table party-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.83rem;">
                 <thead>
-                    <tr style="background: #0B2B26; color: #DAF1DE; border-bottom: 2px solid #235347; font-size: 0.77rem; text-transform: uppercase; letter-spacing: 0.03em;">
+                    <tr style="background: #253E52; color: #EBF5FC; border-bottom: 2px solid #355872; font-size: 0.77rem; text-transform: uppercase; letter-spacing: 0.03em;">
                         <th style="padding: 0.65rem 0.75rem; font-weight: 600; white-space: nowrap;">Party Name</th>
                         <th style="padding: 0.65rem 0.65rem; font-weight: 600; white-space: nowrap;">Code</th>
                         <th style="padding: 0.65rem 0.65rem; font-weight: 600; text-align: center; white-space: nowrap;">Type</th>
@@ -162,7 +162,7 @@ $cities = $cities ?? [];
                                 $badgeStyle = match ($pType) {
                                     'Both' => 'background: #E0E7FF; color: #4338CA; border: 1px solid #C7D2FE;',
                                     'Supplier' => 'background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A;',
-                                    default => 'background: #DAF1DE; color: #163832; border: 1px solid #8EB69B;',
+                                    default => 'background: #EBF5FC; color: #2A485E; border: 1px solid #7AAACE;',
                                 };
 
                                 $balance = (float)($p['current_balance'] ?? 0.0);
@@ -179,7 +179,7 @@ $cities = $cities ?? [];
                             <tr style="background: <?= $rowBg ?>; border-bottom: 1px solid #E2E8F0; transition: background 0.15s ease;" onmouseover="this.style.background='#F1F5F9'" onmouseout="this.style.background='<?= $rowBg ?>'">
                                 <!-- Name -->
                                 <td style="padding: 0.6rem 0.75rem; font-weight: 600; min-width: 140px; max-width: 180px;">
-                                    <a href="/parties/<?= (int)$p['id'] ?>" style="color: #0F172A; text-decoration: none; word-break: break-word;" onmouseover="this.style.color='#235347'; this.style.textDecoration='underline';" onmouseout="this.style.color='#0F172A'; this.style.textDecoration='none';">
+                                    <a href="/parties/<?= (int)$p['id'] ?>" style="color: #0F172A; text-decoration: none; word-break: break-word;" onmouseover="this.style.color='#355872'; this.style.textDecoration='underline';" onmouseout="this.style.color='#0F172A'; this.style.textDecoration='none';">
                                         <?= e($p['name']) ?>
                                     </a>
                                     <?php if (!empty($p['company_name']) && $p['company_name'] !== $p['name']): ?>
@@ -242,7 +242,7 @@ $cities = $cities ?? [];
                                 <td style="padding: 0.6rem 0.75rem; text-align: center; white-space: nowrap;">
                                     <div style="display: inline-flex; gap: 0.35rem; align-items: center; justify-content: center;">
                                         <!-- View Profile -->
-                                        <a href="/parties/<?= (int)$p['id'] ?>" class="btn-action" title="View 360° Profile" style="color: #235347; padding: 4px; display: inline-flex; border-radius: 4px;" onmouseover="this.style.background='#E2E8F0'" onmouseout="this.style.background='transparent'">
+                                        <a href="/parties/<?= (int)$p['id'] ?>" class="btn-action" title="View 360° Profile" style="color: #355872; padding: 4px; display: inline-flex; border-radius: 4px;" onmouseover="this.style.background='#E2E8F0'" onmouseout="this.style.background='transparent'">
                                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                         </a>
 
@@ -282,7 +282,7 @@ $cities = $cities ?? [];
                     <?php endif; ?>
 
                     <?php for ($i = max(1, $pagination['page'] - 2); $i <= min($pagination['total_pages'], $pagination['page'] + 2); $i++): ?>
-                        <a href="<?= e(buildPartyFilterUrl(['page' => $i])) ?>" class="btn-page <?= $i === $pagination['page'] ? 'active' : '' ?>" style="padding: 0.35rem 0.65rem; border: 1px solid <?= $i === $pagination['page'] ? '#235347' : '#CBD5E1' ?>; border-radius: 4px; background: <?= $i === $pagination['page'] ? '#235347' : '#FFFFFF' ?>; color: <?= $i === $pagination['page'] ? '#FFFFFF' : '#334155' ?>; font-size: 0.82rem; text-decoration: none; font-weight: <?= $i === $pagination['page'] ? '600' : '400' ?>;"><?= $i ?></a>
+                        <a href="<?= e(buildPartyFilterUrl(['page' => $i])) ?>" class="btn-page <?= $i === $pagination['page'] ? 'active' : '' ?>" style="padding: 0.35rem 0.65rem; border: 1px solid <?= $i === $pagination['page'] ? '#355872' : '#CBD5E1' ?>; border-radius: 4px; background: <?= $i === $pagination['page'] ? '#355872' : '#FFFFFF' ?>; color: <?= $i === $pagination['page'] ? '#FFFFFF' : '#334155' ?>; font-size: 0.82rem; text-decoration: none; font-weight: <?= $i === $pagination['page'] ? '600' : '400' ?>;"><?= $i ?></a>
                     <?php endfor; ?>
 
                     <?php if ($pagination['page'] < $pagination['total_pages']): ?>
@@ -297,15 +297,15 @@ $cities = $cities ?? [];
 <!-- ============================================================ -->
 <!-- UNIFIED ADD / EDIT PARTY MODAL -->
 <!-- ============================================================ -->
-<div id="partyModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(5, 31, 32, 0.7); z-index: 2000; align-items: center; justify-content: center; padding: 1rem; overflow-y: auto;">
+<div id="partyModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(30, 41, 59, 0.7); z-index: 2000; align-items: center; justify-content: center; padding: 1rem; overflow-y: auto;">
     <div style="background: #FFFFFF; border-radius: 12px; width: 100%; max-width: 780px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.4); border: 1px solid #E2E8F0; margin: auto;">
         <!-- Modal Header -->
-        <div style="padding: 1.15rem 1.5rem; background: #0B2B26; color: #DAF1DE; border-top-left-radius: 12px; border-top-right-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="padding: 1.15rem 1.5rem; background: #253E52; color: #EBF5FC; border-top-left-radius: 12px; border-top-right-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; align-items: center; gap: 0.65rem;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8EB69B" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7AAACE" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                 <h3 id="partyModalTitle" style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #FFFFFF;">Add New Party</h3>
             </div>
-            <button type="button" onclick="window.closePartyModal()" style="background: none; border: none; color: #DAF1DE; cursor: pointer; font-size: 1.3rem; line-height: 1;" title="Close">&times;</button>
+            <button type="button" onclick="window.closePartyModal()" style="background: none; border: none; color: #EBF5FC; cursor: pointer; font-size: 1.3rem; line-height: 1;" title="Close">&times;</button>
         </div>
 
         <!-- Notification Banner -->
@@ -324,15 +324,15 @@ $cities = $cities ?? [];
                     </label>
                     <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
                         <label style="display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; font-size: 0.86rem; color: #1E293B;">
-                            <input type="radio" name="party_type" value="Customer" checked id="ptypeCustomer" style="accent-color: #235347;">
+                            <input type="radio" name="party_type" value="Customer" checked id="ptypeCustomer" style="accent-color: #355872;">
                             <span><strong>Customer</strong> (Buyer)</span>
                         </label>
                         <label style="display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; font-size: 0.86rem; color: #1E293B;">
-                            <input type="radio" name="party_type" value="Supplier" id="ptypeSupplier" style="accent-color: #235347;">
+                            <input type="radio" name="party_type" value="Supplier" id="ptypeSupplier" style="accent-color: #355872;">
                             <span><strong>Supplier</strong> (Vendor)</span>
                         </label>
                         <label style="display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; font-size: 0.86rem; color: #1E293B;">
-                            <input type="radio" name="party_type" value="Both" id="ptypeBoth" style="accent-color: #235347;">
+                            <input type="radio" name="party_type" value="Both" id="ptypeBoth" style="accent-color: #355872;">
                             <span><strong>Both</strong> (Multi-Role Partner)</span>
                         </label>
                     </div>
@@ -485,7 +485,7 @@ $cities = $cities ?? [];
                     </div>
                     <div style="padding-top: 1.25rem;">
                         <label style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.86rem; color: #1E293B; font-weight: 600;">
-                            <input type="checkbox" name="is_active" id="pIsActive" value="1" checked style="width: 16px; height: 16px; accent-color: #235347;">
+                            <input type="checkbox" name="is_active" id="pIsActive" value="1" checked style="width: 16px; height: 16px; accent-color: #355872;">
                             <span>Active Account</span>
                         </label>
                     </div>
@@ -497,7 +497,7 @@ $cities = $cities ?? [];
                 <button type="button" onclick="window.closePartyModal()" class="btn btn-secondary" style="padding: 0.55rem 1.15rem; font-size: 0.85rem; font-weight: 600; border-radius: 6px; background: #E2E8F0; color: #475569; border: none; cursor: pointer;">
                     Cancel
                 </button>
-                <button type="submit" id="btnSaveParty" class="btn btn-primary" style="padding: 0.55rem 1.35rem; font-size: 0.85rem; font-weight: 600; border-radius: 6px; background: #235347; color: #FFFFFF; border: none; cursor: pointer;">
+                <button type="submit" id="btnSaveParty" class="btn btn-primary" style="padding: 0.55rem 1.35rem; font-size: 0.85rem; font-weight: 600; border-radius: 6px; background: #355872; color: #FFFFFF; border: none; cursor: pointer;">
                     Save Party
                 </button>
             </div>

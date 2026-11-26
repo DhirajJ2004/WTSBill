@@ -47,18 +47,18 @@ $exportUrl = '/reports/invoice-payment-status/export' . ($exportQuery ? '?' . $e
             <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; margin-bottom: 6px;">
                 <a href="/reports/profit-loss" style="color: #64748b; text-decoration: none;">Reports</a>
                 <span>/</span>
-                <span style="color: #0B2B26; font-weight: 600;">Payment Status</span>
+                <span style="color: #253E52; font-weight: 600;">Payment Status</span>
             </div>
-            <h1 style="font-size: 24px; font-weight: 700; color: #0B2B26; margin: 0; display: flex; align-items: center; gap: 10px;">
+            <h1 style="font-size: 24px; font-weight: 700; color: #253E52; margin: 0; display: flex; align-items: center; gap: 10px;">
                 <span>Invoice Payment Status Report</span>
-                <span style="font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: #DAF1DE; color: #235347;">Live Audit</span>
+                <span style="font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: #EBF5FC; color: #355872;">Live Audit</span>
             </h1>
             <p style="font-size: 13px; color: #64748b; margin: 4px 0 0 0;">Comprehensive breakdown of unpaid, fully paid, and partially paid sales invoices with real-time outstanding balances.</p>
         </div>
 
         <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
             <!-- PROMINENT DOWNLOAD EXCEL BUTTON -->
-            <a href="<?= e($exportUrl) ?>" class="btn-download-excel" id="btn-download-excel" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 13px; background: #235347; color: #FFFFFF; border: 1px solid #163832; text-decoration: none; box-shadow: 0 2px 4px rgba(35, 83, 71, 0.25); transition: all 0.2s ease;">
+            <a href="<?= e($exportUrl) ?>" class="btn-download-excel" id="btn-download-excel" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 13px; background: #355872; color: #FFFFFF; border: 1px solid #2A485E; text-decoration: none; box-shadow: 0 2px 4px rgba(53, 88, 114, 0.25); transition: all 0.2s ease;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                     <polyline points="14 2 14 8 20 8"></polyline>
@@ -86,7 +86,7 @@ $exportUrl = '/reports/invoice-payment-status/export' . ($exportQuery ? '?' . $e
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
                     <div style="font-size: 11px; font-weight: 700; color: #DC2626; text-transform: uppercase; letter-spacing: 0.05em;">Pending Invoices (Unpaid)</div>
-                    <div style="font-size: 26px; font-weight: 700; color: #0B2B26; margin-top: 6px;"><?= (int)$summary['pending']['count'] ?> <span style="font-size: 13px; font-weight: 500; color: #64748b;">bills</span></div>
+                    <div style="font-size: 26px; font-weight: 700; color: #253E52; margin-top: 6px;"><?= (int)$summary['pending']['count'] ?> <span style="font-size: 13px; font-weight: 500; color: #64748b;">bills</span></div>
                 </div>
                 <div style="width: 36px; height: 36px; border-radius: 8px; background: #FEE2E2; display: flex; align-items: center; justify-content: center; color: #DC2626;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
@@ -103,7 +103,7 @@ $exportUrl = '/reports/invoice-payment-status/export' . ($exportQuery ? '?' . $e
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
                     <div style="font-size: 11px; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.05em;">Paid Invoices (Fully Settled)</div>
-                    <div style="font-size: 26px; font-weight: 700; color: #0B2B26; margin-top: 6px;"><?= (int)$summary['paid']['count'] ?> <span style="font-size: 13px; font-weight: 500; color: #64748b;">settled</span></div>
+                    <div style="font-size: 26px; font-weight: 700; color: #253E52; margin-top: 6px;"><?= (int)$summary['paid']['count'] ?> <span style="font-size: 13px; font-weight: 500; color: #64748b;">settled</span></div>
                 </div>
                 <div style="width: 36px; height: 36px; border-radius: 8px; background: #DCFCE7; display: flex; align-items: center; justify-content: center; color: #059669;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
@@ -120,7 +120,7 @@ $exportUrl = '/reports/invoice-payment-status/export' . ($exportQuery ? '?' . $e
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
                     <div style="font-size: 11px; font-weight: 700; color: #D97706; text-transform: uppercase; letter-spacing: 0.05em;">Partially Paid Invoices</div>
-                    <div style="font-size: 26px; font-weight: 700; color: #0B2B26; margin-top: 6px;"><?= (int)$summary['partially_paid']['count'] ?> <span style="font-size: 13px; font-weight: 500; color: #64748b;">partially paid</span></div>
+                    <div style="font-size: 26px; font-weight: 700; color: #253E52; margin-top: 6px;"><?= (int)$summary['partially_paid']['count'] ?> <span style="font-size: 13px; font-weight: 500; color: #64748b;">partially paid</span></div>
                 </div>
                 <div style="width: 36px; height: 36px; border-radius: 8px; background: #FEF3C7; display: flex; align-items: center; justify-content: center; color: #D97706;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
@@ -139,17 +139,17 @@ $exportUrl = '/reports/invoice-payment-status/export' . ($exportQuery ? '?' . $e
         </div>
 
         <!-- Card D: Total Outstanding -->
-        <div style="background: linear-gradient(135deg, #0B2B26 0%, #163832 50%, #235347 100%); border-radius: 12px; padding: 20px; color: #FFFFFF; box-shadow: 0 4px 10px rgba(11, 43, 38, 0.25);">
+        <div style="background: linear-gradient(135deg, #253E52 0%, #2A485E 50%, #355872 100%); border-radius: 12px; padding: 20px; color: #FFFFFF; box-shadow: 0 4px 10px rgba(37, 62, 82, 0.25);">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
-                    <div style="font-size: 11px; font-weight: 700; color: #8EB69B; text-transform: uppercase; letter-spacing: 0.05em;">Total Net Outstanding</div>
-                    <div style="font-size: 26px; font-weight: 700; color: #DAF1DE; margin-top: 6px;">₹<?= number_format($summary['total_outstanding'], 2) ?></div>
+                    <div style="font-size: 11px; font-weight: 700; color: #7AAACE; text-transform: uppercase; letter-spacing: 0.05em;">Total Net Outstanding</div>
+                    <div style="font-size: 26px; font-weight: 700; color: #EBF5FC; margin-top: 6px;">₹<?= number_format($summary['total_outstanding'], 2) ?></div>
                 </div>
-                <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(218, 241, 222, 0.15); display: flex; align-items: center; justify-content: center; color: #DAF1DE;">
+                <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(156, 213, 255, 0.15); display: flex; align-items: center; justify-content: center; color: #EBF5FC;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
                 </div>
             </div>
-            <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(142, 182, 155, 0.25); font-size: 12px; color: #8EB69B;">
+            <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(122, 170, 206, 0.25); font-size: 12px; color: #7AAACE;">
                 Combined Unpaid (₹<?= number_format($summary['pending']['total_outstanding_amount'], 2) ?>) + Partial (₹<?= number_format($summary['partially_paid']['total_remaining_balance'], 2) ?>)
             </div>
         </div>
@@ -239,7 +239,7 @@ $exportUrl = '/reports/invoice-payment-status/export' . ($exportQuery ? '?' . $e
             <!-- Action Buttons Bar -->
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #F1F5F9; padding-top: 14px; flex-wrap: wrap; gap: 10px;">
                 <div style="display: flex; gap: 10px; align-items: center;">
-                    <button type="submit" style="padding: 9px 20px; background: #235347; color: #FFFFFF; font-size: 13px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                    <button type="submit" style="padding: 9px 20px; background: #355872; color: #FFFFFF; font-size: 13px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                         <span>Filter Report</span>
                     </button>
@@ -247,7 +247,7 @@ $exportUrl = '/reports/invoice-payment-status/export' . ($exportQuery ? '?' . $e
                 </div>
 
                 <div style="font-size: 13px; color: #64748B;">
-                    Showing <strong style="color: #0B2B26;"><?= number_format($pagination['total']) ?></strong> matching invoices
+                    Showing <strong style="color: #253E52;"><?= number_format($pagination['total']) ?></strong> matching invoices
                 </div>
             </div>
         </form>
@@ -258,9 +258,9 @@ $exportUrl = '/reports/invoice-payment-status/export' . ($exportQuery ? '?' . $e
         <div style="overflow-x: auto;">
             <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
                 <thead>
-                    <tr style="background: #0B2B26; color: #FFFFFF; font-weight: 600; font-size: 12px; letter-spacing: 0.03em; text-transform: uppercase;">
+                    <tr style="background: #253E52; color: #FFFFFF; font-weight: 600; font-size: 12px; letter-spacing: 0.03em; text-transform: uppercase;">
                         <!-- 1. Invoice Number -->
-                        <th style="padding: 12px 14px; border-bottom: 2px solid #163832;">
+                        <th style="padding: 12px 14px; border-bottom: 2px solid #2A485E;">
                             <a href="?<?= $buildQuery(['sort' => 'invoice_number', 'dir' => ($sort['field'] === 'invoice_number' && $sort['direction'] === 'asc') ? 'desc' : 'asc']) ?>" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 4px;">
                                 <span>Invoice No.</span>
                                 <?php if ($sort['field'] === 'invoice_number'): ?>
@@ -269,7 +269,7 @@ $exportUrl = '/reports/invoice-payment-status/export' . ($exportQuery ? '?' . $e
                             </a>
                         </th>
                         <!-- 2. Invoice Date -->
-                        <th style="padding: 12px 14px; border-bottom: 2px solid #163832;">
+                        <th style="padding: 12px 14px; border-bottom: 2px solid #2A485E;">
                             <a href="?<?= $buildQuery(['sort' => 'invoice_date', 'dir' => ($sort['field'] === 'invoice_date' && $sort['direction'] === 'asc') ? 'desc' : 'asc']) ?>" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 4px;">
                                 <span>Invoice Date</span>
                                 <?php if ($sort['field'] === 'invoice_date'): ?>
@@ -278,11 +278,11 @@ $exportUrl = '/reports/invoice-payment-status/export' . ($exportQuery ? '?' . $e
                             </a>
                         </th>
                         <!-- 3. Customer Name -->
-                        <th style="padding: 12px 14px; border-bottom: 2px solid #163832;">Customer Name</th>
+                        <th style="padding: 12px 14px; border-bottom: 2px solid #2A485E;">Customer Name</th>
                         <!-- 4. Mobile Number -->
-                        <th style="padding: 12px 14px; border-bottom: 2px solid #163832;">Mobile Number</th>
+                        <th style="padding: 12px 14px; border-bottom: 2px solid #2A485E;">Mobile Number</th>
                         <!-- 5. Invoice Amount -->
-                        <th style="padding: 12px 14px; border-bottom: 2px solid #163832; text-align: right;">
+                        <th style="padding: 12px 14px; border-bottom: 2px solid #2A485E; text-align: right;">
                             <a href="?<?= $buildQuery(['sort' => 'invoice_amount', 'dir' => ($sort['field'] === 'invoice_amount' && $sort['direction'] === 'asc') ? 'desc' : 'asc']) ?>" style="color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
                                 <span>Invoice Amt (₹)</span>
                                 <?php if ($sort['field'] === 'invoice_amount'): ?>
@@ -291,7 +291,7 @@ $exportUrl = '/reports/invoice-payment-status/export' . ($exportQuery ? '?' . $e
                             </a>
                         </th>
                         <!-- 6. Paid Amount -->
-                        <th style="padding: 12px 14px; border-bottom: 2px solid #163832; text-align: right;">
+                        <th style="padding: 12px 14px; border-bottom: 2px solid #2A485E; text-align: right;">
                             <a href="?<?= $buildQuery(['sort' => 'paid_amount', 'dir' => ($sort['field'] === 'paid_amount' && $sort['direction'] === 'asc') ? 'desc' : 'asc']) ?>" style="color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
                                 <span>Paid Amt (₹)</span>
                                 <?php if ($sort['field'] === 'paid_amount'): ?>
@@ -300,7 +300,7 @@ $exportUrl = '/reports/invoice-payment-status/export' . ($exportQuery ? '?' . $e
                             </a>
                         </th>
                         <!-- 7. Remaining Balance -->
-                        <th style="padding: 12px 14px; border-bottom: 2px solid #163832; text-align: right;">
+                        <th style="padding: 12px 14px; border-bottom: 2px solid #2A485E; text-align: right;">
                             <a href="?<?= $buildQuery(['sort' => 'remaining_balance', 'dir' => ($sort['field'] === 'remaining_balance' && $sort['direction'] === 'asc') ? 'desc' : 'asc']) ?>" style="color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
                                 <span>Balance (₹)</span>
                                 <?php if ($sort['field'] === 'remaining_balance'): ?>
@@ -309,7 +309,7 @@ $exportUrl = '/reports/invoice-payment-status/export' . ($exportQuery ? '?' . $e
                             </a>
                         </th>
                         <!-- 8. Due Date -->
-                        <th style="padding: 12px 14px; border-bottom: 2px solid #163832;">
+                        <th style="padding: 12px 14px; border-bottom: 2px solid #2A485E;">
                             <a href="?<?= $buildQuery(['sort' => 'due_date', 'dir' => ($sort['field'] === 'due_date' && $sort['direction'] === 'asc') ? 'desc' : 'asc']) ?>" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 4px;">
                                 <span>Due Date</span>
                                 <?php if ($sort['field'] === 'due_date'): ?>
@@ -318,7 +318,7 @@ $exportUrl = '/reports/invoice-payment-status/export' . ($exportQuery ? '?' . $e
                             </a>
                         </th>
                         <!-- 9. Payment Status -->
-                        <th style="padding: 12px 14px; border-bottom: 2px solid #163832; text-align: center;">Payment Status</th>
+                        <th style="padding: 12px 14px; border-bottom: 2px solid #2A485E; text-align: center;">Payment Status</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -329,7 +329,7 @@ $exportUrl = '/reports/invoice-payment-status/export' . ($exportQuery ? '?' . $e
                                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                                     <div style="font-size: 15px; font-weight: 600; color: #334155;">No invoices match the selected filter criteria.</div>
                                     <div style="font-size: 13px;">Try adjusting your date range, status, or search keywords.</div>
-                                    <a href="/reports/invoice-payment-status" style="margin-top: 6px; padding: 6px 14px; background: #235347; color: #fff; font-size: 12px; font-weight: 600; border-radius: 6px; text-decoration: none;">Reset Filters</a>
+                                    <a href="/reports/invoice-payment-status" style="margin-top: 6px; padding: 6px 14px; background: #355872; color: #fff; font-size: 12px; font-weight: 600; border-radius: 6px; text-decoration: none;">Reset Filters</a>
                                 </div>
                             </td>
                         </tr>
@@ -343,7 +343,7 @@ $exportUrl = '/reports/invoice-payment-status/export' . ($exportQuery ? '?' . $e
                             <tr style="background: <?= $rowBg ?>; border-bottom: 1px solid #E2E8F0; <?= $borderLeft ?> transition: background 0.15s ease;" onmouseover="this.style.background='#F1F5F9'" onmouseout="this.style.background='<?= $rowBg ?>'">
                                 <!-- 1. Invoice Number Link -->
                                 <td style="padding: 12px 14px; font-weight: 600;">
-                                    <a href="/sales/invoices/<?= (int)$r['id'] ?>" title="View Invoice <?= e($r['invoice_number']) ?>" style="color: #235347; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
+                                    <a href="/sales/invoices/<?= (int)$r['id'] ?>" title="View Invoice <?= e($r['invoice_number']) ?>" style="color: #355872; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
                                         <span><?= e($r['invoice_number']) ?></span>
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
                                     </a>
@@ -424,7 +424,7 @@ $exportUrl = '/reports/invoice-payment-status/export' . ($exportQuery ? '?' . $e
                 </tbody>
                 <!-- FILTERED TOTALS FOOTER ROW -->
                 <tfoot>
-                    <tr style="background: #DAF1DE; color: #0B2B26; font-weight: 700; border-top: 2px solid #8EB69B;">
+                    <tr style="background: #EBF5FC; color: #253E52; font-weight: 700; border-top: 2px solid #7AAACE;">
                         <td colspan="4" style="padding: 12px 14px;">
                             FILTERED TOTALS (<?= number_format($filteredTotals['count']) ?> Invoices)
                         </td>
@@ -437,7 +437,7 @@ $exportUrl = '/reports/invoice-payment-status/export' . ($exportQuery ? '?' . $e
                         <td style="padding: 12px 14px; text-align: right; color: #B91C1C;">
                             ₹<?= number_format($filteredTotals['total_remaining_balance'], 2) ?>
                         </td>
-                        <td colspan="2" style="padding: 12px 14px; font-size: 11px; color: #235347; text-align: right;">
+                        <td colspan="2" style="padding: 12px 14px; font-size: 11px; color: #355872; text-align: right;">
                             All matching filtered rows
                         </td>
                     </tr>
@@ -449,7 +449,7 @@ $exportUrl = '/reports/invoice-payment-status/export' . ($exportQuery ? '?' . $e
         <?php if ($pagination['total_pages'] > 1): ?>
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; background: #FFFFFF; border-top: 1px solid #E2E8F0; flex-wrap: wrap; gap: 12px;">
                 <div style="font-size: 13px; color: #64748B;">
-                    Showing <strong style="color: #0B2B26;"><?= $pagination['from'] ?></strong> to <strong style="color: #0B2B26;"><?= $pagination['to'] ?></strong> of <strong style="color: #0B2B26;"><?= number_format($pagination['total']) ?></strong> records
+                    Showing <strong style="color: #253E52;"><?= $pagination['from'] ?></strong> to <strong style="color: #253E52;"><?= $pagination['to'] ?></strong> of <strong style="color: #253E52;"><?= number_format($pagination['total']) ?></strong> records
                 </div>
 
                 <div style="display: flex; gap: 6px; align-items: center;">
@@ -470,7 +470,7 @@ $exportUrl = '/reports/invoice-payment-status/export' . ($exportQuery ? '?' . $e
                     ?>
                     <?php for ($p = $startPage; $p <= $endPage; $p++): ?>
                         <?php if ($p === $pagination['page']): ?>
-                            <span style="padding: 6px 12px; border-radius: 6px; background: #235347; color: #FFFFFF; font-size: 12px; font-weight: 700;"><?= $p ?></span>
+                            <span style="padding: 6px 12px; border-radius: 6px; background: #355872; color: #FFFFFF; font-size: 12px; font-weight: 700;"><?= $p ?></span>
                         <?php else: ?>
                             <a href="?<?= $buildQuery(['page' => $p]) ?>" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #334155; font-size: 12px; font-weight: 500; text-decoration: none;"><?= $p ?></a>
                         <?php endif; ?>

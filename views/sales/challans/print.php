@@ -37,7 +37,7 @@ $stampUrl = $b['stamp_url'] ?? null;
         * { box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            color: #051F20;
+            color: #1E293B;
             background: #f1f5f9;
             margin: 0;
             padding: 20px;
@@ -71,14 +71,14 @@ $stampUrl = $b['stamp_url'] ?? null;
         .challan-title h1 {
             margin: 0;
             font-size: 22px;
-            color: #235347;
+            color: #355872;
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
         .challan-meta-pill {
             display: inline-block;
-            background: #DAF1DE;
-            color: #0B2B26;
+            background: #EBF5FC;
+            color: #253E52;
             font-weight: 700;
             font-size: 12px;
             padding: 4px 10px;
@@ -90,8 +90,8 @@ $stampUrl = $b['stamp_url'] ?? null;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
             margin-bottom: 25px;
-            border-top: 2px solid #DAF1DE;
-            border-bottom: 2px solid #DAF1DE;
+            border-top: 2px solid #EBF5FC;
+            border-bottom: 2px solid #EBF5FC;
             padding: 15px 0;
         }
         .info-box h4 {
@@ -103,7 +103,7 @@ $stampUrl = $b['stamp_url'] ?? null;
         }
         .info-box strong {
             font-size: 14px;
-            color: #051F20;
+            color: #1E293B;
         }
         .items-table {
             width: 100%;
@@ -111,7 +111,7 @@ $stampUrl = $b['stamp_url'] ?? null;
             margin-bottom: 25px;
         }
         .items-table th {
-            background: #0B2B26;
+            background: #253E52;
             color: #ffffff;
             text-align: left;
             padding: 9px 12px;
@@ -168,8 +168,8 @@ $stampUrl = $b['stamp_url'] ?? null;
             cursor: pointer;
             text-decoration: none;
         }
-        .btn-print { background: #235347; color: #ffffff; border: none; }
-        .btn-back { background: #ffffff; color: #051F20; border: 1px solid #CBD5E1; }
+        .btn-print { background: #355872; color: #ffffff; border: none; }
+        .btn-back { background: #ffffff; color: #1E293B; border: 1px solid #CBD5E1; }
         @media print {
             body { background: #ffffff; padding: 0; }
             .challan-container { box-shadow: none; border: none; padding: 0; }
@@ -195,7 +195,7 @@ $stampUrl = $b['stamp_url'] ?? null;
                     <?php if (!empty($logoUrl)): ?>
                         <img src="<?= e($logoUrl) ?>" alt="Logo" class="company-logo"><br>
                     <?php endif; ?>
-                    <strong style="font-size: 15px; color: #051F20;"><?= e($compName) ?></strong><br>
+                    <strong style="font-size: 15px; color: #1E293B;"><?= e($compName) ?></strong><br>
                     <span style="color: #4B5563; font-size: 11px;">
                         <?= e($compAddress) ?><?= !empty($compCity) ? ', ' . e($compCity) : '' ?>, <?= e($compState) ?> <?= e($compPincode) ?><br>
                         <?php if ($compGstin): ?>GSTIN: <strong><?= e($compGstin) ?></strong> &bull; <?php endif; ?>
@@ -208,7 +208,7 @@ $stampUrl = $b['stamp_url'] ?? null;
                     <div style="margin-top: 6px; font-size: 12px; color: #4B5563;">
                         Date: <strong><?= date('d M Y', strtotime($ch['challan_date'] ?? 'now')) ?></strong><br>
                         <?php if (!empty($ch['invoice_number'])): ?>
-                            Linked Invoice: <strong style="color: #235347;"><?= e($ch['invoice_number']) ?></strong><br>
+                            Linked Invoice: <strong style="color: #355872;"><?= e($ch['invoice_number']) ?></strong><br>
                         <?php endif; ?>
                         Status: <strong style="color: #10B981;"><?= e($ch['status'] ?? 'DELIVERED') ?></strong>
                     </div>
@@ -229,7 +229,7 @@ $stampUrl = $b['stamp_url'] ?? null;
             </div>
             <div class="info-box">
                 <h4>Transport &amp; Dispatch Logistics:</h4>
-                <span style="font-size: 12px; color: #051F20;">
+                <span style="font-size: 12px; color: #1E293B;">
                     Transport Details: <strong><?= e($ch['transport_details'] ?: 'Road Transport') ?></strong><br>
                     Dispatch Date: <strong><?= date('d M Y', strtotime($ch['challan_date'] ?? 'now')) ?></strong><br>
                     Goods Type: <strong>Finished Commercial Goods</strong><br>
@@ -277,10 +277,10 @@ $stampUrl = $b['stamp_url'] ?? null;
                     <?php endforeach; ?>
                     <tr style="background: #F1F5F9; font-weight: 700;">
                         <td colspan="2" style="text-align: right; text-transform: uppercase; font-size: 11px;">Total Dispatched Quantity:</td>
-                        <td style="text-align: right; font-size: 13px; color: #235347;"><?= number_format($totalQty, 2) ?></td>
+                        <td style="text-align: right; font-size: 13px; color: #355872;"><?= number_format($totalQty, 2) ?></td>
                         <td></td>
                         <td style="text-align: right; text-transform: uppercase; font-size: 11px;">Total Value:</td>
-                        <td style="text-align: right; font-size: 13px; color: #235347;">₹<?= number_format($grandTotal, 2) ?></td>
+                        <td style="text-align: right; font-size: 13px; color: #355872;">₹<?= number_format($grandTotal, 2) ?></td>
                     </tr>
                 <?php else: ?>
                     <tr>
@@ -303,7 +303,7 @@ $stampUrl = $b['stamp_url'] ?? null;
                 <div style="height: 60px; display: flex; align-items: flex-end; justify-content: center;">
                     <span style="border-bottom: 1px solid #CBD5E1; width: 140px; display: block;"></span>
                 </div>
-                <div style="font-size: 11px; font-weight: 600; color: #051F20; margin-top: 6px;">Receiver's Signature &amp; Stamp</div>
+                <div style="font-size: 11px; font-weight: 600; color: #1E293B; margin-top: 6px;">Receiver's Signature &amp; Stamp</div>
             </div>
 
             <div class="signatory-box">
@@ -315,7 +315,7 @@ $stampUrl = $b['stamp_url'] ?? null;
                         <img src="<?= e($sigUrl) ?>" alt="Signature" class="sig-img">
                     <?php endif; ?>
                 </div>
-                <div style="font-size: 11px; font-weight: 600; color: #051F20; margin-top: 6px;">
+                <div style="font-size: 11px; font-weight: 600; color: #1E293B; margin-top: 6px;">
                     For <?= e($compName) ?><br>
                     <span style="font-weight: 400; color: #64748B;">Authorized Signatory</span>
                 </div>

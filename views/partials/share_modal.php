@@ -5,13 +5,13 @@ if (defined('SHARE_MODAL_INCLUDED')) {
 define('SHARE_MODAL_INCLUDED', true);
 ?>
 <!-- WTSBill ERP — Enterprise Document Sharing Modal (WhatsApp & Email Delivery) -->
-<div id="wtsbill-share-modal" class="modal-backdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5, 31, 32, 0.75); z-index: 99999; align-items: center; justify-content: center; backdrop-filter: blur(4px);" role="dialog" aria-modal="true" aria-labelledby="share-modal-title">
+<div id="wtsbill-share-modal" class="modal-backdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(30, 41, 59, 0.75); z-index: 99999; align-items: center; justify-content: center; backdrop-filter: blur(4px);" role="dialog" aria-modal="true" aria-labelledby="share-modal-title">
     <div class="modal-dialog" style="max-width: 620px; width: 100%; margin: 1rem; background: var(--bg-card, #ffffff); border-radius: 12px; padding: 1.5rem; border: 1px solid var(--border-color, #e2e8f0); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); max-height: 92vh; overflow-y: auto;">
         
         <!-- Header -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color, #e2e8f0); padding-bottom: 0.75rem;">
             <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <span id="share-modal-icon" style="color: var(--primary, #0B2B26); display: flex;">
+                <span id="share-modal-icon" style="color: var(--primary, #253E52); display: flex;">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
                 </span>
                 <h3 id="share-modal-title" style="margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--text-primary, #0f172a);">Share Document</h3>
@@ -28,8 +28,8 @@ define('SHARE_MODAL_INCLUDED', true);
             <div style="text-align: right;">
                 <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--text-muted, #64748b); display: block;">Document & Amount</span>
                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.1rem;">
-                    <span id="share-doc-number" style="font-size: 0.95rem; font-weight: 700; color: var(--primary, #0B2B26);">DOC-0000</span>
-                    <span id="share-doc-amount" class="badge" style="background: rgba(35,83,71,0.12); color: #235347; font-weight: 700; font-size: 0.8rem; padding: 0.2rem 0.5rem; border-radius: 4px;">₹0.00</span>
+                    <span id="share-doc-number" style="font-size: 0.95rem; font-weight: 700; color: var(--primary, #253E52);">DOC-0000</span>
+                    <span id="share-doc-amount" class="badge" style="background: rgba(53, 88, 114,0.12); color: #355872; font-weight: 700; font-size: 0.8rem; padding: 0.2rem 0.5rem; border-radius: 4px;">₹0.00</span>
                 </div>
             </div>
             <div style="width: 100%; display: flex; justify-content: flex-end; gap: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--border-color, #e2e8f0);">

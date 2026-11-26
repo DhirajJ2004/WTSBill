@@ -6,20 +6,20 @@
 
 :root {
     /* Global Forest-Green Design Token Palette */
-    --color-background: #DAF1DE;
-    --color-secondary: #8EB69B;
-    --color-primary: #235347;
-    --color-primary-dark: #163832;
-    --color-dark-surface: #0B2B26;
-    --color-deepest: #051F20;
+    --color-background: #EBF5FC;
+    --color-secondary: #7AAACE;
+    --color-primary: #355872;
+    --color-primary-dark: #2A485E;
+    --color-dark-surface: #253E52;
+    --color-deepest: #1E293B;
 
-    --color-primary-hover: #163832;
-    --color-primary-light: #DAF1DE;
+    --color-primary-hover: #2A485E;
+    --color-primary-light: #EBF5FC;
     --color-primary-contrast: #ffffff;
 
-    --color-success: #235347;
-    --color-success-bg: rgba(35, 83, 71, 0.12);
-    --color-success-border: #8EB69B;
+    --color-success: #355872;
+    --color-success-bg: rgba(53, 88, 114, 0.12);
+    --color-success-border: #7AAACE;
 
     --color-danger: #B91C1C;
     --color-danger-bg: rgba(185, 28, 28, 0.12);
@@ -29,23 +29,23 @@
     --color-warning-bg: rgba(180, 83, 9, 0.12);
     --color-warning-border: #F59E0B;
 
-    --color-info: #163832;
-    --color-info-bg: #E8F5EB;
-    --color-info-border: #8EB69B;
+    --color-info: #2A485E;
+    --color-info-bg: #EEF4F8;
+    --color-info-border: #7AAACE;
 
     /* Theme - Default Dark Mode Baseline */
     --bg-body: #0b1120;
     --bg-surface: #ffffff;
-    --bg-surface-elevated: #F4FAF6;
-    --bg-sidebar: #051F20;
-    --bg-sidebar-active: #235347;
-    --border-color: #8EB69B;
-    --border-subtle: #DAF1DE;
+    --bg-surface-elevated: #F7F8F0;
+    --bg-sidebar: #1E293B;
+    --bg-sidebar-active: #355872;
+    --border-color: #7AAACE;
+    --border-subtle: #EBF5FC;
 
     /* Text Colors */
-    --text-primary: #051F20;
-    --text-secondary: #163832;
-    --text-muted: #235347;
+    --text-primary: #1E293B;
+    --text-secondary: #2A485E;
+    --text-muted: #355872;
     --text-inverse: #ffffff;
 
     /* Layout Metrics */
@@ -915,7 +915,7 @@ a:hover {
     max-width: 100%;
     overflow-x: auto !important;
     scrollbar-width: thin;
-    scrollbar-color: #235347 #E2E8F0;
+    scrollbar-color: #355872 #E2E8F0;
     -webkit-overflow-scrolling: touch;
 }
 
@@ -941,7 +941,7 @@ div[style*="overflow-x: auto"]::-webkit-scrollbar-track {
 .table-responsive::-webkit-scrollbar-thumb,
 .party-table-responsive::-webkit-scrollbar-thumb,
 div[style*="overflow-x: auto"]::-webkit-scrollbar-thumb {
-    background: #235347 !important;
+    background: #355872 !important;
     border-radius: 6px !important;
     border: 2px solid #E2E8F0 !important;
 }
@@ -950,7 +950,7 @@ div[style*="overflow-x: auto"]::-webkit-scrollbar-thumb {
 .table-responsive::-webkit-scrollbar-thumb:hover,
 .party-table-responsive::-webkit-scrollbar-thumb:hover,
 div[style*="overflow-x: auto"]::-webkit-scrollbar-thumb:hover {
-    background: #0B2B26 !important;
+    background: #253E52 !important;
 }
 
 .table {

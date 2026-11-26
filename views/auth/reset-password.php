@@ -14,8 +14,8 @@ $companyLogoUrl = \WTSBill\Services\CompanyBrandingService::getCompanyLogo();
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #DAF1DE;
-            color: #051F20;
+            background-color: #EBF5FC;
+            color: #1E293B;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -35,23 +35,23 @@ $companyLogoUrl = \WTSBill\Services\CompanyBrandingService::getCompanyLogo();
         .bg-blob-1 {
             width: 450px; height: 450px;
             top: -100px; left: -100px;
-            background: radial-gradient(circle, #8EB69B 0%, #DAF1DE 70%, rgba(218, 241, 222, 0) 100%);
+            background: radial-gradient(circle, #7AAACE 0%, #EBF5FC 70%, rgba(156, 213, 255, 0) 100%);
         }
         .bg-blob-2 {
             width: 500px; height: 500px;
             bottom: -120px; right: -120px;
-            background: radial-gradient(circle, #8EB69B 0%, #DAF1DE 70%, rgba(218, 241, 222, 0) 100%);
+            background: radial-gradient(circle, #7AAACE 0%, #EBF5FC 70%, rgba(156, 213, 255, 0) 100%);
         }
         .card {
             position: relative;
             z-index: 1;
             background: #FFFFFF;
-            border: 2px solid #8EB69B;
+            border: 2px solid #7AAACE;
             border-radius: 24px;
             width: 100%;
             max-width: 460px;
             padding: 2.75rem 2.5rem;
-            box-shadow: 0 20px 45px -10px rgba(11, 43, 38, 0.12), 0 10px 25px -5px rgba(5, 31, 32, 0.05);
+            box-shadow: 0 20px 45px -10px rgba(37, 62, 82, 0.12), 0 10px 25px -5px rgba(30, 41, 59, 0.05);
         }
         .header { text-align: center; margin-bottom: 2rem; }
         .brand-badge {
@@ -64,8 +64,8 @@ $companyLogoUrl = \WTSBill\Services\CompanyBrandingService::getCompanyLogo();
             margin-bottom: 1rem;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
         }
-        h1 { font-size: 1.75rem; font-weight: 800; color: #051F20; margin-bottom: 0.45rem; letter-spacing: -0.02em; }
-        .subtitle { font-size: 0.9rem; color: #163832; line-height: 1.45; }
+        h1 { font-size: 1.75rem; font-weight: 800; color: #1E293B; margin-bottom: 0.45rem; letter-spacing: -0.02em; }
+        .subtitle { font-size: 0.9rem; color: #2A485E; line-height: 1.45; }
         .alert {
             padding: 0.8rem 1rem;
             border-radius: 10px;
@@ -73,30 +73,30 @@ $companyLogoUrl = \WTSBill\Services\CompanyBrandingService::getCompanyLogo();
             margin-bottom: 1.5rem;
             line-height: 1.4;
         }
-        .alert-error { background: #FFF5F5; border: 1.5px solid #8EB69B; color: #051F20; }
-        .alert-success { background: #DAF1DE; border: 1.5px solid #235347; color: #051F20; }
+        .alert-error { background: #FFF5F5; border: 1.5px solid #7AAACE; color: #1E293B; }
+        .alert-success { background: #EBF5FC; border: 1.5px solid #355872; color: #1E293B; }
         .form-group { margin-bottom: 1.35rem; }
-        label { display: block; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #163832; margin-bottom: 0.45rem; }
+        label { display: block; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #2A485E; margin-bottom: 0.45rem; }
         input[type="email"], input[type="text"], input[type="password"] {
             width: 100%;
             padding: 0.75rem 0.95rem;
             background: #FFFFFF;
-            border: 1.5px solid #8EB69B;
+            border: 1.5px solid #7AAACE;
             border-radius: 10px;
-            color: #051F20;
+            color: #1E293B;
             font-family: inherit;
             font-size: 0.98rem;
             outline: none;
             transition: all 0.2s ease;
         }
         input:focus {
-            border-color: #235347;
-            box-shadow: 0 0 0 3px rgba(35, 83, 71, 0.15);
+            border-color: #355872;
+            box-shadow: 0 0 0 3px rgba(53, 88, 114, 0.15);
         }
         .btn-submit {
             width: 100%;
             padding: 0.9rem;
-            background: #235347;
+            background: #355872;
             color: #FFFFFF;
             border: none;
             border-radius: 10px;
@@ -106,12 +106,12 @@ $companyLogoUrl = \WTSBill\Services\CompanyBrandingService::getCompanyLogo();
             letter-spacing: 0.05em;
             text-transform: uppercase;
             cursor: pointer;
-            box-shadow: 0 8px 20px -4px rgba(35, 83, 71, 0.4);
+            box-shadow: 0 8px 20px -4px rgba(53, 88, 114, 0.4);
             transition: all 0.2s ease;
             margin-top: 0.5rem;
         }
         .btn-submit:hover {
-            background: #163832;
+            background: #2A485E;
             transform: translateY(-1px);
         }
         .links {
@@ -119,8 +119,8 @@ $companyLogoUrl = \WTSBill\Services\CompanyBrandingService::getCompanyLogo();
             text-align: center;
             font-size: 0.88rem;
         }
-        .links a { color: #235347; text-decoration: none; font-weight: 600; }
-        .links a:hover { color: #163832; text-decoration: underline; }
+        .links a { color: #355872; text-decoration: none; font-weight: 600; }
+        .links a:hover { color: #2A485E; text-decoration: underline; }
     </style>
 </head>
 <body>

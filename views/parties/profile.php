@@ -23,7 +23,7 @@ $hasSupplierRole = $hasSupplierRole ?? false;
 $badgeStyle = match ($partyType) {
     'Both' => 'background: #E0E7FF; color: #4338CA; border: 1px solid #C7D2FE;',
     'Supplier' => 'background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A;',
-    default => 'background: #DAF1DE; color: #163832; border: 1px solid #8EB69B;',
+    default => 'background: #EBF5FC; color: #2A485E; border: 1px solid #7AAACE;',
 };
 ?>
 
@@ -31,7 +31,7 @@ $badgeStyle = match ($partyType) {
     <!-- TOP NAVIGATION & BREADCRUMB -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
         <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.86rem; color: #64748B;">
-            <a href="/parties" style="color: #235347; text-decoration: none; font-weight: 600;">&larr; Parties</a>
+            <a href="/parties" style="color: #355872; text-decoration: none; font-weight: 600;">&larr; Parties</a>
             <span>/</span>
             <span style="color: #1E293B; font-weight: 600;"><?= e($party['name']) ?></span>
         </div>
@@ -41,12 +41,12 @@ $badgeStyle = match ($partyType) {
                 <span>Download Statement (CSV)</span>
             </a>
             <?php if ($hasCustomerRole): ?>
-                <a href="/sales/invoices/create" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.85rem; font-size: 0.84rem; font-weight: 600; background: #235347; border: none; border-radius: 6px; color: #FFFFFF; text-decoration: none;">
+                <a href="/sales/invoices/create" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.85rem; font-size: 0.84rem; font-weight: 600; background: #355872; border: none; border-radius: 6px; color: #FFFFFF; text-decoration: none;">
                     <span>+ New Invoice</span>
                 </a>
             <?php endif; ?>
             <?php if ($hasSupplierRole): ?>
-                <a href="/purchases/bills" class="btn" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.85rem; font-size: 0.84rem; font-weight: 600; background: #0B2B26; border: none; border-radius: 6px; color: #DAF1DE; text-decoration: none;">
+                <a href="/purchases/bills" class="btn" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.85rem; font-size: 0.84rem; font-weight: 600; background: #253E52; border: none; border-radius: 6px; color: #EBF5FC; text-decoration: none;">
                     <span>+ Record Purchase</span>
                 </a>
             <?php endif; ?>
@@ -57,7 +57,7 @@ $badgeStyle = match ($partyType) {
     <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
             <div style="display: flex; gap: 1.15rem; align-items: center;">
-                <div style="width: 56px; height: 56px; border-radius: 12px; background: #0B2B26; color: #DAF1DE; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; box-shadow: 0 4px 10px rgba(11,43,38,0.25);">
+                <div style="width: 56px; height: 56px; border-radius: 12px; background: #253E52; color: #EBF5FC; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; box-shadow: 0 4px 10px rgba(11,43,38,0.25);">
                     <?= strtoupper(substr($party['name'], 0, 1)) ?>
                 </div>
                 <div>
@@ -152,7 +152,7 @@ $badgeStyle = match ($partyType) {
         <!-- Card 3: Payments & Collections -->
         <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 10px; padding: 1.15rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
             <div style="font-size: 0.78rem; color: #64748B; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Total Payments &amp; Receipts</div>
-            <div style="font-size: 1.45rem; font-weight: 700; color: #235347; margin-top: 0.25rem;">
+            <div style="font-size: 1.45rem; font-weight: 700; color: #355872; margin-top: 0.25rem;">
                 ₹ <?= number_format($summary['total_receipts'] + $summary['total_payments_made'], 2) ?>
             </div>
             <div style="font-size: 0.75rem; color: #64748B; margin-top: 0.35rem;">
@@ -175,30 +175,30 @@ $badgeStyle = match ($partyType) {
     <!-- TABBED SECTION CARD -->
     <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
         <!-- Tab Navigation Header -->
-        <div style="display: flex; gap: 0.25rem; background: #0B2B26; padding: 0.5rem 1rem 0 1rem; border-bottom: 2px solid #235347; overflow-x: auto;">
-            <button type="button" class="tab-btn active" onclick="switchProfileTab('overview', this)" style="background: #235347; color: #FFFFFF; border: none; padding: 0.6rem 1.1rem; border-radius: 8px 8px 0 0; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+        <div style="display: flex; gap: 0.25rem; background: #253E52; padding: 0.5rem 1rem 0 1rem; border-bottom: 2px solid #355872; overflow-x: auto;">
+            <button type="button" class="tab-btn active" onclick="switchProfileTab('overview', this)" style="background: #355872; color: #FFFFFF; border: none; padding: 0.6rem 1.1rem; border-radius: 8px 8px 0 0; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
                 Overview &amp; Contact
             </button>
             <?php if ($hasCustomerRole): ?>
-                <button type="button" class="tab-btn" onclick="switchProfileTab('invoices', this)" style="background: transparent; color: #DAF1DE; border: none; padding: 0.6rem 1.1rem; border-radius: 8px 8px 0 0; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+                <button type="button" class="tab-btn" onclick="switchProfileTab('invoices', this)" style="background: transparent; color: #EBF5FC; border: none; padding: 0.6rem 1.1rem; border-radius: 8px 8px 0 0; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
                     Sales Invoices (<?= count($invoices) ?>)
                 </button>
-                <button type="button" class="tab-btn" onclick="switchProfileTab('quotations', this)" style="background: transparent; color: #DAF1DE; border: none; padding: 0.6rem 1.1rem; border-radius: 8px 8px 0 0; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+                <button type="button" class="tab-btn" onclick="switchProfileTab('quotations', this)" style="background: transparent; color: #EBF5FC; border: none; padding: 0.6rem 1.1rem; border-radius: 8px 8px 0 0; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
                     Quotations (<?= count($quotations) ?>)
                 </button>
             <?php endif; ?>
             <?php if ($hasSupplierRole): ?>
-                <button type="button" class="tab-btn" onclick="switchProfileTab('bills', this)" style="background: transparent; color: #DAF1DE; border: none; padding: 0.6rem 1.1rem; border-radius: 8px 8px 0 0; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+                <button type="button" class="tab-btn" onclick="switchProfileTab('bills', this)" style="background: transparent; color: #EBF5FC; border: none; padding: 0.6rem 1.1rem; border-radius: 8px 8px 0 0; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
                     Purchase Bills (<?= count($bills) ?>)
                 </button>
-                <button type="button" class="tab-btn" onclick="switchProfileTab('pos', this)" style="background: transparent; color: #DAF1DE; border: none; padding: 0.6rem 1.1rem; border-radius: 8px 8px 0 0; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+                <button type="button" class="tab-btn" onclick="switchProfileTab('pos', this)" style="background: transparent; color: #EBF5FC; border: none; padding: 0.6rem 1.1rem; border-radius: 8px 8px 0 0; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
                     Purchase Orders (<?= count($purchaseOrders) ?>)
                 </button>
             <?php endif; ?>
-            <button type="button" class="tab-btn" onclick="switchProfileTab('payments', this)" style="background: transparent; color: #DAF1DE; border: none; padding: 0.6rem 1.1rem; border-radius: 8px 8px 0 0; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+            <button type="button" class="tab-btn" onclick="switchProfileTab('payments', this)" style="background: transparent; color: #EBF5FC; border: none; padding: 0.6rem 1.1rem; border-radius: 8px 8px 0 0; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
                 Payments &amp; Receipts (<?= count($payments) ?>)
             </button>
-            <button type="button" class="tab-btn" onclick="switchProfileTab('ledger', this)" style="background: transparent; color: #DAF1DE; border: none; padding: 0.6rem 1.1rem; border-radius: 8px 8px 0 0; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+            <button type="button" class="tab-btn" onclick="switchProfileTab('ledger', this)" style="background: transparent; color: #EBF5FC; border: none; padding: 0.6rem 1.1rem; border-radius: 8px 8px 0 0; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
                 Consolidated Ledger (<?= count($ledger) ?>)
             </button>
         </div>
@@ -270,7 +270,7 @@ $badgeStyle = match ($partyType) {
                                         <span style="display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; background: #DEF7EC; color: #03543F;"><?= e($inv['payment_status'] ?? 'PAID') ?></span>
                                     </td>
                                     <td style="padding: 0.65rem 0.85rem; text-align: center;">
-                                        <a href="/sales/invoices/<?= (int)$inv['id'] ?>/print" target="_blank" style="color: #235347; text-decoration: underline; font-weight: 600;">Print</a>
+                                        <a href="/sales/invoices/<?= (int)$inv['id'] ?>/print" target="_blank" style="color: #355872; text-decoration: underline; font-weight: 600;">Print</a>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -304,7 +304,7 @@ $badgeStyle = match ($partyType) {
                                     <td style="padding: 0.65rem 0.85rem; text-align: right; font-weight: 600;">₹ <?= number_format((float)$q['grand_total'], 2) ?></td>
                                     <td style="padding: 0.65rem 0.85rem; text-align: center;"><?= e($q['status'] ?? 'SENT') ?></td>
                                     <td style="padding: 0.65rem 0.85rem; text-align: center;">
-                                        <a href="/sales/quotations/<?= (int)$q['id'] ?>/print" target="_blank" style="color: #235347; text-decoration: underline; font-weight: 600;">View</a>
+                                        <a href="/sales/quotations/<?= (int)$q['id'] ?>/print" target="_blank" style="color: #355872; text-decoration: underline; font-weight: 600;">View</a>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -479,7 +479,7 @@ window.switchProfileTab = function(tabKey, btn) {
     });
     document.querySelectorAll('.tab-btn').forEach(function(el) {
         el.style.background = 'transparent';
-        el.style.color = '#DAF1DE';
+        el.style.color = '#EBF5FC';
     });
 
     var target = document.getElementById('tab-' + tabKey);
@@ -487,7 +487,7 @@ window.switchProfileTab = function(tabKey, btn) {
         target.style.display = 'block';
     }
     if (btn) {
-        btn.style.background = '#235347';
+        btn.style.background = '#355872';
         btn.style.color = '#FFFFFF';
     }
 };

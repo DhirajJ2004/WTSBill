@@ -111,47 +111,47 @@ $canAccess = function(array $item) use ($isTestFixture, $userRole): bool {
     return true;
 };
 ?>
-<aside id="erp-sidebar" class="erp-sidebar" style="background: #051F20; border-right: 1px solid rgba(142, 182, 155, 0.2); display: flex; flex-direction: column;">
+<aside id="erp-sidebar" class="erp-sidebar" style="background: #355872; border-right: 1px solid rgba(156, 213, 255, 0.2); display: flex; flex-direction: column;">
     <!-- TOP COMPANY BRANDING -->
-    <div class="sidebar-brand" style="padding: 1.15rem 1rem 0.65rem 1rem; border-bottom: 1px solid rgba(142, 182, 155, 0.15);">
+    <div class="sidebar-brand" style="padding: 1.15rem 1rem 0.65rem 1rem; border-bottom: 1px solid rgba(156, 213, 255, 0.16);">
         <div style="display: flex; align-items: center; gap: 0.65rem;">
             <div class="brand-icon" style="width: 32px; height: 32px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25); background: #ffffff;">
                 <img src="<?= e($sidebarLogoUrl) ?>" alt="WTS Logo" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror=null; this.src='/assets/images/logo.png';">
             </div>
             <div>
-                <div class="brand-title" style="font-size: 0.95rem; font-weight: 700; color: #DAF1DE; letter-spacing: -0.01em;"><?= e($appName) ?></div>
-                <div class="brand-phone" style="font-size: 0.72rem; color: #8EB69B; margin-top: 1px;">+91 98765 43210</div>
+                <div class="brand-title" style="font-size: 0.95rem; font-weight: 700; color: #F7F8F0; letter-spacing: -0.01em;"><?= e($appName) ?></div>
+                <div class="brand-phone" style="font-size: 0.72rem; color: #9CD5FF; margin-top: 1px;">+91 98765 43210</div>
             </div>
         </div>
         <span class="brand-tag" style="display: none;" aria-hidden="true">v2.0</span>
     </div>
 
     <!-- CREATE SALES INVOICE BUTTON WITH QUICK-CREATE DROPDOWN -->
-    <div class="sidebar-action-wrap" style="padding: 0.75rem 0.85rem 0.5rem 0.85rem; position: relative; background: #0B2B26;">
-        <div style="display: flex; width: 100%; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.25);">
-            <a href="/sales/invoices/create" class="btn btn-primary" style="flex: 1; background: #235347; color: #FFFFFF; font-size: 0.8rem; font-weight: 600; padding: 0.55rem 0.75rem; text-decoration: none; display: flex; align-items: center; gap: 0.4rem; white-space: nowrap; border: none; border-radius: 8px 0 0 8px;">
+    <div class="sidebar-action-wrap" style="padding: 0.75rem 0.85rem 0.5rem 0.85rem; position: relative; background: #2B495F;">
+        <div style="display: flex; width: 100%; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+            <a href="/sales/invoices/create" class="btn btn-primary" style="flex: 1; background: #7AAACE; color: #FFFFFF; font-size: 0.8rem; font-weight: 700; padding: 0.55rem 0.75rem; text-decoration: none; display: flex; align-items: center; gap: 0.4rem; white-space: nowrap; border: none; border-radius: 8px 0 0 8px;">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 <span>Create Sales Invoice</span>
             </a>
-            <button type="button" class="btn-create-caret" onclick="window.toggleInvoiceDropdown(event)" title="Quick-Create Menu" style="background: #163832; color: #FFFFFF; border: none; padding: 0 0.55rem; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 0 8px 8px 0; border-left: 1px solid rgba(255,255,255,0.2);">
+            <button type="button" class="btn-create-caret" onclick="window.toggleInvoiceDropdown(event)" title="Quick-Create Menu" style="background: #5E91B8; color: #FFFFFF; border: none; padding: 0 0.55rem; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 0 8px 8px 0; border-left: 1px solid rgba(255,255,255,0.25);">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
         </div>
-        <div id="sidebar-invoice-popover" style="display: none; position: absolute; top: calc(100% - 2px); left: 0.85rem; right: 0.85rem; background: #0B2B26; border: 1.5px solid #163832; border-radius: 8px; z-index: 1000; box-shadow: 0 10px 20px -3px rgba(0,0,0,0.5);">
+        <div id="sidebar-invoice-popover" style="display: none; position: absolute; top: calc(100% - 2px); left: 0.85rem; right: 0.85rem; background: #253E52; border: 1.5px solid #2A485E; border-radius: 8px; z-index: 1000; box-shadow: 0 10px 20px -3px rgba(0,0,0,0.5);">
             <?php if ($isTestFixture || Gate::can('invoices.create')): ?>
-                <a href="/sales/invoices/create" style="display: block; padding: 0.55rem 0.85rem; color: #DAF1DE; text-decoration: none; font-size: 0.78rem; border-bottom: 1px solid #163832;">+ Invoice</a>
+                <a href="/sales/invoices/create" style="display: block; padding: 0.55rem 0.85rem; color: #EBF5FC; text-decoration: none; font-size: 0.78rem; border-bottom: 1px solid #2A485E;">+ Invoice</a>
             <?php endif; ?>
             <?php if ($isTestFixture || Gate::can('quotations.create')): ?>
-                <a href="/sales/quotations/create" style="display: block; padding: 0.55rem 0.85rem; color: #DAF1DE; text-decoration: none; font-size: 0.78rem; border-bottom: 1px solid #163832;">+ Quotation</a>
+                <a href="/sales/quotations/create" style="display: block; padding: 0.55rem 0.85rem; color: #EBF5FC; text-decoration: none; font-size: 0.78rem; border-bottom: 1px solid #2A485E;">+ Quotation</a>
             <?php endif; ?>
             <?php if ($isTestFixture || Gate::can('customers.create') || Gate::can('suppliers.create')): ?>
-                <a href="/parties?action=create" style="display: block; padding: 0.55rem 0.85rem; color: #DAF1DE; text-decoration: none; font-size: 0.78rem; border-bottom: 1px solid #163832;">+ Party</a>
+                <a href="/parties?action=create" style="display: block; padding: 0.55rem 0.85rem; color: #EBF5FC; text-decoration: none; font-size: 0.78rem; border-bottom: 1px solid #2A485E;">+ Party</a>
             <?php endif; ?>
             <?php if ($isTestFixture || Gate::can('items.create')): ?>
-                <a href="/items?tab=items" style="display: block; padding: 0.55rem 0.85rem; color: #DAF1DE; text-decoration: none; font-size: 0.78rem; border-bottom: 1px solid #163832;">+ Item</a>
+                <a href="/items?tab=items" style="display: block; padding: 0.55rem 0.85rem; color: #EBF5FC; text-decoration: none; font-size: 0.78rem; border-bottom: 1px solid #2A485E;">+ Item</a>
             <?php endif; ?>
             <?php if ($isTestFixture || Gate::can('expenses.create')): ?>
-                <a href="/expenses" style="display: block; padding: 0.55rem 0.85rem; color: #DAF1DE; text-decoration: none; font-size: 0.78rem;">+ Expense</a>
+                <a href="/expenses" style="display: block; padding: 0.55rem 0.85rem; color: #EBF5FC; text-decoration: none; font-size: 0.78rem;">+ Expense</a>
             <?php endif; ?>
         </div>
     </div>
@@ -187,7 +187,7 @@ $canAccess = function(array $item) use ($isTestFixture, $userRole): bool {
                 if (!$hasChildren && $itemUrl !== null):
                     $active = $isItemActive($itemUrl);
             ?>
-                <a href="<?= e($itemUrl) ?>" class="nav-item <?= $active ? 'active' : '' ?>" style="display: flex; align-items: center; gap: 0.65rem; padding: 0.55rem 0.75rem; margin: 2px 8px; border-radius: 8px; color: <?= $active ? '#FFFFFF' : '#DAF1DE' ?>; background: <?= $active ? '#235347' : 'transparent' ?>; text-decoration: none; font-size: 0.84rem; font-weight: 500; <?= $active ? 'border-left: 3px solid #8EB69B;' : '' ?>">
+                <a href="<?= e($itemUrl) ?>" class="nav-item <?= $active ? 'active' : '' ?>" style="display: flex; align-items: center; gap: 0.65rem; padding: 0.55rem 0.75rem; margin: 2px 8px; border-radius: 8px; color: <?= $active ? '#FFFFFF' : '#F7F8F0' ?>; background: <?= $active ? 'rgba(156, 213, 255, 0.2)' : 'transparent' ?>; text-decoration: none; font-size: 0.84rem; font-weight: 500; <?= $active ? 'border-left: 3px solid #9CD5FF;' : '' ?>">
                     <span class="nav-icon" style="color: inherit; display: flex; align-items: center;">
                         <?= $item['icon'] ?>
                     </span>
@@ -213,21 +213,21 @@ $canAccess = function(array $item) use ($isTestFixture, $userRole): bool {
                     $isCollapsed = !$hasActiveChild;
             ?>
                 <div class="nav-group <?= $isCollapsed ? 'collapsed' : '' ?> <?= $hasActiveChild ? 'has-active' : '' ?>" data-nav-group="<?= $itemId ?>" <?= ($itemId === 'inventory' ? 'data-menu-id="items"' : '') ?> <?= ($itemId === 'finance' ? 'data-legacy-group="money"' : '') ?>>
-                    <button type="button" class="nav-section-title nav-group-toggle" onclick="window.toggleNavGroup('<?= $itemId ?>', event)" aria-expanded="<?= $isCollapsed ? 'false' : 'true' ?>" title="<?= e($item['label']) ?>" style="color: #8EB69B; display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 0.55rem 0.75rem; margin: 2px 8px; background: <?= $hasActiveChild ? 'rgba(35, 83, 71, 0.35)' : 'none' ?>; border: none; font-size: 0.84rem; font-weight: 500; cursor: pointer; border-radius: 8px;">
+                    <button type="button" class="nav-section-title nav-group-toggle" onclick="window.toggleNavGroup('<?= $itemId ?>', event)" aria-expanded="<?= $isCollapsed ? 'false' : 'true' ?>" title="<?= e($item['label']) ?>" style="color: #9CD5FF; display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 0.55rem 0.75rem; margin: 2px 8px; background: <?= $hasActiveChild ? 'rgba(156, 213, 255, 0.14)' : 'none' ?>; border: none; font-size: 0.84rem; font-weight: 600; cursor: pointer; border-radius: 8px;">
                         <span style="display: flex; align-items: center; gap: 0.65rem;">
                             <span class="nav-icon" style="color: inherit; display: flex; align-items: center;">
                                 <?= $item['icon'] ?>
                             </span>
                             <span><?= e($item['label']) ?></span>
                         </span>
-                        <svg class="nav-group-caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: #8EB69B;">
+                        <svg class="nav-group-caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: #9CD5FF;">
                             <polyline points="9 18 15 12 9 6"></polyline>
                         </svg>
                     </button>
                     <div class="nav-group-items" id="nav-group-<?= $itemId ?>" style="<?= $isCollapsed ? 'display: none;' : '' ?>">
                         <?php foreach ($allowedChildren as $child): ?>
                             <?php $childActive = $isItemActive($child['url'] ?? ''); ?>
-                            <a href="<?= e($child['url']) ?>" class="nav-item <?= $childActive ? 'active' : '' ?>" style="display: flex; align-items: center; gap: 0.65rem; padding: 0.48rem 0.75rem 0.48rem 1.75rem; margin: 1px 8px; border-radius: 6px; color: <?= $childActive ? '#FFFFFF' : '#DAF1DE' ?>; background: <?= $childActive ? '#235347' : 'transparent' ?>; text-decoration: none; font-size: 0.82rem; font-weight: 500; <?= $childActive ? 'border-left: 3px solid #8EB69B;' : '' ?>">
+                            <a href="<?= e($child['url']) ?>" class="nav-item <?= $childActive ? 'active' : '' ?>" style="display: flex; align-items: center; gap: 0.65rem; padding: 0.48rem 0.75rem 0.48rem 1.75rem; margin: 1px 8px; border-radius: 6px; color: <?= $childActive ? '#FFFFFF' : '#F7F8F0' ?>; background: <?= $childActive ? 'rgba(156, 213, 255, 0.2)' : 'transparent' ?>; text-decoration: none; font-size: 0.82rem; font-weight: 500; <?= $childActive ? 'border-left: 3px solid #9CD5FF;' : '' ?>">
                                 <span class="nav-icon" style="color: inherit; display: flex; align-items: center;">
                                     <?= $child['icon'] ?>
                                 </span>
@@ -269,12 +269,12 @@ $canAccess = function(array $item) use ($isTestFixture, $userRole): bool {
     </nav>
 
     <!-- BOTTOM SECURITY CERTIFICATION FOOTER -->
-    <div class="sidebar-bottom-block" style="margin-top: auto; border-top: 1px solid rgba(142,182,155,0.15); padding: 0.65rem 0.85rem; background: #0B2B26;">
-        <div class="sidebar-security-badge" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.55rem 0.75rem; font-size: 0.72rem; color: #8EB69B;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8EB69B" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><polyline points="9 12 11 14 15 10"></polyline></svg>
+    <div class="sidebar-bottom-block" style="margin-top: auto; border-top: 1px solid rgba(122,170,206,0.15); padding: 0.65rem 0.85rem; background: #253E52;">
+        <div class="sidebar-security-badge" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.55rem 0.75rem; font-size: 0.72rem; color: #7AAACE;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7AAACE" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><polyline points="9 12 11 14 15 10"></polyline></svg>
             <div>
-                <div style="color: #DAF1DE; font-weight: 600; font-size: 0.74rem;">ISO 27001 Certified</div>
-                <div style="color: #8EB69B; font-size: 0.68rem;">256-Bit SSL Secured</div>
+                <div style="color: #EBF5FC; font-weight: 600; font-size: 0.74rem;">ISO 27001 Certified</div>
+                <div style="color: #7AAACE; font-size: 0.68rem;">256-Bit SSL Secured</div>
             </div>
         </div>
     </div>

@@ -22,21 +22,21 @@ $tabs = [
     <!-- Page Header -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
         <div>
-            <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: #163832; margin-bottom: 0.25rem;">
-                <span style="color: #235347; font-weight: 500;">GST Compliance</span>
+            <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: #2A485E; margin-bottom: 0.25rem;">
+                <span style="color: #355872; font-weight: 500;">GST Compliance</span>
                 <span>/</span>
-                <span style="color: #051F20; font-weight: 600;">GST Registers</span>
+                <span style="color: #1E293B; font-weight: 600;">GST Registers</span>
             </div>
-            <h1 style="font-size: 1.5rem; font-weight: 700; color: #051F20; margin: 0;">GST Registers</h1>
-            <p style="font-size: 0.85rem; color: #163832; margin: 0.25rem 0 0 0;">Outward tax supplies and inward purchase registers for GSTR-1, GSTR-3B, and ITC reconciliation.</p>
+            <h1 style="font-size: 1.5rem; font-weight: 700; color: #1E293B; margin: 0;">GST Registers</h1>
+            <p style="font-size: 0.85rem; color: #2A485E; margin: 0.25rem 0 0 0;">Outward tax supplies and inward purchase registers for GSTR-1, GSTR-3B, and ITC reconciliation.</p>
         </div>
         <div style="display: flex; gap: 0.65rem;">
             <?php if ($activeTab === 'sales'): ?>
-                <a href="/reports/gst-sales-register/export" class="btn btn-secondary" style="background: #DAF1DE; border: 1.5px solid #8EB69B; color: #235347; padding: 0.55rem 1rem; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 0.85rem;">
+                <a href="/reports/gst-sales-register/export" class="btn btn-secondary" style="background: #EBF5FC; border: 1.5px solid #7AAACE; color: #355872; padding: 0.55rem 1rem; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 0.85rem;">
                     Download Sales CSV
                 </a>
             <?php else: ?>
-                <a href="/reports/gst-purchase-register/export" class="btn btn-secondary" style="background: #DAF1DE; border: 1.5px solid #8EB69B; color: #235347; padding: 0.55rem 1rem; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 0.85rem;">
+                <a href="/reports/gst-purchase-register/export" class="btn btn-secondary" style="background: #EBF5FC; border: 1.5px solid #7AAACE; color: #355872; padding: 0.55rem 1rem; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 0.85rem;">
                     Download Purchase CSV
                 </a>
             <?php endif; ?>
