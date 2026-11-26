@@ -749,12 +749,16 @@ class ReportController
         $service = new InvoicePaymentStatusReportService();
         $report = $service->getReport($companyId, $filters);
 
+        $exportQuery = array_filter($filters, fn($v) => $v !== null && $v !== '' && $v !== 'all');
+        $exportUrl = '/reports/invoice-payment-status/export' . (!empty($exportQuery) ? '?' . http_build_query($exportQuery) : '');
+
         $html = View::renderWithLayout('reports/invoice_payment_status', [
             'title' => 'Invoice Payment Status Report',
             'currentUri' => '/reports/invoice-payment-status',
             'report' => $report,
             'branches' => $branches,
             'filters' => $filters,
+            'exportUrl' => $exportUrl,
         ], 'layouts/app');
 
         return Response::html($html);

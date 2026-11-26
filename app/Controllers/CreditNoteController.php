@@ -154,20 +154,20 @@ class CreditNoteController
         return Response::redirect('/sales/credit-notes');
     }
 
-    public function edit(Request $req, array $params = []): Response
+    public function edit(Request $req, mixed $id = null): Response
     {
         $companyId = $this->getCompanyId();
-        $id = (int)($params['id'] ?? $req->input('id') ?? 1);
+        $cnId = (int)(is_array($id) ? ($id['id'] ?? 0) : ($id ?: $req->input('id') ?: 1));
 
         $cn = null;
         try {
-            $cn = Database::selectOne("SELECT * FROM `credit_notes` WHERE id = ? AND company_id = ?", [$id, $companyId]);
+            $cn = Database::selectOne("SELECT * FROM `credit_notes` WHERE id = ? AND company_id = ?", [$cnId, $companyId]);
         } catch (\Throwable $e) {}
 
         if (!$cn) {
             $list = Session::get('mock_credit_notes', []);
             foreach ($list as $item) {
-                if ((int)$item['id'] === $id) {
+                if ((int)$item['id'] === $cnId) {
                     $cn = $item;
                     break;
                 }
@@ -176,7 +176,7 @@ class CreditNoteController
 
         if (!$cn) {
             $cn = [
-                'id' => $id,
+                'id' => $cnId,
                 'credit_note_number' => 'CN-2026-0001',
                 'credit_note_date' => date('Y-m-d'),
                 'customer_id' => 1,
@@ -204,10 +204,10 @@ class CreditNoteController
         return Response::html($html);
     }
 
-    public function update(Request $req, array $params = []): Response
+    public function update(Request $req, mixed $id = null): Response
     {
         $companyId = $this->getCompanyId();
-        $id = (int)($params['id'] ?? $req->input('id') ?? 1);
+        $cnId = (int)(is_array($id) ? ($id['id'] ?? 0) : ($id ?: $req->input('id') ?: 1));
         $taxable = (float)$req->input('taxable_amount', 0);
         $rate = (float)$req->input('gst_rate', 18);
         $total = $taxable + (($taxable * $rate) / 100);
@@ -216,7 +216,7 @@ class CreditNoteController
             Database::execute(
                 "UPDATE `credit_notes` SET customer_id = ?, invoice_number = ?, reason = ?, taxable_amount = ?, gst_rate = ?, total_amount = ?, notes = ?, updated_at = NOW()
                  WHERE id = ? AND company_id = ?",
-                [(int)$req->input('customer_id', 1), $req->input('invoice_number'), $req->input('reason'), $taxable, $rate, $total, $req->input('notes'), $id, $companyId]
+                [(int)$req->input('customer_id', 1), $req->input('invoice_number'), $req->input('reason'), $taxable, $rate, $total, $req->input('notes'), $cnId, $companyId]
             );
         } catch (\Throwable $e) {}
 

@@ -42,6 +42,32 @@ class ExpenseController
     }
 
     /**
+     * Show expense creation form / view (with auto-open create modal).
+     */
+    public function createForm(Request $req): Response
+    {
+        $companyId = Session::getCompanyId() ?? 1;
+        $branchId = Session::getBranchId() ?? 1;
+
+        $expenses = Database::select(
+            "SELECT id, expense_number, category, payee, expense_date, amount, tax_amount, payment_mode, description 
+             FROM expenses 
+             WHERE company_id = ? AND (branch_id = ? OR branch_id IS NULL)
+             ORDER BY id DESC",
+            [$companyId, $branchId]
+        );
+
+        $html = View::renderWithLayout('expenses/index', [
+            'title' => 'Record Expense Voucher — WTSBill ERP',
+            'currentUri' => '/expenses',
+            'expenses' => $expenses,
+            'autoOpenCreateModal' => true,
+        ], 'layouts/app');
+
+        return Response::html($html);
+    }
+
+    /**
      * Store new expense voucher.
      */
     public function store(Request $req): Response

@@ -118,7 +118,7 @@ $selectedBranch = $selectedBranch ?? 0;
                     <?php foreach ($bills as $b): ?>
                         <tr style="border-bottom: 1px solid #f1f5f9;">
                             <td style="padding: 12px 16px; font-weight: 600;">
-                                <a href="/purchases/<?= (int)$b['id'] ?>" style="color: #2563eb; text-decoration: none;">
+                                <a href="/purchases/bills?id=<?= (int)$b['id'] ?>" style="color: #2563eb; text-decoration: none;" title="View Purchase Bill">
                                     <?= htmlspecialchars($b['purchase_number']) ?>
                                 </a>
                             </td>

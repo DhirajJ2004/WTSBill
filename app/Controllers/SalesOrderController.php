@@ -82,7 +82,7 @@ class SalesOrderController
             [$companyId]
         );
         $categories = Database::select("SELECT id, name FROM categories WHERE company_id = ? AND is_active = 1 ORDER BY name ASC", [$companyId]);
-        $products = Database::select("SELECT id, category_id, name, sku, hsn_sac, selling_price, tax_rate, unit FROM products WHERE company_id = ? AND is_active = 1 AND deleted_at IS NULL ORDER BY name ASC", [$companyId]);
+        $products = Database::select("SELECT id, category_id, name, sku, hsn_sac, sales_price, tax_rate, unit FROM products WHERE company_id = ? AND is_active = 1 AND deleted_at IS NULL ORDER BY name ASC", [$companyId]);
 
         $nextOrderNumber = $this->orderService->generateOrderNumber($companyId);
         $selectedCustomerId = (int)($req->query('customer_id') ?? 0);

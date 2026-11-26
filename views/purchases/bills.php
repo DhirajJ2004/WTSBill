@@ -1481,6 +1481,16 @@
             }
         });
 
+        // Auto-open purchase bill drawer if navigating with ?id=123
+        const targetBillId = parseInt(new URLSearchParams(window.location.search).get('id')) || 0;
+        if (targetBillId > 0) {
+            setTimeout(function() {
+                if (typeof window.openBillDrawer === 'function') {
+                    window.openBillDrawer(targetBillId);
+                }
+            }, 300);
+        }
+
         // Auto-open purchase bill modal if navigating to /purchases/bills/create or action=create
         if (<?= json_encode(!empty($autoOpenCreateModal)) ?> || window.location.pathname.endsWith('/create') || new URLSearchParams(window.location.search).get('action') === 'create') {
             setTimeout(function() {

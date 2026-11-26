@@ -177,8 +177,14 @@ $router->get('/public/quotations/{id}', [$commController, 'publicQuotationView']
 
 // 8d. Sales Orders (Commercial Commitments & Fulfillment Lifecycle)
 $salesOrderController = new \WTSBill\Controllers\SalesOrderController();
-$router->get('/sales/orders', [$salesOrderController, 'index'], [$auth, $can('quotations.view')]);
-$router->get('/sales/orders/create', [$salesOrderController, 'createForm'], [$auth, $can('quotations.create')]);
+$router->get('/sales/orders', function ($req) {
+    \WTSBill\Core\Session::flash('info', 'Sales orders have been consolidated into Invoices and Quotations.');
+    return \WTSBill\Core\Response::redirect('/sales/invoices');
+}, [$auth]);
+$router->get('/sales/orders/create', function ($req) {
+    \WTSBill\Core\Session::flash('info', 'Sales orders have been consolidated into Invoices and Quotations.');
+    return \WTSBill\Core\Response::redirect('/sales/invoices/create');
+}, [$auth]);
 $router->post('/sales/orders/create', [$salesOrderController, 'store'], [$auth, $csrf, $can('quotations.create')]);
 $router->post('/sales/orders', [$salesOrderController, 'store'], [$auth, $csrf, $can('quotations.create')]);
 $router->get('/sales/orders/{id}', [$salesOrderController, 'show'], [$auth, $can('quotations.view')]);
@@ -238,10 +244,16 @@ $router->post('/api/purchases/bills/{id}/payments', [$purchaseController, 'recor
 $router->post('/api/purchases/bills/{id}/duplicate', [$purchaseController, 'billDuplicateApi'], [$auth, $csrf, $can('bills.create')]);
 $router->delete('/api/purchases/bills/{id}', [$purchaseController, 'billDeleteApi'], [$auth, $csrf, $can('bills.delete')]);
 $router->post('/api/purchases/bills/{id}/delete', [$purchaseController, 'billDeleteApi'], [$auth, $csrf, $can('bills.delete')]);
+$router->get('/purchases/{id}', function ($req, $id) {
+    $billId = is_array($id) ? ($id['id'] ?? 0) : $id;
+    return \WTSBill\Core\Response::redirect('/purchases/bills?id=' . (int)$billId);
+}, [$auth, $can('bills.view')]);
 
 // 11. Expenses (Accountant / Admin)
 $expenseController = new ExpenseController();
 $router->get('/expenses', [$expenseController, 'index'], [$auth, $can('expenses.view')]);
+$router->get('/expenses/create', [$expenseController, 'createForm'], [$auth, $can('expenses.create')]);
+$router->post('/expenses/create', [$expenseController, 'store'], [$auth, $csrf, $can('expenses.create')]);
 $router->post('/expenses', [$expenseController, 'store'], [$auth, $csrf, $can('expenses.create')]);
 $router->post('/expenses/{id}/update', [$expenseController, 'update'], [$auth, $csrf, $can('expenses.edit')]);
 $router->post('/expenses/{id}/delete', [$expenseController, 'delete'], [$auth, $csrf, $can('expenses.delete')]);

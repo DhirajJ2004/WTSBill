@@ -143,6 +143,15 @@
                 }
             }
         });
+
+        // Auto-open modal if navigated to /expenses/create or action=create
+        if (<?= json_encode(!empty($autoOpenCreateModal)) ?> || window.location.pathname.endsWith('/create') || new URLSearchParams(window.location.search).get('action') === 'create') {
+            setTimeout(function() {
+                if (typeof window.openExpenseModal === 'function') {
+                    window.openExpenseModal();
+                }
+            }, 150);
+        }
     });
 
     window.openExpenseModal = function() {
