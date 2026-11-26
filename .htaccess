@@ -1,6 +1,10 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
+    # Block direct public access to sensitive files and internal directories
+    RewriteRule ^(\.env|\.git|composer\.(json|lock)|.*\.sql$|.*\.zip$|.*\.log$|.*\.md$) - [F,L,NC]
+    RewriteRule ^(app|config|database|includes|routes|storage|tests|vendor|views)/ - [F,L,NC]
+
     # Directly serve static assets from public/assets and public/uploads
     RewriteRule ^assets/(.*)$ public/assets/$1 [L]
     RewriteRule ^uploads/(.*)$ public/uploads/$1 [L]

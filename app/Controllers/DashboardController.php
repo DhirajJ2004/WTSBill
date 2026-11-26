@@ -192,21 +192,34 @@ class DashboardController
      */
     protected function renderAdminDashboard(int $companyId, int $branchId): Response
     {
+        // 1. Top 6 Core Summary Metrics
         $salesMetrics = Database::selectOne(
             "SELECT COUNT(*) AS total_invoices, 
                     COALESCE(SUM(grand_total), 0) AS total_sales,
                     COALESCE(SUM(total_tax), 0) AS total_tax,
                     COALESCE(SUM(amount_due), 0) AS receivables
              FROM `invoices` 
-             WHERE company_id = ? AND branch_id = ? AND deleted_at IS NULL AND status != 'CANCELLED'",
-            [$companyId, $branchId]
+             WHERE company_id = ? AND deleted_at IS NULL AND status != 'CANCELLED'",
+            [$companyId]
         );
 
         $purchaseMetrics = Database::selectOne(
-            "SELECT COALESCE(SUM(amount_due), 0) AS payables
+            "SELECT COUNT(*) AS total_bills,
+                    COALESCE(SUM(grand_total), 0) AS total_purchases,
+                    COALESCE(SUM(amount_due), 0) AS payables
              FROM `purchases` 
-             WHERE company_id = ? AND branch_id = ?",
-            [$companyId, $branchId]
+             WHERE company_id = ?",
+            [$companyId]
+        );
+
+        $customerRow = Database::selectOne(
+            "SELECT COUNT(*) AS total_customers FROM `customers` WHERE company_id = ? AND deleted_at IS NULL",
+            [$companyId]
+        );
+
+        $productRow = Database::selectOne(
+            "SELECT COUNT(*) AS total_products FROM `products` WHERE company_id = ? AND deleted_at IS NULL",
+            [$companyId]
         );
 
         $bankRow = Database::selectOne(
@@ -224,15 +237,104 @@ class DashboardController
             [$companyId]
         );
 
-        // Pending Payments
-        $pendingRow = Database::selectOne(
-            "SELECT COUNT(*) AS count, COALESCE(SUM(amount_due), 0) AS amount 
-             FROM `invoices` 
-             WHERE company_id = ? AND deleted_at IS NULL AND amount_due > 0 AND status != 'CANCELLED'",
+        // 2. DONUT CHART 1: Sales Payment Status (Paid, Partial, Pending/Unpaid)
+        $salesStatusRows = Database::select(
+            "SELECT status, COUNT(*) AS count, COALESCE(SUM(grand_total), 0) AS amount
+             FROM `invoices`
+             WHERE company_id = ? AND deleted_at IS NULL AND status != 'CANCELLED'
+             GROUP BY status",
             [$companyId]
         );
+        $chartSalesStatus = ['PAID' => ['count' => 0, 'amount' => 0.0], 'PARTIAL' => ['count' => 0, 'amount' => 0.0], 'PENDING' => ['count' => 0, 'amount' => 0.0]];
+        foreach ($salesStatusRows as $ssr) {
+            $st = strtoupper((string)$ssr['status']);
+            if ($st === 'PAID') {
+                $chartSalesStatus['PAID']['count'] += (int)$ssr['count'];
+                $chartSalesStatus['PAID']['amount'] += (float)$ssr['amount'];
+            } elseif ($st === 'PARTIAL' || $st === 'PARTIALLY_PAID') {
+                $chartSalesStatus['PARTIAL']['count'] += (int)$ssr['count'];
+                $chartSalesStatus['PARTIAL']['amount'] += (float)$ssr['amount'];
+            } else {
+                $chartSalesStatus['PENDING']['count'] += (int)$ssr['count'];
+                $chartSalesStatus['PENDING']['amount'] += (float)$ssr['amount'];
+            }
+        }
 
-        // Low-Stock Alerts (Velocity & Alerts replacement)
+        // 3. DONUT CHART 2: Purchase Payment Status (Paid, Partial, Pending/Unpaid)
+        $purchaseStatusRows = Database::select(
+            "SELECT status, COUNT(*) AS count, COALESCE(SUM(grand_total), 0) AS amount
+             FROM `purchases`
+             WHERE company_id = ?
+             GROUP BY status",
+            [$companyId]
+        );
+        $chartPurchaseStatus = ['PAID' => ['count' => 0, 'amount' => 0.0], 'PARTIAL' => ['count' => 0, 'amount' => 0.0], 'PENDING' => ['count' => 0, 'amount' => 0.0]];
+        foreach ($purchaseStatusRows as $psr) {
+            $st = strtoupper((string)$psr['status']);
+            if ($st === 'PAID') {
+                $chartPurchaseStatus['PAID']['count'] += (int)$psr['count'];
+                $chartPurchaseStatus['PAID']['amount'] += (float)$psr['amount'];
+            } elseif ($st === 'PARTIAL' || $st === 'PARTIALLY_PAID') {
+                $chartPurchaseStatus['PARTIAL']['count'] += (int)$psr['count'];
+                $chartPurchaseStatus['PARTIAL']['amount'] += (float)$psr['amount'];
+            } else {
+                $chartPurchaseStatus['PENDING']['count'] += (int)$psr['count'];
+                $chartPurchaseStatus['PENDING']['amount'] += (float)$psr['amount'];
+            }
+        }
+
+        // 4. DONUT CHART 3: Expense Breakdown (Categories, Amounts, Percentages)
+        $expenseRows = Database::select(
+            "SELECT COALESCE(category, 'General') AS category, COUNT(*) AS count, COALESCE(SUM(amount), 0) AS amount
+             FROM `expenses`
+             WHERE company_id = ?
+             GROUP BY category
+             ORDER BY amount DESC LIMIT 5",
+            [$companyId]
+        );
+        $totalExpenseAmount = array_sum(array_column($expenseRows, 'amount'));
+        $chartExpenseBreakdown = [];
+        foreach ($expenseRows as $er) {
+            $amt = (float)$er['amount'];
+            $pct = $totalExpenseAmount > 0 ? round(($amt / $totalExpenseAmount) * 100, 1) : 0;
+            $chartExpenseBreakdown[] = [
+                'category' => (string)$er['category'],
+                'amount' => $amt,
+                'count' => (int)$er['count'],
+                'percent' => $pct,
+            ];
+        }
+
+        // 5. DONUT CHART 4: Receivables Status (Paid, Outstanding / Current, Overdue)
+        $recStatusRow = Database::selectOne(
+            "SELECT 
+                COALESCE(SUM(CASE WHEN amount_due <= 0 THEN grand_total ELSE (grand_total - amount_due) END), 0) AS paid_val,
+                COALESCE(SUM(CASE WHEN amount_due > 0 AND (due_date IS NULL OR due_date >= CURDATE()) THEN amount_due ELSE 0 END), 0) AS current_val,
+                COALESCE(SUM(CASE WHEN amount_due > 0 AND due_date < CURDATE() THEN amount_due ELSE 0 END), 0) AS overdue_val
+             FROM `invoices`
+             WHERE company_id = ? AND deleted_at IS NULL AND status != 'CANCELLED'",
+            [$companyId]
+        );
+        $chartReceivablesStatus = [
+            'paid' => (float)($recStatusRow['paid_val'] ?? 0),
+            'outstanding' => (float)($recStatusRow['current_val'] ?? 0),
+            'overdue' => (float)($recStatusRow['overdue_val'] ?? 0),
+        ];
+
+        // 6. Sales Trend (Last 6 Months)
+        $salesTrendRows = Database::select(
+            "SELECT DATE_FORMAT(invoice_date, '%b %Y') AS month_label,
+                    DATE_FORMAT(invoice_date, '%Y-%m') AS month_key,
+                    COALESCE(SUM(grand_total), 0) AS total_revenue
+             FROM `invoices`
+             WHERE company_id = ? AND deleted_at IS NULL AND status != 'CANCELLED'
+             GROUP BY month_key, month_label
+             ORDER BY month_key DESC LIMIT 6",
+            [$companyId]
+        );
+        $salesTrends = array_reverse($salesTrendRows);
+
+        // Low-Stock Alerts
         $lowStockItems = Database::select(
             "SELECT id, name, sku, current_stock, COALESCE(reorder_level, min_stock_alert, 5) AS reorder_level, unit 
              FROM `products` 
@@ -242,13 +344,33 @@ class DashboardController
             [$companyId]
         );
 
+        // Recent Invoices
         $recentInvoices = Database::select(
-            "SELECT i.id, i.invoice_number, COALESCE(c.name, i.customer_name, 'Direct Customer') AS customer_name, i.invoice_date, i.grand_total, i.status 
+            "SELECT i.id, i.invoice_number, COALESCE(c.name, i.customer_name, 'Direct Customer') AS customer_name, i.invoice_date, i.grand_total, i.amount_due, i.status 
              FROM `invoices` i
              LEFT JOIN `customers` c ON i.customer_id = c.id
-             WHERE i.company_id = ? AND (i.branch_id = ? OR i.branch_id IS NULL) AND i.deleted_at IS NULL AND i.status != 'CANCELLED'
-             ORDER BY i.id DESC LIMIT 8",
-            [$companyId, $branchId]
+             WHERE i.company_id = ? AND i.deleted_at IS NULL AND i.status != 'CANCELLED'
+             ORDER BY i.id DESC LIMIT 6",
+            [$companyId]
+        );
+
+        // Recent Quotations
+        $recentQuotations = Database::select(
+            "SELECT q.id, q.quotation_number, COALESCE(c.name, 'Direct Client') AS customer_name, q.quotation_date, q.grand_total, q.status
+             FROM `quotations` q
+             LEFT JOIN `customers` c ON q.customer_id = c.id
+             WHERE q.company_id = ? AND q.deleted_at IS NULL
+             ORDER BY q.id DESC LIMIT 5",
+            [$companyId]
+        );
+
+        // Recent Payments
+        $recentPayments = Database::select(
+            "SELECT id, payment_number, receipt_number, payment_date, amount, payment_mode, payment_type, status
+             FROM `payments`
+             WHERE company_id = ? AND deleted_at IS NULL
+             ORDER BY id DESC LIMIT 5",
+            [$companyId]
         );
 
         $html = View::renderWithLayout('dashboard/index', [
@@ -256,17 +378,26 @@ class DashboardController
             'currentUri' => '/',
             'metrics' => [
                 'total_sales' => (float)($salesMetrics['total_sales'] ?? 0),
-                'total_tax' => (float)($salesMetrics['total_tax'] ?? 0),
+                'total_sales_count' => (int)($salesMetrics['total_invoices'] ?? 0),
+                'total_purchases' => (float)($purchaseMetrics['total_purchases'] ?? 0),
+                'total_purchases_count' => (int)($purchaseMetrics['total_bills'] ?? 0),
                 'receivables' => (float)($salesMetrics['receivables'] ?? 0),
                 'payables' => (float)($purchaseMetrics['payables'] ?? 0),
+                'total_customers' => (int)($customerRow['total_customers'] ?? 0),
+                'total_products' => (int)($productRow['total_products'] ?? 0),
                 'cash_bank_balance' => (float)($bankRow['cash_bank_balance'] ?? 0),
                 'today_sales' => (float)($todayRow['amount'] ?? 0),
                 'today_invoices_count' => (int)($todayRow['count'] ?? 0),
-                'pending_payments' => (float)($pendingRow['amount'] ?? 0),
-                'pending_invoices_count' => (int)($pendingRow['count'] ?? 0),
             ],
+            'chartSalesStatus' => $chartSalesStatus,
+            'chartPurchaseStatus' => $chartPurchaseStatus,
+            'chartExpenseBreakdown' => $chartExpenseBreakdown,
+            'chartReceivablesStatus' => $chartReceivablesStatus,
+            'salesTrends' => $salesTrends,
             'lowStockItems' => $lowStockItems,
             'recentInvoices' => $recentInvoices,
+            'recentQuotations' => $recentQuotations,
+            'recentPayments' => $recentPayments,
         ], 'layouts/app');
 
         return Response::html($html);
